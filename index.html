@@ -742,6 +742,11 @@
       .b-card:active{transform:scale(.985)}
       .b-card-preview{position:relative;height:154px;display:grid;place-items:center;overflow:hidden;border-radius:14px 14px 0 0;background:radial-gradient(circle at 50% 64%,var(--bglow,rgba(255,201,60,.28)),rgba(255,255,255,.05) 44%,rgba(0,0,0,.22) 78%)}
       .b-card-preview.live::before{display:none}
+      .boutique-redeem{pointer-events:auto;display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin:2px 0 10px;padding:9px 11px;border:1.5px solid rgba(255,210,60,.55);border-radius:14px;background:rgba(255,210,60,.07)}
+      .boutique-redeem .br-txt{font-size:.72rem;color:#ffe98a}
+      .boutique-redeem input{flex:1;min-width:130px;background:#17131f;border:1.5px solid #4a3b57;border-radius:10px;color:#fff;padding:7px 9px;font:700 .74rem 'Trebuchet MS',sans-serif;text-transform:uppercase}
+      .boutique-redeem button{background:linear-gradient(160deg,#ffd23c,#f5a623);color:#241a00;border:0;border-radius:99px;font:900 .68rem 'Trebuchet MS',sans-serif;padding:8px 13px;cursor:pointer}
+      .boutique-redeem .br-msg{flex-basis:100%;font-size:.68rem;color:#bdeaff}
       .boutique-buy-btn{pointer-events:auto;background:linear-gradient(160deg,#54c8ff,#8b30c9);color:#fff;border:1.5px solid #bdeaff;border-radius:99px;font:900 .62rem 'Trebuchet MS',sans-serif;padding:6px 10px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.4)}
       .boutique-buy-btn:disabled{filter:grayscale(.7);opacity:.65;cursor:default}
       .b-card-preview::before{content:"PRÓXIMAMENTE";position:absolute;z-index:5;top:20px;left:-48px;width:178px;transform:rotate(-23deg);background:linear-gradient(90deg,#ff2f78,#ff8a1e);color:#fff;font-family:var(--display);font-size:.58rem;letter-spacing:.11em;text-align:center;padding:5px 0;box-shadow:0 5px 14px rgba(0,0,0,.4);text-shadow:0 1px 2px rgba(0,0,0,.35)}
@@ -1342,10 +1347,11 @@
           <div class="boutique-honest"><span aria-hidden="true">🛡️</span><span><strong>Solo aspecto:</strong> ningún objeto da ventaja en combate.</span></div>
           <nav class="boutique-tabs" id="boutiqueTabs" aria-label="Categorías de la Boutique"></nav>
           <div class="boutique-meta" id="boutiqueMeta"></div>
+          <div class="boutique-redeem"><span class="br-txt">🎟️ ¿Tienes un código del <b>Paquete Fundador 👑</b>?</span><input id="redeemInput" type="text" placeholder="VF-0000-XXXXXX" autocomplete="off" autocapitalize="characters"><button id="redeemBtn" type="button">CANJEAR</button><span class="br-msg" id="redeemMsg"></span></div>
           <div class="boutique-grid" id="boutiqueGrid"></div>
           <div class="boutique-foot">
             <button class="big-btn" id="btnCloseBoutique2" type="button">✔ SEGUIR JUGANDO</button>
-            <span class="boutique-foot-note">Las 💎 gemas aún no existen como moneda: los precios son la referencia futura de cada pieza.</span>
+            <span class="boutique-foot-note">Las 💎 se ganan jugando: contratos 📜, campeones 👑 y los tesoros de Musa 🦊. El Paquete Fundador se desbloquea con su código.</span>
           </div>
           <div class="boutique-detail hidden" id="boutiqueDetail"></div>
         </div>
@@ -4665,6 +4671,12 @@
       {id:'aura_petalos',cat:'auras',name:'Pétalos Rosas',tier:'Legendario',price:900,icon:'🌸',shape:'petal',colors:['#ff8fb8','#ffb7d5','#ff5da2'],desc:'Pétalos rosas en remolino lento: primavera permanente, también dentro de la Cripta.'},
       {id:'aura_chispas',cat:'auras',name:'Chispas Azules',tier:'Especial',price:650,icon:'✦',shape:'spark',colors:['#54c8ff','#7ad0ff','#bdeaff'],desc:'Chispas azules que orbitan y parpadean como luciérnagas de río al anochecer.'},
       {id:'aura_hojas',cat:'auras',name:'Hojas Verdes',tier:'Especial',price:600,icon:'🍃',shape:'leaf',colors:['#57d977','#b8ff9e','#2e9e4f'],desc:'Hojas verdes que giran contigo: el bosque te sigue a donde vayas.'},
+      {id:'asp_fund_guerrero',cat:'aspectos',name:'Fundador de Ónix · Guerrero',tier:'Fundador',price:0,founder:true,cls:'warrior',body:'#1c1a20',trim:'#ffd23c',hair:'#0d0b10',cape:'#14100a',gem:'#ffd23c',desc:'Ónice pulido y oro de fundición: el aspecto de quienes creyeron en Valdoria desde el principio. Solo con el código del Paquete Fundador.'},
+      {id:'asp_fund_maga',cat:'aspectos',name:'Fundadora de Ónix · Maga',tier:'Fundador',price:0,founder:true,cls:'mage',body:'#1c1a20',trim:'#ffd23c',hair:'#0d0b10',cape:'#14100a',gem:'#ffd23c',desc:'Ónice pulido y oro de fundición: el aspecto de quienes creyeron en Valdoria desde el principio. Solo con el código del Paquete Fundador.'},
+      {id:'asp_fund_cazadora',cat:'aspectos',name:'Fundadora de Ónix · Cazadora',tier:'Fundador',price:0,founder:true,cls:'hunter',body:'#1c1a20',trim:'#ffd23c',hair:'#0d0b10',cape:'#14100a',gem:'#ffd23c',desc:'Ónice pulido y oro de fundición: el aspecto de quienes creyeron en Valdoria desde el principio. Solo con el código del Paquete Fundador.'},
+      {id:'asp_fund_druida',cat:'aspectos',name:'Fundadora de Ónix · Druida',tier:'Fundador',price:0,founder:true,cls:'druid',body:'#1c1a20',trim:'#ffd23c',hair:'#0d0b10',cape:'#14100a',gem:'#ffd23c',desc:'Ónice pulido y oro de fundición: el aspecto de quienes creyeron en Valdoria desde el principio. Solo con el código del Paquete Fundador.'},
+      {id:'arm_fund_onix',cat:'armas',name:'Filo de Ónix',tier:'Fundador',price:0,founder:true,color:'#241f31',desc:'Un filo negro como la noche de la Cripta, con el filo bruñido en oro. Solo con el código del Paquete Fundador.'},
+      {id:'aura_fund_corona',cat:'auras',name:'Corona Dorada',tier:'Fundador',price:0,founder:true,icon:'👑',shape:'ember',colors:['#ffd23c','#fff0a0','#f5a623'],desc:'Brasas de oro viejo que suben como una coronación. Solo con el código del Paquete Fundador.'},
       {id:'pet_corgi_bufanda',cat:'mascotas',name:'Corgi con Bufanda',tier:'Especial',price:700,pet:'corgi',desc:'El Corgi Recolector con su bufanda roja de lana y franjas doradas, listo para el Páramo.'},
       {id:'pet_pato_corona',cat:'mascotas',name:'Pato con Corona',tier:'Legendario',price:1000,pet:'duck',desc:'El Pato de la Suerte, por fin coronado: corona dorada con gemas y toda la dignidad que cabe en un pato.'},
       {id:'pet_murcielago_lazo',cat:'mascotas',name:'Murciélago con Lazo',tier:'Especial',price:750,pet:'bat',desc:'El Murciélago del Alba con un lazo rosa en la oreja: terrorífico, pero solo un poco.'}
@@ -4681,6 +4693,7 @@
       const btn=document.createElement('button'); btn.type='button';
       btn.addEventListener('click',ev=>{ ev.stopPropagation(); });
       if(!boutiqueLive(item)){ btn.className='boutique-soon-btn'; btn.textContent='PRÓXIMAMENTE'; btn.disabled=true; return btn; }
+      if(item.founder&&!shopOwned(item.id)){ btn.className='boutique-soon-btn'; btn.textContent='🎟️ SOLO CON CÓDIGO'; btn.disabled=true; return btn; }
       btn.className='boutique-buy-btn';
       const clsOk=item.cat!=='aspectos'||item.cls===S.clsKey;
       if(!clsOk){ btn.textContent='SOLO PARA '+({warrior:'GUERRERO',mage:'MAGA',hunter:'CAZADORA',druid:'DRUIDA'}[item.cls]||item.cls); btn.disabled=true; return btn; }
@@ -4691,6 +4704,47 @@
       return btn;
     }
     function shopReopen(item){ renderBoutique(); const bd=$('boutiqueDetail'); if(bd&&!bd.classList.contains('hidden')) openBoutiqueDetail(item.id); }
+    /* ---------- PAQUETE FUNDADOR: códigos de desbloqueo ----------
+       Cada código lleva un número de serie y una firma hecha con la llave
+       del pack; el juego comprueba la firma sin necesitar servidor. El lote
+       de códigos a la venta se genera fuera del juego, con la misma llave. */
+    const FOUNDER_ITEMS=['asp_fund_guerrero','asp_fund_maga','asp_fund_cazadora','asp_fund_druida','arm_fund_onix','aura_fund_corona'];
+    const FOUNDER_SECRET='valdoria-fundador-2026-fx7';
+    function founderHash(str){ let h1=0xdeadbeef, h2=0x41c6ce57;
+      for(let i=0;i<str.length;i++){ const ch=str.charCodeAt(i); h1=Math.imul(h1^ch,2654435761); h2=Math.imul(h2^ch,1597334677); }
+      h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);
+      h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);
+      return (h2>>>0).toString(16).padStart(8,'0')+(h1>>>0).toString(16).padStart(8,'0'); }
+    function founderCodeOk(code){
+      const c=String(code||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+      const m=c.match(/^VF(\d{4})([0-9A-F]{6})$/); if(!m) return false;
+      return founderHash(FOUNDER_SECRET+':'+m[1]).slice(0,6).toUpperCase()===m[2];
+    }
+    function redeemFounder(code){
+      if(!S||!S.player) return 'bad';
+      if(S.founder) return 'already';
+      if(!founderCodeOk(code)) return 'bad';
+      S.founder=1; if(!S.owned) S.owned=[];
+      for(const id of FOUNDER_ITEMS) if(S.owned.indexOf(id)<0) S.owned.push(id);
+      S.gems=(S.gems||0)+1000;
+      const mine=FOUNDER_ITEMS.map(id=>boutiqueById(id)).find(it=>it&&it.cat==='aspectos'&&it.cls===S.clsKey);
+      if(mine) S.skin=mine.id;
+      S.weaponSkin='arm_fund_onix'; S.aura='aura_fund_corona';
+      if(sfx.loot) sfx.loot(2);
+      burst(S.player.x,S.player.y-20,'#ffd23c',30,180,0.8,4);
+      floatText(S.player.x,S.player.y-62,'👑 ¡PAQUETE FUNDADOR! +1000 💎','#ffd23c');
+      saveGame(true);
+      return 'ok';
+    }
+    function wireRedeem(){
+      const rb=$('redeemBtn'); if(!rb||rb._w) return; rb._w=1;
+      rb.addEventListener('click',()=>{
+        const inp=$('redeemInput'), msg=$('redeemMsg');
+        const r=redeemFounder(inp?inp.value:'');
+        if(msg) msg.textContent=r==='ok'?'👑 ¡Pack desbloqueado! Ya tienes tus piezas de ónice, el Filo de Ónix, la Corona Dorada y 1000 💎.':(r==='already'?'Ya eres Fundador 👑: el pack ya está en tu colección.':'Ese código no es válido: revísalo letra a letra.');
+        if(r==='ok'){ if(inp) inp.value=''; renderBoutique(); }
+      });
+    }
     function shopBuy(item){ if(!S||shopOwned(item.id)||(S.gems||0)<item.price) return; S.gems-=item.price; if(!S.owned) S.owned=[]; S.owned.push(item.id); if(sfx.loot) sfx.loot(2); shopEquip(item,true,true); floatText(S.player.x,S.player.y-58,'💎 ¡'+item.name+' es tuyo!','#7ad0ff'); saveGame(true); shopReopen(item); }
     function shopEquip(item,on,silent){ if(!S) return; if(item.cat==='aspectos') S.skin=on?item.id:null; else if(item.cat==='armas') S.weaponSkin=on?item.id:null; else if(item.cat==='auras') S.aura=on?item.id:null; if(!silent&&sfx.click) sfx.click(); saveGame(true); shopReopen(item); }
     function boutiqueById(id){ return BOUTIQUE_ITEMS.find(it=>it.id===id)||null; }
@@ -4921,7 +4975,7 @@
       host.appendChild(side);
       host.onclick=()=>openBoutiqueDetail(item.id);
     }
-    function renderBoutique(){
+    function renderBoutique(){ wireRedeem();
       if(!S) return;
       renderBoutiqueFeatured();
       const tabs=$('boutiqueTabs'); tabs.innerHTML='';
@@ -5992,7 +6046,7 @@
         pets:{owned:p.petsOwned.slice(), active:p.petActive||null},
         quest:{stage:S.quest.stage,count:S.quest.count,need:S.quest.need},
         victory:!!S.victory, crypt:!!S.cryptDone, madre:!!S.bossMadre, alfa:!!S.bossAlfa, kills:S.kills||0, goldEarned:S.goldEarned||0, bramStock:S.bramStock||0,
-        gems:S.gems||0, treeLoot:!!S.treeLoot, owned:(S.owned||[]).slice(), skin:S.skin||null, wskin:S.weaponSkin||null, aura:S.aura||null, contracts:S.contracts||null, musaLog:(S.musaLog||[]).slice(-12), renacer:S.renacer||0,
+        founder:S.founder||0, gems:S.gems||0, treeLoot:!!S.treeLoot, owned:(S.owned||[]).slice(), skin:S.skin||null, wskin:S.weaponSkin||null, aura:S.aura||null, contracts:S.contracts||null, musaLog:(S.musaLog||[]).slice(-12), renacer:S.renacer||0,
         elapsed:Math.round(S.elapsed||0), clan:SOC.clan?{n:SOC.clan.name,t:SOC.clan.tag,c:SOC.clan.code}:null };
     }
     function saveGame(force){
@@ -6072,7 +6126,7 @@
           else if(sv.quest.stage>=2) sv.quest.stage=4;
         }
         sv.kills=Math.floor(saveNum(o.kills,0,1e7,0)); sv.goldEarned=Math.floor(saveNum(o.goldEarned,0,1e9,0));
-        sv.gems=Math.floor(saveNum(o.gems,0,1e9,0)); sv.treeLoot=!!o.treeLoot; sv.owned=Array.isArray(o.owned)?o.owned.filter(x=>typeof x==='string').slice(0,64):[]; sv.skin=(typeof o.skin==='string')?o.skin:null; sv.wskin=(typeof o.wskin==='string')?o.wskin:null; sv.aura=(typeof o.aura==='string')?o.aura:null; sv.contracts=(o.contracts&&typeof o.contracts==='object')?o.contracts:null; sv.musaLog=Array.isArray(o.musaLog)?o.musaLog.filter(x=>typeof x==='string').slice(-12):[]; sv.renacer=o.renacer?1:0;
+        sv.gems=Math.floor(saveNum(o.gems,0,1e9,0)); sv.treeLoot=!!o.treeLoot; sv.founder=o.founder?1:0; sv.owned=Array.isArray(o.owned)?o.owned.filter(x=>typeof x==='string').slice(0,64):[]; sv.skin=(typeof o.skin==='string')?o.skin:null; sv.wskin=(typeof o.wskin==='string')?o.wskin:null; sv.aura=(typeof o.aura==='string')?o.aura:null; sv.contracts=(o.contracts&&typeof o.contracts==='object')?o.contracts:null; sv.musaLog=Array.isArray(o.musaLog)?o.musaLog.filter(x=>typeof x==='string').slice(-12):[]; sv.renacer=o.renacer?1:0;
         sv.bramStock=Math.floor(saveNum(o.bramStock,0,1e6,0)); sv.elapsed=saveNum(o.elapsed,0,1e7,0);
         // MIGRACIÓN DE VUELTA desde la etapa de supervivencia: los objetos
         // de supervivencia (comida, vendas, botiquines, materiales y
@@ -6121,7 +6175,7 @@
       p.petsOwned=(sv.petsOwned||[]).slice(); p.petActive=sv.petActive||null; S.pet=null; petEnsure();
       S.quest.stage=sv.quest.stage; S.quest.count=sv.quest.count; S.quest.need=sv.quest.need;
       S.victory=sv.victory; S.cryptDone=!!sv.cryptDone; S.bossMadre=!!sv.bossMadre; S.bossAlfa=!!sv.bossAlfa; S.kills=sv.kills; S.goldEarned=sv.goldEarned; S.bramStock=sv.bramStock;
-      S.gems=sv.gems||0; S.treeLoot=!!sv.treeLoot; S.owned=Array.isArray(sv.owned)?sv.owned.slice():[]; S.skin=sv.skin||null; S.weaponSkin=sv.wskin||null; S.aura=sv.aura||null; S.contracts=sv.contracts||null; S.musaLog=Array.isArray(sv.musaLog)?sv.musaLog.slice():[]; S.renacer=sv.renacer||0;
+      S.gems=sv.gems||0; S.treeLoot=!!sv.treeLoot; S.founder=sv.founder||0; S.owned=Array.isArray(sv.owned)?sv.owned.slice():[]; S.skin=sv.skin||null; S.weaponSkin=sv.wskin||null; S.aura=sv.aura||null; S.contracts=sv.contracts||null; S.musaLog=Array.isArray(sv.musaLog)?sv.musaLog.slice():[]; S.renacer=sv.renacer||0;
       S.startTime=performance.now()-sv.elapsed*1000;
       S.migGold=sv.migGold||0; // oro de la conversión al volver del modo supervivencia
       if(sv.migGold){ p.gold+=sv.migGold; S.goldEarned+=sv.migGold; }
@@ -10652,7 +10706,7 @@
     let contractChipTxt='';
     function updateContractChip(){ const el=$('contractTxt'); if(!el||!S||!S.contracts) return; const dn=S.contracts.list.filter(c=>c.done).length; const tx='Contratos '+dn+'/3 · Diario'; if(tx!==contractChipTxt){ contractChipTxt=tx; el.textContent=tx; } }
     function renderDiario(){ if(!S) return; contractsEnsure();
-      $('diarioGems').textContent='💎 '+(S.gems||0)+' gemas · Recompensas de contratos y jefes · Gástalas en la Boutique 💎';
+      $('diarioGems').textContent='💎 '+(S.gems||0)+' gemas'+(S.founder?' · 👑 FUNDADOR':'')+' · Recompensas de contratos y jefes · Gástalas en la Boutique 💎';
       const dc=$('diarioContracts'); dc.innerHTML='';
       if(!S.contracts||!S.contracts.list.length) dc.innerHTML='<p class="diario-empty">Sin contratos hoy.</p>';
       for(const c of (S.contracts?S.contracts.list:[])){ const d=contractDef(c.id); if(!d) continue;
