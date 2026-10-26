@@ -1772,7 +1772,8 @@
       DPR = Math.min(window.devicePixelRatio || 1, 2);
       const vv = window.visualViewport;
       let iw = window.innerWidth, ih = window.innerHeight, ox = 0, oy = 0;
-      if(vv && vv.width > iw*0.6 && vv.height > ih*0.6){ iw = Math.round(vv.width); ih = Math.round(vv.height); ox = Math.round(vv.offsetLeft||0); oy = Math.round(vv.offsetTop||0); } // tamaño Y centro de lo realmente visible (la barra de Safari ya no tapa ni recoge el juego); el 0,6 evita que el teclado al abrir el chat encoja el escenario
+      const standaloneFs = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+      if(vv && !standaloneFs && vv.width > iw*0.6 && vv.height > ih*0.6){ iw = Math.round(vv.width); ih = Math.round(vv.height); ox = Math.round(vv.offsetLeft||0); oy = Math.round(vv.offsetTop||0); } // en el navegador manda lo realmente visible (la barra de Safari ya no tapa ni recoge el juego); como app instalada (standalone) manda el tamaño completo del sistema, porque ahí visualViewport se queda corto y dejaba la franja negra; el 0,6 evita que el teclado al abrir el chat encoja el escenario
       // Vista horizontal SIEMPRE: si el dispositivo está en vertical, el
       // escenario completo se gira 90° para que el lado largo sea el ancho.
       // Así el HUD se reparte entre las esquinas — estado arriba a la
