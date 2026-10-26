@@ -902,7 +902,7 @@
         <div class="sheet">
           <span class="kicker">RPG de acción · Mundo compartido abierto, sin códigos · Tiempo real</span>
           <h1>VALDORIA<br /><em>FRONTERA EN LLAMAS</em></h1>
-          <p class="lede">El pueblo de <strong>Ferralla</strong> resiste al borde de unas tierras tomadas por las <strong>bestias</strong>: esporas, lobos de brasa y gólems de la antigua fundición. Lyra, la guardiana, necesita un héroe: caza <strong>5 bestias</strong>, vuelve a por su bendición y despierta al <strong>Coloso de la Fundición</strong> que duerme en la cantera. Subir de nivel da <strong>puntos de talento</strong>, un poder nuevo al nivel 3 y la definitiva al 5, y las bestias dejan caer <strong>oro, pociones y equipo</strong> que brilla en el suelo. Y es un <strong>mundo compartido abierto</strong>: quien abra el enlace aparece en tu mismo mapa, sin códigos.</p>
+          <p class="lede">El pueblo de <strong>Ferralla</strong> resiste al borde de unas tierras tomadas por las <strong>bestias</strong>: esporas, lobos de ceniza y gólems de la antigua fundición. Lyra, la guardiana, necesita un héroe: caza <strong>5 esporas</strong> en el Campo, entra en las <strong>mazmorras</strong> de cada zona, derriba a sus jefes y haz caer los <strong>muros del pueblo</strong> hasta llegar al Heraldo de la Cripta. Subir de nivel da <strong>puntos de talento</strong>, un poder nuevo al nivel 3 y la definitiva al 5, y las bestias dejan caer <strong>oro, pociones y equipo</strong> que brilla en el suelo. Y es un <strong>mundo compartido abierto</strong>: quien abra el enlace aparece en tu mismo mapa, sin códigos.</p>
 
           <div class="hero-stage" id="heroStage">
             <div class="stage-view" id="stageView">
@@ -950,7 +950,7 @@
           <div class="howto">
             <span>🖥 Vista horizontal siempre · todo en iconos, sin leer</span>
             <span>🕹 Joystick virtual o WASD</span>
-            <span>⚜ Misión de Lyra: derrota 5 bestias y vuelve a verla en la plaza</span>
+            <span>⚜ Misión de Lyra: caza 5 esporas al oeste y vuelve a verla en la plaza</span>
             <span>🧪 Las bestias sueltan oro, pociones y equipo brillante: camina sobre él para recogerlo</span>
             <span>⭐ Cada nivel da 1 punto de talento: árbol propio por clase, con ruta dorada</span>
             <span>💥 Poder nuevo al nivel 3 y 🌟 definitiva al nivel 5</span>
@@ -959,7 +959,7 @@
             <span>🐾 Milo vende mascotas en la plaza, junto a su corral: el Corgi recoge tu botín, el Pato da +10% de oro y el Murciélago +10% de XP</span>
             <span>💎 Boutique Valdoria en el sureste de la plaza (botón 💎 o tecla B): aspectos, armas, auras y mascotas en escaparate — todo PRÓXIMAMENTE, solo para mirar</span>
             <span>🔥 Jefe final: el Coloso de la Fundición, en la cantera del este</span>
-            <span>🚪 Tras el Coloso se abre LA CRIPTA DE LA FUNDICIÓN: su puerta sellada está al sureste de la cantera, y dentro aguarda el Heraldo con una épica garantizada</span>
+            <span>🚪 Cada zona guarda una MAZMORRA con su jefe: la Raíz Hueca, la Guarida Quemada y LA CRIPTA, cuyo sello rompe el Coloso del Páramo</span>
             <span>👥 Mundo compartido: quien abra el enlace entra a tu mismo mapa, sin códigos</span>
           </div>
         </div>
@@ -2211,16 +2211,17 @@
     };
     // Superficie bajo los pies: decide el sonido de los pasos
     function surfaceAt(x,y){
-      if(x>=4900) return 'stone'; // cripta: pasos sobre piedra vieja
-      if(x>GATE.x-26&&x<GATE.x+GATE.w+26&&y>GATE.y-8&&y<GATE.y+GATE.h+8) return 'wood'; // puerta de madera de la muralla
+      if(x>=4900) return 'stone'; // mazmorras: pasos sobre piedra vieja
       if(typeof onBridge==='function'&&onBridge(x,y)) return 'wood'; // puente de madera sobre el río
       if(typeof inWater==='function'&&inWater(x,y)) return 'water'; // vadeando el río o el lago
-      const onRoad=(y>=855&&y<=947)||(x>=408&&x<=502);
-      const onPlaza=Math.hypot(x-455,y-905)<120;
-      if(x<TOWN_EDGE) return (onRoad||onPlaza)?'dirt':'stone'; // pueblo empedrado, caminos y plaza de tierra
-      if(x>=EAST_X) return y<950?'stone':'ash'; // Páramo: roca viva · Bosque de Ceniza: ceniza
+      const onRoad=(y>=1240&&y<=1360)||(x>=2140&&x<=2260);
+      const onPlaza=Math.hypot(x-PLAZA.x,y-PLAZA.y)<135;
+      if(inVillage(x,y)) return (onRoad||onPlaza)?'dirt':'stone'; // pueblo empedrado, caminos y plaza de tierra
+      const z=zoneAt(x,y);
+      if(z==='paramo') return 'stone'; // Páramo: roca viva
+      if(z==='bosque') return 'ash'; // Bosque de Ceniza: ceniza
       if(onRoad) return 'dirt';
-      if(Math.hypot(x-2260,y-900)<190) return 'dirt'; // arena del Bruto
+      if(Math.hypot(x-COLOSO_POS.x,y-COLOSO_POS.y)<190) return 'dirt'; // arena del Coloso
       return 'grass';
     }
     // Ambiente aleatorio según la zona, la hora y el clima
@@ -2239,7 +2240,7 @@
         if(r<0.34) sfx.wind(); else if(r<0.58) sfx.creak(); else if(r<0.8) sfx.leaves(); else sfx.growlFar();
       } else if(zone==='paramo'){ // viento bajo y grave sobre la roca caliente
         if(r<0.4) sfx.wind(); else if(r<0.62) playSample('rumble',0.10,0,0.8); else if(r<0.85) sfx.growlFar(); else sfx.creak();
-      } else if(zone==='cripta'){ // cueva sellada: goteo lejano, madera vieja, algo que respira en la piedra
+      } else if(zone==='cripta'||zone==='raiz'||zone==='guarida'){ // cueva sellada: goteo lejano, madera vieja, algo que respira en la piedra
         if(r<0.34) sfx.creak(); else if(r<0.58) sfx.wind(); else if(r<0.8) sfx.growlFar(); else sfx.owl();
       } else { // campo abierto
         if(r<0.36) sfx.wind(); else if(r<0.6) sfx.leaves(); else if(r<0.85) sfx.growlFar(); else sfx.bird();
@@ -2287,7 +2288,7 @@
         else if(zone==='field'){ wind=0.042; air=0.012; }
         else if(zone==='bosque'){ wind=0.055; air=0.018; low=0.012; }
         else if(zone==='paramo'){ wind=0.038; air=0.006; low=0.05; }
-        else if(zone==='cripta'){ wind=0.013; air=0.004; low=0.034; } // cueva: aire quieto y un retumbo grave constante bajo la piedra
+        else if(zone==='cripta'||zone==='raiz'||zone==='guarida'){ wind=0.013; air=0.004; low=0.034; } // cueva: aire quieto y un retumbo grave constante bajo la piedra
         wind*= (1-night*0.35); air*=(1-night*0.6);
         wind+=rain*0.03; low+=rain*0.025; // la lluvia suma viento y retumbo lejano
         const t=AC.currentTime;
@@ -2316,7 +2317,9 @@
        hasta que cae el Coloso (S.victory). Dentro mandan las mismas
        reglas de siempre: sólidos, IA, botín, muerte → pueblo. */
     const CRYPT={x0:5000,y0:60,x1:6500,y1:1100};
-    const CRYPT_DOOR={x:2350,y:1210}; // puerta de piedra en el campo, al sureste de la cantera
+    const CRYPT_DOOR={x:3750,y:1500}; // puerta de piedra en el Páramo Carmesí, guardada por el Coloso
+    const RAIZ_DOOR={x:170,y:1300}; // puerta de raíces al oeste del Campo: la Raíz Hueca
+    const GUARIDA_DOOR={x:3050,y:150}; // puerta quemada al norte del Bosque: la Guarida Quemada
     const CRYPT_SPAWN={x:5750,y:1035}; // justo tras cruzar la puerta interior
     const CRYPT_IDOOR={x:5750,y:1068}; // punto de interacción de la puerta desde dentro
     const CRYPT_PORTAL_POS={x:5750,y:128}; // portal de salida al caer el Heraldo (sala del jefe)
@@ -2343,19 +2346,44 @@
       {x:5490,y:950},{x:6010,y:950},{x:5540,y:712},{x:5960,y:712},
       {x:5470,y:428},{x:6030,y:428},{x:5250,y:104},{x:6250,y:104},{x:5750,y:92}
     ];
+    /* ===== LAS OTRAS DOS MAZMORRAS: Raíz Hueca (Zona 1) y Guarida
+       Quemada (Zona 2) ===== Misma planta probada de la Cripta —
+       entrada, dos encuentros, sala del jefe — en bloques propios de
+       coordenadas (x 7000–8500 y 9000–10500), con su paleta, sus
+       guardianes y su JEFE: la Madre Espora y el Alfa de Ceniza.
+       Matar a cada jefe derriba el muro siguiente del pueblo. */
+    const RAIZ_B={x0:7000,y0:60,x1:8500,y1:1100};
+    const GUAR_B={x0:9000,y0:60,x1:10500,y1:1100};
+    const RAIZ_FLOORS=CRYPT_FLOORS.map(f=>({x:f.x+1500,y:f.y,w:f.w,h:f.h}));
+    const RAIZ_WALLS=CRYPT_WALLS.map(w=>({x:w.x+1500,y:w.y,w:w.w,h:w.h}));
+    const RAIZ_TORCHES=CRYPT_TORCHES.map(t=>({x:t.x+1500,y:t.y}));
+    const GUAR_FLOORS=CRYPT_FLOORS.map(f=>({x:f.x+3500,y:f.y,w:f.w,h:f.h}));
+    const GUAR_WALLS=CRYPT_WALLS.map(w=>({x:w.x+3500,y:w.y,w:w.w,h:w.h}));
+    const GUAR_TORCHES=CRYPT_TORCHES.map(t=>({x:t.x+3500,y:t.y}));
+    const DUNGEONS={
+      raiz:{key:'raiz',name:'La Raíz Hueca',B:RAIZ_B,door:RAIZ_DOOR,spawn:{x:7250,y:1035},idoor:{x:7250,y:1068},portal:{x:7250,y:128},floors:RAIZ_FLOORS,walls:RAIZ_WALLS,torches:RAIZ_TORCHES,floorA:'#37452e',floorB:'#26331f',cellA:'#33452b',cellB:'#2a3823',zcode:2},
+      guarida:{key:'guarida',name:'La Guarida Quemada',B:GUAR_B,door:GUARIDA_DOOR,spawn:{x:9250,y:1035},idoor:{x:9250,y:1068},portal:{x:9250,y:128},floors:GUAR_FLOORS,walls:GUAR_WALLS,torches:GUAR_TORCHES,floorA:'#453528',floorB:'#2f2318',cellA:'#413125',cellB:'#372a1e',zcode:3},
+      cripta:{key:'cripta',name:'La Cripta de la Fundición',B:CRYPT,door:CRYPT_DOOR,spawn:CRYPT_SPAWN,idoor:CRYPT_IDOOR,portal:CRYPT_PORTAL_POS,floors:CRYPT_FLOORS,walls:CRYPT_WALLS,torches:CRYPT_TORCHES,floorA:'#333644',floorB:'#252732',cellA:'#31333f',cellB:'#2b2d38',zcode:1}
+    };
+    function inDungeonArea(D,x,y){ return x>=D.B.x0-90&&x<=D.B.x1+90&&y>=D.B.y0-90&&y<=D.B.y1+90; }
     function inCryptArea(x,y){ return x>=CRYPT.x0-90&&x<=CRYPT.x1+90&&y>=CRYPT.y0-90&&y<=CRYPT.y1+90; }
     function zoneAt(x,y){
       if(inCryptArea(x,y)) return 'cripta';
-      if(x<TOWN_EDGE) return 'town';
-      if(x>=EAST_X) return y<950?'paramo':'bosque';
-      return 'field';
+      if(inDungeonArea(DUNGEONS.raiz,x,y)) return 'raiz';
+      if(inDungeonArea(DUNGEONS.guarida,x,y)) return 'guarida';
+      if(inVillage(x,y)) return 'town';
+      if(x<VILLAGE.x0||y>=VILLAGE.y1) return 'field';
+      if(y<VILLAGE.y0) return 'bosque';
+      return 'paramo';
     }
     const ZONE_INFO={
       town:{name:'Pueblo de Ferralla',sub:'Zona segura · Las bestias no entran'},
-      field:{name:'Campo de Valdoria',sub:'Bestias Nv 1–2 · El Coloso duerme en la cantera, al este'},
-      bosque:{name:'🌲 Bosque de Ceniza',sub:'Bestias Nv 3–5 · Una estatua guarda el camino de vuelta a casa'},
-      paramo:{name:'◆ Páramo Carmesí',sub:'Élites Nv 6–8 · Botín rico: entra solo si vas sobrado'},
-      cripta:{name:'La Cripta de la Fundición',sub:'La cámara sellada bajo la cantera · El Heraldo aguarda al fondo'}
+      field:{name:'🌿 Campo de Esporas',sub:'Esporas Nv 1–5 · La Raíz Hueca duerme al oeste'},
+      bosque:{name:'🌲 Bosque de Ceniza',sub:'Lobos Nv 3–7 · La Guarida Quemada humea al norte'},
+      paramo:{name:'◆ Páramo Carmesí',sub:'Gólems élite Nv 5–9 · La Cripta y el Coloso aguardan'},
+      cripta:{name:'La Cripta de la Fundición',sub:'La cámara sellada del Páramo · El Heraldo aguarda al fondo'},
+      raiz:{name:'La Raíz Hueca',sub:'El corazón podrido del Campo · La Madre Espora aguarda al fondo'},
+      guarida:{name:'La Guarida Quemada',sub:'La madriguera del Bosque · El Alfa de Ceniza aguarda al fondo'}
     };
     /* ----- Cámara de elevación AJUSTABLE (⚙️ Ajustes → 📷 Cámara) -----
        El jugador sube o baja la cámara entre 29° («desde atrás») y 82°
@@ -2389,8 +2417,20 @@
     (function loadCamPref(){ try{ const o=JSON.parse(localStorage.getItem(PREF_KEY)||'null'); if(o&&typeof o.cam==='number'&&isFinite(o.cam)){ camElevTgt=camElevCur=clamp(o.cam,29,82); applyCamElev(camElevCur); } }catch(e){} })();
     function pinY(x,ay){ ctx.translate(x,ay); ctx.scale(1,PINV); ctx.translate(-x,-ay); }
     function charScale(x,ay){ ctx.translate(x,ay); ctx.scale(CHAR_SCALE,CHAR_SCALE); ctx.translate(-x,-ay); } // cuerpo ~28% más pequeño, anclado a los pies
-    const TOWN_EDGE=920; // x < TOWN_EDGE = pueblo (seguro)
-    const GATE={x:TOWN_EDGE-14,y:810,w:28,h:180};
+    /* ===== FERRALLA, EN EL CENTRO DEL MUNDO =====
+       El pueblo ya no es una franja al oeste: es una plaza amurallada
+       en el centro, con cuatro salidas — oeste libre al Campo, sur
+       libre al Campo, NORTE con puerta (cae al matar a la Madre
+       Espora) y ESTE con puerta (cae al matar al Alfa de Ceniza) — y
+       murallas también entre zonas, para que nadie se salte el camino:
+       Zona 1 → su jefe → Zona 2 → su jefe → Zona 3. */
+    const VILLAGE={x0:1750,y0:820,x1:2650,y1:1780};
+    const PLAZA={x:2200,y:1300};
+    const GATE_N={x:2110,y:806,w:180,h:28}; // puerta norte: al Bosque de Ceniza
+    const GATE_E={x:2636,y:1210,w:28,h:180}; // puerta este: al Páramo Carmesí
+    const COLOSO_POS={x:3620,y:1380}; // la arena del Coloso, junto a la puerta de la Cripta
+    function inVillage(x,y){ return x>=VILLAGE.x0&&x<VILLAGE.x1&&y>=VILLAGE.y0&&y<VILLAGE.y1; }
+    function gateOpen(g){ if(!S) return false; if(g==='norte') return !!(S.bossMadre||S.victory||S.cryptDone); return !!(S.bossAlfa||S.victory||S.cryptDone); }
     /* ================= RELIEVE Y RÍOS =================
        terrainH(x,y) es LA función de altura compartida: la usan las
        colisiones (los acantilados bloquean como paredes), el dibujo 2D
@@ -2461,18 +2501,29 @@
     }
 
     const houses=[
-      {x:150,y:200,w:170,h:130,roof:'#e2483d',label:'Posada'},
-      {x:420,y:170,w:150,h:120,roof:'#2fb3a6',label:'Taller'},
-      {x:640,y:230,w:160,h:125,roof:'#7a4fd0',label:'Archivo'},
-      {x:180,y:1080,w:160,h:125,roof:'#e8912d',label:'Casa'},
-      {x:600,y:1120,w:170,h:130,roof:'#3f8fe2',label:'Casa'},
-      {x:120,y:560,w:130,h:110,roof:'#c94f7c',label:'Granero'}
+      {x:1830,y:905,w:170,h:130,roof:'#e2483d',label:'Posada'},
+      {x:2420,y:890,w:150,h:120,roof:'#2fb3a6',label:'Taller'},
+      {x:1855,y:1500,w:160,h:125,roof:'#7a4fd0',label:'Archivo'},
+      {x:2400,y:1490,w:160,h:125,roof:'#e8912d',label:'Casa'},
+      {x:1835,y:1180,w:150,h:115,roof:'#3f8fe2',label:'Casa'},
+      {x:2430,y:1185,w:150,h:110,roof:'#c94f7c',label:'Granero'}
     ];
     const solids=[]; // {x,y,w,h}
     houses.forEach(h=>solids.push({x:h.x,y:h.y,w:h.w,h:h.h}));
-    // Muralla del pueblo con puerta al este
-    solids.push({x:TOWN_EDGE,y:0,w:26,h:GATE.y});
-    solids.push({x:TOWN_EDGE,y:GATE.y+GATE.h,w:26,h:WORLD.h-(GATE.y+GATE.h)});
+    // Muralla del pueblo central (cuatro lados, con sus cuatro
+    // salidas) y murallas entre zonas: el único camino al Bosque es la
+    // puerta norte y el único camino al Páramo es la puerta este.
+    const WALLSEGS=[
+      {x:1736,y:792,w:28,h:418},{x:1736,y:1390,w:28,h:418}, // oeste (salida libre y 1210–1390)
+      {x:1736,y:806,w:374,h:28},{x:2290,y:806,w:374,h:28}, // norte (puerta: 2110–2290)
+      {x:2636,y:792,w:28,h:418},{x:2636,y:1390,w:28,h:418}, // este (puerta: y 1210–1390)
+      {x:1736,y:1766,w:374,h:28},{x:2290,y:1766,w:374,h:28}, // sur (salida libre x 2110–2290)
+      {x:0,y:806,w:1736,h:28},{x:2664,y:806,w:1736,h:28}, // Campo|Bosque y Bosque|Páramo
+      {x:2664,y:1766,w:1736,h:28} // Páramo|Campo (sur)
+    ];
+    WALLSEGS.forEach(w=>solids.push(w));
+    solids.push({x:GATE_N.x,y:GATE_N.y,w:GATE_N.w,h:GATE_N.h,gate:'norte'});
+    solids.push({x:GATE_E.x,y:GATE_E.y,w:GATE_E.w,h:GATE_E.h,gate:'este'});
     // Rocas y troncos del campo
     const decos=[];
     function addDeco(x,y,kind){ decos.push({x,y,kind}); if(kind==='rock'||kind==='stump') solids.push({x:x-20,y:y-14,w:40,h:30}); if(kind==='tree') solids.push({x:x-9,y:y-6,w:18,h:16}); if(kind==='deadtree') solids.push({x:x-8,y:y-6,w:16,h:14}); if(kind==='crystal') solids.push({x:x-14,y:y-8,w:28,h:18}); }
@@ -2500,12 +2551,67 @@
     for(let i=0;i<30;i++){ decos.push({x:rnd(2660,4340),y:rnd(60,900),kind:'shard'}); }
     for(let i=0;i<24;i++){ decos.push({x:rnd(1000,2540),y:rnd(1860,2540),kind:Math.random()<0.5?'grass':'flower'}); }
 
+    /* Los vecinos VIVEN en el pueblo: cada uno tiene su hogar (hx,hy)
+       y pasea a su aire por las calles (ver updateNPCs), charlando con
+       bocadillos cuando se cruza con otro. Al hablar con ellos se
+       quedan quietos en el sitio, como siempre. */
     const npcs=[
-      {id:'lyra', name:'Lyra · Guardiana de Ferralla', short:'Lyra', x:455,y:845, color:'#ffc93c', icon:'⚜'},
-      {id:'sana', name:'Sana · Curandera', short:'Sana', x:640,y:1000, color:'#5effa1', icon:'✚'},
-      {id:'bram', name:'Bram · Herrero', short:'Bram', x:495,y:330, color:'#ff9d5c', icon:'⚒'},
-      {id:'milo', name:'Milo · Cuidador de mascotas', short:'Milo', x:530,y:950, color:'#57a773', icon:'🐾'}
+      {id:'lyra', name:'Lyra · Guardiana de Ferralla', short:'Lyra', x:2130,y:1170, hx:2130,hy:1170, color:'#ffc93c', icon:'⚜'},
+      {id:'sana', name:'Sana · Curandera', short:'Sana', x:2310,y:1330, hx:2310,hy:1330, color:'#5effa1', icon:'✚'},
+      {id:'bram', name:'Bram · Herrero', short:'Bram', x:2470,y:1055, hx:2470,hy:1055, color:'#ff9d5c', icon:'⚒'},
+      {id:'milo', name:'Milo · Cuidador de mascotas', short:'Milo', x:2300,y:1570, hx:2300,hy:1570, color:'#57a773', icon:'🐾'},
+      {id:'pilar', name:'Pilar · Vecina de Ferralla', short:'Pilar', x:1985,y:1335, hx:1985,hy:1335, color:'#c99aff', icon:'🌸'},
+      {id:'tomas', name:'Tomás · Vecino de Ferralla', short:'Tomás', x:2060,y:1650, hx:2060,hy:1650, color:'#9adfff', icon:'🧺'}
     ];
+    npcs.forEach(n=>{ n.r=15; n.tx=n.x; n.ty=n.y; n.wt=rnd(1,4); n.spd=rnd(32,46); n.bub=null; n.bubT=0; n.chatCd=rnd(4,14); n._hx=n.x; n._hy=n.y; n._hh=0; });
+    /* ===== VIDA EN EL PUEBLO ===== Los vecinos pasean a su aire por
+       las calles (cada uno alrededor de su hogar), se paran a ratos,
+       y cuando dos se cruzan, se saludan con bocadillos sobre la
+       cabeza; también sueltan frases al aire de vez en cuando. En
+       conversación (S.dlg) todo el pueblo escucha y se está quieto. */
+    const NPC_CHAT={
+      solo:{ lyra:['Qué buen día para Ferralla ☀','La plaza se ve hermosa hoy','Dicen que la Raíz Hueca respira…'],
+        sana:['¿Alguien necesita curación? ✚','Las pociones saben a fresa, lo juro'],
+        bram:['¡Ese acero no se forja solo! ⚒','Hoy huele a fragua y a pan'],
+        milo:['¿Has visto a mi corgi? 🐾','Las mascotas alegran el pueblo'],
+        pilar:['Compré flores para la plaza 🌸','Dicen que un muro entero cayó…'],
+        tomas:['Este año la cosecha viene buena 🌾','Vi un lobo ENORME… de lejos, eh'] },
+      pair:[['¡Buenos días!','¡Buenos días! ¿Qué tal la plaza?'],
+        ['¿Viste las esporas del oeste?','¡Enormes! Como setas con patas'],
+        ['Ferralla cada día más bonita','Y con héroes de visita, más'],
+        ['¿Crees que lloverá hoy?','Si llueve, el río canta'],
+        ['Vendo flores frescas 🌸','¡Te compro dos!'],
+        ['El herrero no para hoy','Es que hay héroes que equipar']]
+    };
+    function npcSay(n,txt,dur){ n.bub=txt; n.bubT=dur||3.2; }
+    function updateNPCs(dt){
+      if(!S||S.dlg) return;
+      for(const n of npcs){
+        if(n.bubT>0){ n.bubT-=dt; if(n.bubT<=0) n.bub=null; }
+        if(n.chatCd>0) n.chatCd-=dt;
+        const dx=n.tx-n.x, dy=n.ty-n.y, dd=Math.hypot(dx,dy);
+        if(dd>6){ n.x+=dx/dd*n.spd*dt; n.y+=dy/dd*n.spd*dt; n.moving=true; }
+        else { n.moving=false; n.wt-=dt;
+          if(n.wt<=0){ n.wt=rnd(2.5,6);
+            if(Math.random()<0.35){ n.tx=n.hx; n.ty=n.hy; }
+            else { const a=rnd(0,Math.PI*2), rr=rnd(30,120); n.tx=clamp(n.hx+Math.cos(a)*rr,VILLAGE.x0+50,VILLAGE.x1-50); n.ty=clamp(n.hy+Math.sin(a)*rr,VILLAGE.y0+50,VILLAGE.y1-50); }
+          }
+        }
+        collideCircle(n); n._hx=n.x; n._hy=n.y;
+      }
+      for(let i=0;i<npcs.length;i++) for(let j=i+1;j<npcs.length;j++){
+        const a=npcs[i], b=npcs[j];
+        if(a.chatCd>0||b.chatCd>0||a.bub||b.bub) continue;
+        if(Math.hypot(a.x-b.x,a.y-b.y)<120&&Math.random()<dt*0.25){
+          const L=NPC_CHAT.pair[irnd(0,NPC_CHAT.pair.length-1)];
+          npcSay(a,L[0],2.6); b.replyT=1.5; b.replyTxt=L[1]; a.chatCd=b.chatCd=rnd(14,26);
+        }
+      }
+      for(const n of npcs){
+        if(n.replyT>0){ n.replyT-=dt; if(n.replyT<=0&&!n.bub) npcSay(n,n.replyTxt,2.8); }
+        else if(!n.bub&&n.chatCd<=0&&Math.random()<dt*0.012){ const L=NPC_CHAT.solo[n.id]; if(L){ npcSay(n,L[irnd(0,L.length-1)],3.4); n.chatCd=rnd(10,20); } }
+      }
+    }
     /* Corral de Milo, al sur de la plaza (reubicado: antes estaba al
        este, tras el puesto de mercado, y no se le veía). Ahora Milo
        queda en el borde sureste de la plaza — junto al camino este-
@@ -2519,7 +2625,7 @@
        La cerca es decorativa — sin sólidos nuevos — y dentro vive el
        CORGI DE MUESTRA del pack, en idle, para que se vea el producto
        antes de comprar. */
-    const PET_SAMPLE={x:543,y:1014};
+    const PET_SAMPLE={x:2313,y:1634};
 
     /* ===== Estatuas del Regreso =====
        Una en cada zona nueva y la de llegada junto a la plaza. Con ✦ la
@@ -2528,9 +2634,9 @@
        menús. El portal se cierra al usarlo o a los ~20 s, y sirve de
        vía de escape en combate: quien te seguía pierde tu rastro. */
     const STATUES=[
-      {id:'casa', home:true, x:600, y:826},
-      {id:'bosque', x:3400, y:1560},
-      {id:'paramo', x:3500, y:330}
+      {id:'casa', home:true, x:2345, y:1200},
+      {id:'bosque', x:3300, y:300},
+      {id:'paramo', x:3500, y:1300}
     ];
     STATUES.forEach(st=>solids.push({x:st.x-15,y:st.y-8,w:30,h:18}));
 
@@ -2546,25 +2652,29 @@
        quien tuviera un guardado antiguo encima de una pieza nueva es
        empujado fuera por el lado más cercano, sin atascos. */
     const KP_EXTRA=[
-      {id:'pozo', x:368, y:972, solid:{x:346,y:958,w:44,h:28}},
-      {id:'mercado', x:738, y:982, solid:{x:681,y:950,w:114,h:64}},
+      {id:'pozo', x:2062, y:1342, solid:{x:2040,y:1328,w:44,h:28}},
+      {id:'mercado', x:2318, y:1442, solid:{x:2261,y:1410,w:114,h:64}},
       /* Boutique Valdoria: el MISMO modelo de puesto de mercado del
          Medieval, en el terreno despejado del sureste de la plaza.
          Queda al este del corral de Milo (que termina en x=580) y al
          norte de la casa sur (y=1120), sin tapar a Milo, a Sana ni a
          ningún vecino; su rótulo 💎 y su respaldo 2D la distinguen del
          mercado de siempre. Al acercarse, ✦ abre el escaparate. */
-      {id:'boutique', x:660, y:1085, solid:{x:603,y:1053,w:114,h:64}},
+      {id:'boutique', x:2052, y:1478, solid:{x:1995,y:1446,w:114,h:64}},
       {id:'molino', x:1300, y:470, solid:{x:1262,y:436,w:76,h:68}}
     ];
-    const BOUTIQUE_STALL={x:660,y:1085};
+    const BOUTIQUE_STALL={x:2052,y:1478};
     KP_EXTRA.forEach(ex=>solids.push(ex.solid));
     /* La Cripta de la Fundición: sus paredes entran en el mismo array
        de sólidos (coordenadas propias, lejos del mundo abierto, así
        que jamás estorban fuera) y la puerta del campo bloquea el paso
        como cualquier piedra: se entra con ✦, no atravesándola. */
     CRYPT_WALLS.forEach(w=>solids.push(w));
+    RAIZ_WALLS.forEach(w=>solids.push(w));
+    GUAR_WALLS.forEach(w=>solids.push(w));
     solids.push({x:CRYPT_DOOR.x-30,y:CRYPT_DOOR.y-12,w:60,h:26});
+    solids.push({x:RAIZ_DOOR.x-30,y:RAIZ_DOOR.y-12,w:60,h:26});
+    solids.push({x:GUARIDA_DOOR.x-30,y:GUARIDA_DOOR.y-12,w:60,h:26});
 
     /* ---------------- Clases ---------------- */
     const CLASSES={
@@ -2784,6 +2894,8 @@
         if(Math.random()<0.55) return GEAR[['w2','a2','m2','h2','s2','c2','r2','a3','m3','h3','s3','c3','r3'][irnd(0,12)]];
         return null;
       }
+      if(e.type==='madre'){ if(!S.bossMadre){ const poolB=['w2','a3','m3','h3','s3','c3','r3']; const pool=poolB.filter(id=>!ownsGear(id)); const id=pool.length?pool[irnd(0,pool.length-1)]:poolB[irnd(0,poolB.length-1)]; return GEAR[id]; } if(Math.random()<0.45) return GEAR[['w2','a2','m2','h2','s2','c2','r2'][irnd(0,6)]]; return null; }
+      if(e.type==='alfa'){ if(!S.bossAlfa){ const poolB=['w2','a3','m3','h3','s3','c3','r3']; const pool=poolB.filter(id=>!ownsGear(id)); const id=pool.length?pool[irnd(0,pool.length-1)]:poolB[irnd(0,poolB.length-1)]; return GEAR[id]; } if(Math.random()<0.5) return GEAR[['w2','a2','m2','h2','s2','c2','r2','a3','m3','h3','s3','c3','r3'][irnd(0,12)]]; return null; }
       if(e.type==='boss'){ const poolB=['w2','a3','m3','h3','s3','c3','r3']; const pool=poolB.filter(id=>!ownsGear(id)); const id=pool.length?pool[irnd(0,pool.length-1)]:poolB[irnd(0,poolB.length-1)]; return GEAR[id]; }
       const r=Math.random();
       // ÉLITE del Páramo Carmesí: botín rico, con raro y épico a menudo
@@ -2868,7 +2980,7 @@
         quest:{stage:0, count:0, need:5}, // 0 caza · 1 vuelve · 2 coloso · 3 hecho
         victory:false, bramStock:0,
         player:{
-          x:455,y:1000, r:17, dir:0, _hx:455, _hy:1000, _hh:0, moveAng:0, moving:false, walkPh:0,
+          x:2200,y:1420, r:17, dir:0, _hx:2200, _hy:1420, _hh:0, moveAng:0, moving:false, walkPh:0,
           lvl:1, xp:0, xpNext:70, gold:30, potions:3,
           hp:c.hp, hpMax:c.hp, mp:c.mp, mpMax:c.mp, atk:c.atk, def:c.def, spd:c.spd, baseSpd:c.spd,
           atkCd:0, s1Cd:0, s2Cd:0, s3Cd:0, s4Cd:0, hurtT:0, swingT:0, castAnim:null, castAnimT:0, hopT:0, dashT:0, dashAng:0, buffSpdT:0, dead:false, respawnT:0,
@@ -2879,6 +2991,7 @@
         enemies:[], projs:[], eprojs:[], parts:[], atmo:[], floats:[], drops:[], rings:[], trails:[],
         spawnT:0, boss:null, bossSpawned:false, shake:0, dlg:null, nearNpc:null, nearStatue:null, nearBoutique:false, portal:null, flashT:0, ambT:2.5, atmoT:0, pet:null, petMode:'mine',
         inCrypt:false, cryptDone:false, herald:null, exitPortal:null, tele:[], nearDoor:null,
+        bossMadre:false, bossAlfa:false, dung:null, dungBoss:null,
         dayT:0.52, bossIntroT:0, weather:'clear', weatherT:55, rainAmt:0,
         butterflies:[], birds:[], clouds:[{x:300,y:200,s:190,sp:11},{x:1500,y:500,s:260,sp:8},{x:2100,y:120,s:210,sp:10}], puddles:[{x:1180,y:620,r:42},{x:1680,y:1020,r:54},{x:520,y:760,r:36},{x:1980,y:1350,r:46}]
       };
@@ -2971,15 +3084,22 @@
        nombre y nivel, en verde/amarillo/rojo según tu propio nivel. */
     function mobLevelAt(x,y){
       const z=zoneAt(x,y);
-      if(z==='cripta') return irnd(6,8); // guardianes de la cripta: duros como el Páramo
-      if(z==='bosque') return irnd(3,5);
-      if(z==='paramo') return irnd(6,8);
-      return irnd(1,2);
+      if(z==='cripta') return irnd(7,9); // guardianes de la Cripta: lo más duro del mundo
+      if(z==='raiz') return irnd(4,5); // guardianes de la Raíz Hueca
+      if(z==='guarida') return irnd(6,7); // guardianes de la Guarida Quemada
+      // en las zonas abiertas el nivel SUBE al alejarte de Ferralla:
+      // junto al pueblo manda el mínimo de la zona; al fondo, el máximo
+      const d=Math.hypot(x-PLAZA.x,y-PLAZA.y);
+      if(z==='bosque') return clamp(3+Math.floor(Math.max(0,d-650)/330)+irnd(0,1),3,7);
+      if(z==='paramo') return clamp(5+Math.floor(Math.max(0,d-650)/330)+irnd(0,1),5,9);
+      return clamp(1+Math.floor(Math.max(0,d-600)/330)+irnd(0,1),1,5);
     }
     const VARIANTS={
       bosque:{ spore:{name:'Espora mayor',vscale:1.3,tint:'#a34fd0'}, wolf:{name:'Lobo de ceniza',vscale:1.08,tint:'#5d564e'}, golem:{name:'Gólem joven',vscale:0.8,tint:'#9aa48c'} },
       paramo:{ spore:{name:'Espora carmesí ✦',vscale:1.55,tint:'#c22f4e'}, wolf:{name:'Lobo infernal ✦',vscale:1.35,tint:'#7a2e22'}, golem:{name:'Gólem carmesí ✦',vscale:1.5,tint:'#9a4a3a'} },
-      cripta:{ spore:{name:'Guardián menor',vscale:1.15,tint:'#4a3b57'}, wolf:{name:'Sabueso de ceniza',vscale:1.06,tint:'#38302e'}, golem:{name:'Guardián de la cripta',vscale:1.12,tint:'#7d6430'} }
+      cripta:{ spore:{name:'Guardián menor',vscale:1.15,tint:'#4a3b57'}, wolf:{name:'Sabueso de ceniza',vscale:1.06,tint:'#38302e'}, golem:{name:'Guardián de la cripta',vscale:1.12,tint:'#7d6430'} },
+      raiz:{ spore:{name:'Guardián de raíces',vscale:1.22,tint:'#3f7a34'}, golem:{name:'Raíz antigua',vscale:1.12,tint:'#5a6e46'} },
+      guarida:{ wolf:{name:'Sabueso de ceniza',vscale:1.14,tint:'#4a3430'}, golem:{name:'Guardián quemado',vscale:1.1,tint:'#6e4a38'} }
     };
     function spawnEnemy(type,x,y){
       const fs=firmSnap(x,y); x=fs.x; y=fs.y; // nunca dentro del río o el lago
@@ -3000,11 +3120,14 @@
     /* Puntos de aparición por zona: cada territorio se puebla y se
        repone en los suyos, con la misma separación entre bestias */
     const ZSPAWN={
-      field:{target:17,spots:[[1180,420,'spore'],[1380,640,'spore'],[1250,980,'wolf'],[1560,420,'spore'],[1660,760,'spore'],
-        [1480,1180,'golem'],[1820,980,'wolf'],[1960,720,'spore'],[2080,1180,'spore'],[2280,760,'wolf'],
-        [1760,1420,'golem'],[1320,1480,'spore'],[2180,1560,'wolf'],[1050,1250,'spore'],[2380,300,'spore'],[1150,700,'wolf'],[2050,1500,'spore']]},
-      bosque:{target:11,spots:[[2850,1200,'spore'],[3050,1450,'wolf'],[3250,1150,'spore'],[3500,1350,'golem'],[3050,1900,'wolf'],[3600,1750,'spore'],[3900,1250,'wolf'],[4100,1650,'golem'],[3350,2150,'spore'],[2850,2250,'wolf'],[3950,2250,'golem'],[4200,1050,'spore']]},
-      paramo:{target:8,spots:[[2850,250,'wolf'],[3150,480,'golem'],[3500,300,'spore'],[3800,520,'golem'],[4100,280,'wolf'],[3300,760,'golem'],[3950,800,'wolf'],[2950,700,'spore']]}
+      field:{target:18,spots:[[1400,500,'spore'],[1100,800,'spore'],[800,600,'spore'],[500,900,'spore'],[300,500,'spore'],
+        [1200,1500,'spore'],[900,1750,'spore'],[600,1400,'spore'],[350,1850,'spore'],[1400,2150,'spore'],
+        [1000,2350,'spore'],[600,2250,'spore'],[1580,950,'spore'],[1550,1780,'spore'],[2400,2250,'spore'],
+        [2900,2380,'spore'],[3400,2180,'spore'],[3950,2320,'spore']]},
+      bosque:{target:12,spots:[[2000,300,'wolf'],[2400,180,'wolf'],[2800,350,'wolf'],[3200,200,'wolf'],[3600,400,'wolf'],[4000,250,'wolf'],
+        [1900,620,'wolf'],[2600,560,'wolf'],[3100,660,'wolf'],[3700,660,'wolf'],[4200,620,'wolf'],[2300,460,'wolf']]},
+      paramo:{target:10,spots:[[2900,1000,'golem'],[3200,1250,'golem'],[3500,1000,'golem'],[3800,1300,'golem'],[4100,1050,'golem'],
+        [3000,1580,'golem'],[3400,1680,'golem'],[3900,1620,'golem'],[4200,1480,'golem'],[2780,1420,'golem']]}
     };
     function populateField(){
       for(const z in ZSPAWN) ZSPAWN[z].spots.forEach(s=>spawnEnemy(s[2],s[0]+rnd(-40,40),s[1]+rnd(-40,40)));
@@ -3020,8 +3143,8 @@
     }
     function spawnBoss(silent){
       S.bossSpawned=true; S.bossIntroT=silent?0:3.0;
-      const b={type:'boss',name:'Coloso de la Fundición',x:2260,y:900,r:44,hp:720,hpMax:720,atk:24,def:6,spd:62,
-        xp:320,gold:220,atkCd:1.2,specialCd:4,hurtT:0,stunT:0,walkPh:0,flash:0,home:{x:2260,y:900},enraged:false};
+      const b={type:'boss',name:'Coloso de la Fundición',x:COLOSO_POS.x,y:COLOSO_POS.y,r:44,hp:720,hpMax:720,atk:24,def:6,spd:62,
+        xp:320,gold:220,atkCd:1.2,specialCd:4,hurtT:0,stunT:0,walkPh:0,flash:0,home:{x:COLOSO_POS.x,y:COLOSO_POS.y},enraged:false};
       try{ b.mid=++CO.midSeq; }catch(err){ b.mid=0; }
       initMobMotion(b); S.boss=b; S.enemies.push(b);
       if(!silent){ toast('🔥 ¡El COLOSO DE LA FUNDICIÓN despierta en la cantera, al este!','gold');
@@ -3031,7 +3154,7 @@
 
     /* ---------------- Utilidades de mundo ---------------- */
     function collideCircle(p){
-      if(p.x>4900){ p.x=clamp(p.x,CRYPT.x0+p.r,CRYPT.x1-p.r); p.y=clamp(p.y,CRYPT.y0+p.r,CRYPT.y1-p.r); } // interior de la cripta: sus propios bordes
+      if(p.x>4900){ const B=(p.x>=GUAR_B.x0-200)?GUAR_B:((p.x>=RAIZ_B.x0-200&&p.x<GUAR_B.x0-200)?RAIZ_B:CRYPT); p.x=clamp(p.x,B.x0+p.r,B.x1-p.r); p.y=clamp(p.y,B.y0+p.r,B.y1-p.r); } // interiores de mazmorra: sus propios bordes
       else { p.x=clamp(p.x,p.r,WORLD.w-p.r); p.y=clamp(p.y,p.r,WORLD.h-p.r); }
       // acantilados (meseta y cascada): un salto brusco de altura bloquea como
       // una pared, con deslizamiento por el borde; rampas y pendientes pasan
@@ -3044,6 +3167,7 @@
         }
       }
       for(const s of solids){
+        if(s.gate&&gateOpen(s.gate)) continue; // la puerta cayó: el muro ya no está
         const nx=clamp(p.x,s.x,s.x+s.w), ny=clamp(p.y,s.y,s.y+s.h);
         const dx=p.x-nx, dy=p.y-ny, d2=dx*dx+dy*dy;
         if(d2 < p.r*p.r){
@@ -3176,7 +3300,7 @@
       if(hasSeal('magma')){ e.burnT=3; e.burnDps=Math.max(e.burnDps||0,Math.max(2,Math.round(p.atk*0.3))); } // sello Corazón de magma
       if(hasSeal('veneno')){ e.poiT=4; e.poiDps=Math.max(e.poiDps||0,Math.max(2,Math.round(p.atk*0.25))); } // sello Veneno de víbora
       if(knock){ // empuje físico: velocidad inicial que la fricción va frenando (la masa protege a los grandes)
-        const mass=(e.type==='boss'||e.type==='herald')?0.22:(e.type==='golem'?0.48:(e.type==='wolf'?0.82:1));
+        const mass=(e.type==='boss'||e.type==='herald'||e.type==='madre'||e.type==='alfa')?0.22:(e.type==='golem'?0.48:(e.type==='wolf'?0.82:1));
         const imp=knock*12*mass;
         e.kvx=(e.kvx||0)+Math.cos(ang)*imp; e.kvy=(e.kvy||0)+Math.sin(ang)*imp; e.wobbleT=0.3;
       }
@@ -3198,7 +3322,7 @@
       burst(e.x,e.y,e.type==='boss'?'#ff8a3c':(ETYPES[e.type]?ETYPES[e.type].color:'#fff'), e.type==='boss'?46:18, e.type==='boss'?260:170, 0.6, 5);
       ring(e.x,e.y,'#ffd23c', e.type==='boss'?130:60);
       if(e.type==='boss'){ sfx.boom(); S.shake=14; }
-      if(CO.mode==='host'&&e.mid!=null&&e.zone!=='cripta'){ try{ coopQueueDeath(e); }catch(err){} } // el anfitrión anuncia cada muerte compartida (con sus participantes) a todo el mundo
+      if(CO.mode==='host'&&e.mid!=null&&!(e.zone==='cripta'||e.zone==='raiz'||e.zone==='guarida')){ try{ coopQueueDeath(e); }catch(err){} } // el anfitrión anuncia cada muerte compartida (con sus participantes) a todo el mundo
       if(!e.noReward){ S.kills++; // sin recompensa (muerte compartida en la que no participé): solo el cuerpo y el espectáculo, ni XP ni botín ni misión
       gainXP(e.xp);
       // Botín: monedas que vuelan al jugador + posible poción
@@ -3219,18 +3343,36 @@
       }
       // El Coloso de la Fundición: el final de la misión
       if(e.type==='boss' && !S.victory){
-        S.victory=true; S.quest.stage=3; updateQuestUI();
-        toast('🏆 ¡EL COLOSO DE LA FUNDICIÓN HA CAÍDO! Ferralla está a salvo','gold');
-        setTimeout(showEnd,1400);
+        S.victory=true; if(S.quest.stage===4){ S.quest.stage=5; updateQuestUI(); }
+        toast('🔥 ¡EL COLOSO HA CAÍDO! El sello de la Cripta se rompe: el Heraldo te espera dentro','gold');
       }
       // El Heraldo de la Fundición: la cripta queda superada (bandera
       // guardada) y el portal de salida se abre en su sala
       if(e.type==='herald'){
         const first=!S.cryptDone;
-        S.cryptDone=true;
+        S.cryptDone=true; if(S.quest.stage===5){ S.quest.stage=6; updateQuestUI(); }
+        if(first) setTimeout(showEnd,1400);
         S.exitPortal={x:CRYPT_PORTAL_POS.x, y:CRYPT_PORTAL_POS.y, t:9999};
         sfx.boom(); S.shake=Math.max(S.shake,12);
         toast(first?'👑 ¡EL HERALDO HA CAÍDO! La cripta es tuya: recoge tu épica y sal por el portal':'👑 El Heraldo cae de nuevo: la cripta sigue dando su botín','gold');
+      }
+      // La Madre Espora: cae el MURO NORTE del pueblo
+      if(e.type==='madre'){
+        const first=!S.bossMadre;
+        S.bossMadre=true; S.dungBoss=null;
+        S.exitPortal={x:DUNGEONS.raiz.portal.x, y:DUNGEONS.raiz.portal.y, t:9999};
+        sfx.boom(); S.shake=Math.max(S.shake,12);
+        if(S.quest.stage===2){ S.quest.stage=3; updateQuestUI(); }
+        toast(first?'👑 ¡LA MADRE ESPORA HA CAÍDO! El MURO NORTE del pueblo se derrumba: el Bosque te espera':'👑 La Madre Espora cae de nuevo: la Raíz sigue dando su botín','gold');
+      }
+      // El Alfa de Ceniza: cae el MURO ESTE del pueblo
+      if(e.type==='alfa'){
+        const first=!S.bossAlfa;
+        S.bossAlfa=true; S.dungBoss=null;
+        S.exitPortal={x:DUNGEONS.guarida.portal.x, y:DUNGEONS.guarida.portal.y, t:9999};
+        sfx.boom(); S.shake=Math.max(S.shake,12);
+        if(S.quest.stage===3){ S.quest.stage=4; updateQuestUI(); }
+        toast(first?'👑 ¡EL ALFA DE CENIZA HA CAÍDO! El MURO ESTE del pueblo se derrumba: el Páramo te espera':'👑 El Alfa cae de nuevo: la Guarida sigue dando su botín','gold');
       }
       saveGame(true); // evento importante: avance de misión / jefe derrotado
       }
@@ -3602,6 +3744,35 @@
       S.drops=S.drops.filter(d=>!inCryptArea(d.x,d.y));
       S.herald=null; S.exitPortal=null; S.tele.length=0;
     }
+    function spawnDungMob(type,x,y){
+      const n0=S.enemies.length;
+      spawnEnemy(type,x,y); // la zona del interior pone nivel y variante por la fórmula de siempre
+      const e=S.enemies[S.enemies.length-1];
+      if(!e||S.enemies.length===n0) return null;
+      e.atk=Math.max(1,Math.round(e.atk*0.85));
+      if(type==='golem'){ e.hp=e.hpMax=Math.round(e.hpMax*0.55); }
+      return e;
+    }
+    function dungSummon(e,type){ // los jefes de mazmorra llaman guardianes al 60% y al 30% de vida
+      floatText(e.x,e.y-84,'🔔 ¡'+e.name+' invoca guardianes!','#ffd9a0',true); sfx.roar(true);
+      const D=DUNGEONS[e.zone]; if(!D) return;
+      [[-120,40],[120,40]].forEach(off=>{
+        const g=spawnDungMob(type,clamp(e.x+off[0],D.B.x0+50,D.B.x1-50),clamp(e.y+off[1],D.B.y0+50,D.B.y1-50));
+        if(g){ burst(g.x,g.y,'#c07dff',14,130,0.45,4); ring(g.x,g.y,'#c07dff',52); }
+      });
+    }
+    function spawnMadre(){
+      const b={type:'madre',name:'La Madre Espora',x:7250,y:195,r:46,hp:560,hpMax:560,atk:16,def:2,spd:44,
+        xp:260,gold:190,atkCd:1.2,specialCd:3,hurtT:0,stunT:0,walkPh:0,flash:0,home:{x:7250,y:195},enraged:false,
+        sum1:false,sum2:false,zone:'raiz',lvl:5,tint:'#3f7a34',vscale:1.9};
+      initMobMotion(b); S.dungBoss=b; S.enemies.push(b);
+    }
+    function spawnAlfa(){
+      const b={type:'alfa',name:'El Alfa de Ceniza',x:9250,y:195,r:44,hp:860,hpMax:860,atk:22,def:4,spd:112,
+        xp:380,gold:240,atkCd:1.1,specialCd:3,hurtT:0,stunT:0,walkPh:0,flash:0,home:{x:9250,y:195},enraged:false,
+        sum1:false,sum2:false,zone:'guarida',lvl:7,tint:'#4a3430',vscale:1.4};
+      initMobMotion(b); S.dungBoss=b; S.enemies.push(b);
+    }
     function enterCrypt(){
       const p=S.player; if(p.dead||S.inCrypt) return;
       cleanCrypt();
@@ -3632,10 +3803,55 @@
       try{ MP.lastSig=''; }catch(e){}
       saveGame(true);
     }
+    /* ---------------- Mazmorras de zona: Raíz Hueca y Guarida Quemada --
+       Mismo patrón probado de la Cripta: entrar regenera el interior
+       limpio (dos encuentros y el jefe), salir por la puerta de
+       entrada o por el portal que se abre al caer el jefe. */
+    function cleanDungeon(key){
+      const D=DUNGEONS[key]; if(!D) return;
+      S.enemies=S.enemies.filter(e=>e.zone!==key);
+      S.drops=S.drops.filter(d=>!inDungeonArea(D,d.x,d.y));
+      S.dungBoss=null; S.exitPortal=null; S.tele.length=0;
+    }
+    function enterDungeon(D){
+      const p=S.player; if(p.dead||S.inCrypt||S.dung) return;
+      cleanDungeon(D.key);
+      S.dung=D.key; S.portal=null;
+      if(D.key==='raiz'){
+        spawnDungMob('spore',7120,762); spawnDungMob('spore',7380,792); spawnDungMob('spore',7250,838);
+        spawnDungMob('spore',7250,578); spawnDungMob('golem',7100,502); spawnDungMob('golem',7400,522);
+        spawnMadre();
+      } else {
+        spawnDungMob('wolf',9120,762); spawnDungMob('wolf',9380,792); spawnDungMob('wolf',9250,838);
+        spawnDungMob('wolf',9250,578); spawnDungMob('golem',9100,502); spawnDungMob('golem',9400,522);
+        spawnAlfa();
+      }
+      burst(p.x,p.y,'#c07dff',20,170,0.5,4);
+      p.x=D.spawn.x; p.y=D.spawn.y; p.dir=-Math.PI/2; p._hx=p.x; p._hy=p.y; p._hh=0; petSnap();
+      S.flashT=0.35; sfx.portalGo();
+      S.cam.x=clamp(p.x-vW()/2,D.B.x0,Math.max(D.B.x0,D.B.x1-vW())); S.cam.y=clamp(p.y-vH()/2,D.B.y0,Math.max(D.B.y0,D.B.y1-vH()));
+      ring(p.x,p.y,'#ffd23c',84); burst(p.x,p.y,'#ffd23c',22,160,0.55,4);
+      floatText(p.x,p.y-46,D.name,'#ffd9a0',true);
+      try{ MP.lastSig=''; }catch(e){}
+      saveGame(true);
+    }
+    function exitDungeon(){
+      const p=S.player; if(!S.dung) return;
+      const D=DUNGEONS[S.dung];
+      burst(p.x,p.y,'#c07dff',20,170,0.5,4);
+      S.dung=null; cleanDungeon(D.key);
+      p.x=D.door.x; p.y=D.door.y+64; p._hx=p.x; p._hy=p.y; p._hh=terrainH(p.x,p.y); petSnap();
+      S.flashT=0.35; sfx.portalGo();
+      S.cam.x=clamp(p.x-vW()/2,0,Math.max(0,WORLD.w-vW())); S.cam.y=clamp(p.y-vH()/2,0,Math.max(0,WORLD.h-vH()));
+      ring(p.x,p.y,'#7ad0ff',84); burst(p.x,p.y,'#7ad0ff',22,160,0.55,4);
+      floatText(p.x,p.y-46,'🌀 De vuelta al aire libre','#bfe3ff',true);
+      try{ MP.lastSig=''; }catch(e){}
+      saveGame(true);
+    }
     function cryptDoorInteract(){
       if(S.inCrypt){ exitCrypt(); return; }
       if(!S.victory){ // sellada: diálogo normal del juego, sin entrar
-        openDialog({name:'🚪 La Cripta de la Fundición', short:'la puerta'},'Una puerta de piedra negra bajo la cantera, cerrada con runas que aún respiran calor. Un sello antiguo la cierra. Algo enorme lo guarda desde la cantera… Cuando el Coloso caiga, el sello se romperá.');
+        openDialog({name:'🚪 La Cripta de la Fundición', short:'la puerta'},'Una puerta de piedra negra en el corazón del Páramo, cerrada con runas que aún respiran calor. Un sello antiguo la cierra y el Coloso la guarda: cuando el Coloso caiga, el sello se romperá.');
         return;
       }
       enterCrypt();
@@ -3644,7 +3860,7 @@
       if(!S) return;
       if(S.player.bagOpen||S.player.talentsOpen||S.player.settingsOpen||S.player.petOpen||S.player.boutiqueOpen||S.player.chatOpen) return;
       if(S.dlg){ closeDialog(); return; }
-      if(S.nearDoor){ cryptDoorInteract(); return; }
+      if(S.nearDoor){ if(S.nearDoor==='in'){ if(S.inCrypt) exitCrypt(); else exitDungeon(); } else if(S.nearDoor==='cripta') cryptDoorInteract(); else enterDungeon(DUNGEONS[S.nearDoor]); return; }
       const n=S.nearNpc;
       if(!n){ if(S.nearBoutique){ openBoutique(); return; } if(S.nearStatue) statueInteract(); return; }
       const p=S.player;
@@ -3662,15 +3878,24 @@
         else openDialog(n,'Mi fragua no descansa: vuelve mañana y tendré otra pieza lista. Las bestias también sueltan equipo de cuando en cuando.');
       } else if(n.id==='milo'){
         openPets('shop');
+      } else if(n.id==='pilar'||n.id==='tomas'){
+        const lines=n.id==='pilar'
+          ? ['Las flores de la plaza no se riegan solas 🌸 ¿Verdad que hoy huele de maravilla?','Dicen que quien mata a la Madre Espora hace caer un muro entero. ¡Un MURO, oíste!','Si andas por el Bosque, la estatua tiene un portal que te trae a casa en un parpadeo.']
+          : ['Este año la cosecha viene buena 🌾 Si el Páramo nos deja en paz, claro.','Vi lobos en el Bosque una vez… de muy lejos. Su Alfa es otra cosa: ni te acerques sin nivel.','El corgi de Milo entiende más que algunos héroes que yo conozco.'];
+        openDialog(n,lines[irnd(0,lines.length-1)]);
       } else if(n.id==='lyra'){
-        if(S.quest.stage===0) openDialog(n,'Las bestias han tomado el campo, héroe. Demuéstrame tu valor: derrota a '+S.quest.need+' de ellas — esporas, lobos de brasa, gólems, me da igual — y vuelve a verme. Llevas '+S.quest.count+' de '+S.quest.need+'. Sal por la puerta este y que la brasa te acompañe.');
+        if(S.quest.stage===0) openDialog(n,'Las esporas han tomado el Campo, al oeste, héroe. Demuéstrame tu valor: derrota a '+S.quest.need+' de ellas y vuelve a verme. Llevas '+S.quest.count+' de '+S.quest.need+'. Sal por la puerta oeste y que la suerte te acompañe.');
         else if(S.quest.stage===1){
-          S.quest.stage=2; sfx.questDone(); updateQuestUI(); saveGame(true);
-          if(S.boss&&!S.boss.dead){ S.bossIntroT=3.0; sfx.roar(true); S.shake=Math.max(S.shake,10); }
-          openDialog(n,'Sabía que eras tú. Con tu caza, el sello de la cantera se ha roto: el COLOSO DE LA FUNDICIÓN despierta al este, entre las rocas. Es piedra y magma viejos: pega duro, escupe fuego y al enfurecer arde más rápido. Derróbalo y Ferralla será libre. Sana te cura gratis antes de ir, y Bram tiene acero si te falta.');
+          const tgt=S.cryptDone?6:(S.victory?5:(S.bossAlfa?4:(S.bossMadre?3:2)));
+          S.quest.stage=tgt; sfx.questDone(); updateQuestUI(); saveGame(true);
+          if(tgt===2) openDialog(n,'Sabía que eras tú. Escucha el plan, héroe: el mal de Valdoria nace en tres raíces. La primera está al oeste, en la RAÍZ HUECA: una Madre Espora que no deja de parir esporas. Derróbala y el MURO NORTE del pueblo caerá, abriendo el Bosque. Sana te cura gratis antes de ir, y Bram tiene acero si te falta.');
+          else openDialog(n,'Veo en tus ojos que ya has avanzado mucho sin mi consejo, héroe: la flecha dorada del minimapa marca tu siguiente paso. Ferralla confía en ti.');
         }
-        else if(S.quest.stage===2) openDialog(n,'El Coloso aguarda en la cantera, al este del campo: sigue la flecha dorada del minimapa. Entra con la vida llena y pociones en la mochila.');
-        else openDialog(n,'Ferralla respira gracias a ti, héroe. El campo sigue teniendo bestias y botín para quien quiera seguir creciendo: la frontera en llamas ahora arde a tu favor.');
+        else if(S.quest.stage===2) openDialog(n,'La Raíz Hueca te espera al oeste del Campo, tras las esporas grandes: dentro aguarda la Madre Espora. Cuando caiga, el muro norte del pueblo caerá con ella. Entra con la vida llena y pociones en la mochila.');
+        else if(S.quest.stage===3) openDialog(n,'El muro norte cayó: el Bosque de Ceniza es tuyo. Al fondo, entre los árboles quemados, humea la GUARIDA QUEMADA: su Alfa guarda el paso al Páramo. Derróbalo y el muro este caerá.');
+        else if(S.quest.stage===4) openDialog(n,'El Páramo Carmesí te espera tras el muro este: gólems élite y, junto a la puerta de la Cripta, el COLOSO DE LA FUNDICIÓN. Derróbalo y el sello de la Cripta se romperá.');
+        else if(S.quest.stage===5) openDialog(n,'El Coloso cayó y la Cripta está abierta, en el Páramo. Al fondo de sus salas aguarda EL HERALDO: el último corazón del mal de Valdoria. Acaba con él, héroe.');
+        else openDialog(n,'Ferralla respira gracias a ti, héroe. Las zonas siguen teniendo bestias y botín para quien quiera seguir creciendo: la frontera en llamas ahora arde a tu favor.');
       }
     }
     function openDialog(n,text){ S.dlg=n; document.getElementById('dlgWho').textContent=n.name; document.getElementById('dlgText').textContent=text; document.getElementById('dialog').classList.add('on'); sfx.talk(); }
@@ -3683,26 +3908,32 @@
       // La misión se lee de un vistazo: icono + contador, sin frases.
       if(q.stage===0){ $('questTitle').textContent='⚔ '+q.count+'/'+q.need; $('questProg').style.width=(q.count/q.need*100)+'%'; }
       else if(q.stage===1){ $('questTitle').textContent='⚜ Vuelve con Lyra'; $('questProg').style.width='100%'; }
-      else if(q.stage===2){ $('questTitle').textContent='🔥 El Coloso'; $('questProg').style.width='100%'; }
+      else if(q.stage===2){ $('questTitle').textContent='🌿 La Madre Espora'; $('questProg').style.width='100%'; }
+      else if(q.stage===3){ $('questTitle').textContent='🐺 El Alfa de Ceniza'; $('questProg').style.width='100%'; }
+      else if(q.stage===4){ $('questTitle').textContent='🔥 El Coloso'; $('questProg').style.width='100%'; }
+      else if(q.stage===5){ $('questTitle').textContent='⚰ El Heraldo'; $('questProg').style.width='100%'; }
       else { $('questTitle').textContent='🏆 Modo libre'; $('questProg').style.width='100%'; }
     }
     /* ---------------- Objetivo de misión (minimapa + flecha guía) ---------------- */
     function getObjective(){
       if(!S) return null; const q=S.quest, p=S.player;
-      if(S.inCrypt) return null; // la cripta es contenido libre post-victoria: sin flecha de misión dentro
+      if(S.inCrypt||S.dung) return null; // dentro de una mazmorra no hay flecha de misión
       if(q.stage===0){
         let best=null,bd=1e9;
         for(const e of S.enemies){ if(e.dead||e.type==='boss') continue; const d=dist(p,e); if(d<bd){bd=d;best=e;} }
-        if(p.x<TOWN_EDGE) return {x:GATE.x+30,y:GATE.y+GATE.h/2,label:'Puerta este → a cazar bestias para Lyra',short:'la puerta este'};
+        if(inVillage(p.x,p.y)) return {x:1690,y:1300,label:'Puerta oeste → a cazar esporas para Lyra',short:'la puerta oeste'};
         if(best) return {x:best.x,y:best.y,label:'Bestia de la caza de Lyra ('+q.count+'/'+q.need+')',short:'la bestia más cercana'};
-        return {x:1500,y:900,label:'El campo: busca bestias',short:'el campo'};
+        return {x:900,y:1100,label:'El Campo de Esporas: busca esporas',short:'el campo'};
       }
-      if(q.stage===1) return {x:455,y:845,label:'Lyra ⚜ te espera en la plaza',short:'Lyra'};
-      if(q.stage===2){
-        if(S.boss&&!S.boss.dead) return {x:S.boss.x,y:S.boss.y,label:'El Coloso de la Fundición (cantera)',short:'el Coloso'};
-        return {x:2260,y:900,label:'La cantera del Coloso',short:'la cantera'};
+      if(q.stage===1) return {x:2130,y:1170,label:'Lyra ⚜ te espera en la plaza',short:'Lyra'};
+      if(q.stage===2) return {x:RAIZ_DOOR.x,y:RAIZ_DOOR.y,label:'La Raíz Hueca: derrota a la Madre Espora',short:'la Raíz Hueca'};
+      if(q.stage===3) return {x:GUARIDA_DOOR.x,y:GUARIDA_DOOR.y,label:'La Guarida Quemada: derrota al Alfa de Ceniza',short:'la Guarida'};
+      if(q.stage===4){
+        if(S.boss&&!S.boss.dead) return {x:S.boss.x,y:S.boss.y,label:'El Coloso de la Fundición (el Páramo)',short:'el Coloso'};
+        return {x:COLOSO_POS.x,y:COLOSO_POS.y,label:'La arena del Coloso, en el Páramo',short:'el Coloso'};
       }
-      return {x:455,y:905,label:'Modo libre · La plaza de Ferralla',short:'la plaza del pueblo'};
+      if(q.stage===5) return {x:CRYPT_DOOR.x,y:CRYPT_DOOR.y,label:'La Cripta de la Fundición: el Heraldo aguarda',short:'la Cripta'};
+      return {x:2200,y:1300,label:'Modo libre · La plaza de Ferralla',short:'la plaza del pueblo'};
     }
     function compassLabel(ang){
       const dirs=['el este','el sureste','el sur','el suroeste','el oeste','el noroeste','el norte','el noreste'];
@@ -4772,7 +5003,7 @@
     function mpBuildMsg(){
       if(!S||!S.player) return null;
       const p=S.player, eq=p.equipment||{};
-      return {id:MP.id,n:MP.name,c:S.clsKey,t0:CO.t0||0,ct:(SOC.clan?SOC.clan.tag:null),cn:(SOC.clan?SOC.clan.name:null),cc:(SOC.clan?SOC.clan.code:null),pg:PTY.id||null,pl:PTY.leader||null,x:Math.round(p.x),y:Math.round(p.y),d:+p.dir.toFixed(2),m:p.moving?1:0,z:S.inCrypt?1:0,
+      return {id:MP.id,n:MP.name,c:S.clsKey,t0:CO.t0||0,ct:(SOC.clan?SOC.clan.tag:null),cn:(SOC.clan?SOC.clan.name:null),cc:(SOC.clan?SOC.clan.code:null),pg:PTY.id||null,pl:PTY.leader||null,x:Math.round(p.x),y:Math.round(p.y),d:+p.dir.toFixed(2),m:p.moving?1:0,z:S.inCrypt?1:(S.dung==='raiz'?2:(S.dung==='guarida'?3:0)),
         hp:+clamp(p.hp/Math.max(1,p.hpMax),0,1).toFixed(3),mp:+clamp(p.mp/Math.max(1,p.mpMax),0,1).toFixed(3),lv:p.lvl,dead:p.dead?1:0,sw:p.swingT>0?1:0,f:(S.clsKey==='druid'?(p.form==='primal'?2:(p.form==='wolf'?1:0)):0),
         pt:(p.petActive&&PETS[p.petActive])?p.petActive:null,
         wc:(eq.arma&&eq.arma.wcol)||'#cfd8e6',wr:eq.arma?(eq.arma.rarity||0):0,
@@ -4803,8 +5034,8 @@
       if(m.bye){ if(rp){ toast('👥 '+rp.name+' salió del mundo',''); MP.peers.delete(m.id); mpRenderPanel(); } return; }
       if(!CLASSES[m.c]) return;
       if(typeof m.x!=='number'||typeof m.y!=='number'||!isFinite(m.x)||!isFinite(m.y)) return;
-      const mz=(m.z===1)?1:0; // marca de zona: 1 = dentro de la cripta (coordenadas propias, separadas del mundo)
-      if(mz){ if(m.x<CRYPT.x0-40||m.y<CRYPT.y0-40||m.x>CRYPT.x1+40||m.y>CRYPT.y1+40) return; }
+      const mz=(typeof m.z==='number'&&m.z>=0&&m.z<=3)?m.z:0; // marca de reino: 0 = mundo abierto, 1 = Cripta, 2 = Raíz Hueca, 3 = Guarida (coordenadas propias por reino)
+      if(mz){ const DB=mz===1?CRYPT:(mz===2?RAIZ_B:GUAR_B); if(m.x<DB.x0-40||m.y<DB.y0-40||m.x>DB.x1+40||m.y>DB.y1+40) return; }
       else if(m.x<-40||m.y<-40||m.x>WORLD.w+40||m.y>WORLD.h+40) return; // fuera del mapa: imposible
       if(typeof m.d!=='number'||!isFinite(m.d)) m.d=0;
       if(!rp){
@@ -4813,7 +5044,7 @@
         MP.peers.set(m.id,rp); toast('👥 '+mpCleanName(m.n||'Un jugador')+' entró al mundo','gold'); tone(760,0,0.07,'triangle',0.035,160);
       }
       rp.name=mpCleanName(m.n)||rp.name; rp.clsKey=m.c; rp.z=mz;
-      rp.x=mz?clamp(m.x,CRYPT.x0,CRYPT.x1):clamp(m.x,0,WORLD.w); rp.y=mz?clamp(m.y,CRYPT.y0,CRYPT.y1):clamp(m.y,0,WORLD.h);
+      if(mz){ const DB=mz===1?CRYPT:(mz===2?RAIZ_B:GUAR_B); rp.x=clamp(m.x,DB.x0,DB.x1); rp.y=clamp(m.y,DB.y0,DB.y1); } else { rp.x=clamp(m.x,0,WORLD.w); rp.y=clamp(m.y,0,WORLD.h); }
       rp.dir=m.d; rp.moving=!!m.m;
       rp.hpF=(typeof m.hp==='number'&&isFinite(m.hp))?clamp(m.hp,0,1):1; rp.mpF=(typeof m.mp==='number'&&isFinite(m.mp))?clamp(m.mp,0,1):1;
       rp.lvl=(typeof m.lv==='number'&&isFinite(m.lv))?Math.max(1,Math.min(99,Math.floor(m.lv))):1; rp.dead=!!m.dead; rp.swing=!!m.sw; rp.form=(m.f===1||m.f===2)?m.f:0;
@@ -4844,9 +5075,9 @@
       if(S&&S.player){
         const p=S.player, arr=[...MP.peers.values()];
         arr.sort((a,b)=>((a.rx-p.x)*(a.rx-p.x)+(a.ry-p.y)*(a.ry-p.y))-((b.rx-p.x)*(b.rx-p.x)+(b.ry-p.y)*(b.ry-p.y)));
-        // interior por jugador: dentro de la cripta no se ve a quien está
-        // fuera, ni desde fuera se ve a quien está dentro
-        MP.drawn=arr.filter(rp=>(rp.z===1)===(!!S.inCrypt)).slice(0,MP_DRAW_MAX);
+        // reino por jugador: dentro de una mazmorra solo se ve a
+        // quien está en LA MISMA mazmorra; desde fuera, a nadie de dentro
+        MP.drawn=arr.filter(rp=>rp.z===(S.inCrypt?1:(S.dung==='raiz'?2:(S.dung==='guarida'?3:0)))).slice(0,MP_DRAW_MAX);
       } else MP.drawn=[];
       // publicar solo si algo cambió (tope ~10/s); latido cada 2.5 s en quieto
       if(MP.state==='online'){
@@ -4927,7 +5158,7 @@
     }
     function coopToGuest(){
       if(!S) return;
-      S.enemies=S.enemies.filter(e=>e.zone==='cripta'); // el campo pasa a ser del anfitrión: fuera mis bestias locales
+      S.enemies=S.enemies.filter(e=>e.zone==='cripta'||e.zone==='raiz'||e.zone==='guarida'); // el campo pasa a ser del anfitrión: fuera mis bestias locales (las de MI mazmorra son mías)
       S.boss=null;
       CO.lastWorldAt=0; CO.adopted=false;
     }
@@ -4961,7 +5192,7 @@
       const near=(x,y)=>{ if(Math.hypot(x-p.x,y-p.y)<1750) return true; let ok=false; MP.peers.forEach(rp=>{ if(rp.z!==1&&Math.hypot(x-rp.rx,y-rp.ry)<1750) ok=true; }); return ok; };
       const ms=[];
       for(const e of S.enemies){
-        if(e.dead||e.zone==='cripta'||e.shared) continue;
+        if(e.dead||e.zone==='cripta'||e.zone==='raiz'||e.zone==='guarida'||e.shared) continue;
         if(e.type!=='boss'&&!near(e.x,e.y)) continue;
         ms.push([e.mid,CO_TYPE.indexOf(e.type),Math.round(e.x),Math.round(e.y),Math.max(0,Math.round(e.hp)),e.hpMax,Math.round((e.face||0)*100)/100,e.lvl||1,e.elite?1:0,e.enraged?1:0]);
       }
@@ -5055,10 +5286,10 @@
     function coopStrike(tp,dmg,src){ if(tp&&tp._peer) coopSendDamage(tp._peer.id,dmg); else hurtPlayer(dmg,src); }
     function coopTargetFor(e){
       const p=S.player;
-      if(CO.mode!=='host'||e.zone==='cripta') return p;
-      let best=p, bd=S.inCrypt?Infinity:Math.hypot(p.x-e.x,p.y-e.y);
+      if(CO.mode!=='host'||e.zone==='cripta'||e.zone==='raiz'||e.zone==='guarida') return p;
+      let best=p, bd=(S.inCrypt||S.dung)?Infinity:Math.hypot(p.x-e.x,p.y-e.y);
       MP.peers.forEach(rp=>{
-        if(rp.z===1||rp.dead) return;
+        if(rp.z!==0||rp.dead) return;
         const d=Math.hypot(rp.rx-e.x,rp.ry-e.y);
         if(d<bd){ bd=d; best={x:rp.rx,y:rp.ry,r:17,moving:rp.moving,moveAng:rp.dir,spd:175,buffSpdT:0,dead:false,_peer:rp}; }
       });
@@ -5066,10 +5297,10 @@
     }
     function coopNearPlayer(e,r){
       const p=S.player;
-      if(e.zone==='cripta') return Math.hypot(p.x-e.x,p.y-e.y)<r;
+      if(e.zone==='cripta'||e.zone==='raiz'||e.zone==='guarida') return Math.hypot(p.x-e.x,p.y-e.y)<r;
       if(CO.mode!=='host') return Math.hypot(p.x-e.x,p.y-e.y)<r;
-      if(!S.inCrypt&&Math.hypot(p.x-e.x,p.y-e.y)<r) return true;
-      let ok=false; MP.peers.forEach(rp=>{ if(rp.z!==1&&Math.hypot(rp.rx-e.x,rp.ry-e.y)<r) ok=true; });
+      if(!S.inCrypt&&!S.dung&&Math.hypot(p.x-e.x,p.y-e.y)<r) return true;
+      let ok=false;       MP.peers.forEach(rp=>{ if(rp.z===0&&Math.hypot(rp.rx-e.x,rp.ry-e.y)<r) ok=true; });
       return ok;
     }
     function coopHostEligible(e){
@@ -5085,7 +5316,7 @@
       if(now-(rp.hitWin||0)>1000){ rp.hitWin=now; rp.hitN=0; }
       rp.hitN=(rp.hitN||0)+1; if(rp.hitN>40) return; // techo de golpes por segundo y remitente
       const dmg=(typeof m.dmg==='number'&&isFinite(m.dmg))?Math.max(1,Math.min(2000,Math.round(m.dmg))):0; if(!dmg) return;
-      let e=null; for(const en of S.enemies){ if(!en.dead&&en.mid===m.mid&&en.zone!=='cripta'&&!en.shared){ e=en; break; } }
+      let e=null; for(const en of S.enemies){ if(!en.dead&&en.mid===m.mid&&!(en.zone==='cripta'||en.zone==='raiz'||en.zone==='guarida')&&!en.shared){ e=en; break; } }
       if(!e) return;
       if(Math.hypot(rp.rx-e.x,rp.ry-e.y)>760) return; // validación básica de alcance: el atacante tiene que estar ahí
       e.hp-=dmg; e.flash=0.12; e.hurtT=0.25;
@@ -5586,7 +5817,7 @@
       if(!S||!S.player||!S.started) return null;
       const p=S.player, dead=p.dead;
       return { v:1, t:Date.now(), name:MP.name||mpDefaultName(), cls:S.clsKey,
-        x:dead?455:(S.inCrypt?CRYPT_DOOR.x:Math.round(p.x)), y:dead?1000:(S.inCrypt?CRYPT_DOOR.y+64:Math.round(p.y)), dir:+p.dir.toFixed(2),
+        x:dead?2200:(S.inCrypt?CRYPT_DOOR.x:(S.dung?DUNGEONS[S.dung].door.x:Math.round(p.x))), y:dead?1420:(S.inCrypt?CRYPT_DOOR.y+64:(S.dung?DUNGEONS[S.dung].door.y+64:Math.round(p.y))), dir:+p.dir.toFixed(2),
         lvl:p.lvl, xp:p.xp, xpNext:p.xpNext, gold:p.gold, potions:p.potions,
         hp:dead?p.hpMax:Math.round(p.hp), hpMax:p.hpMax, mp:Math.round(p.mp), mpMax:p.mpMax,
         atk:p.atk, def:p.def, spd:p.spd, baseSpd:p.baseSpd,
@@ -5595,12 +5826,12 @@
         bag:p.bag.map(it=>it.id),
         pets:{owned:p.petsOwned.slice(), active:p.petActive||null},
         quest:{stage:S.quest.stage,count:S.quest.count,need:S.quest.need},
-        victory:!!S.victory, crypt:!!S.cryptDone, kills:S.kills||0, goldEarned:S.goldEarned||0, bramStock:S.bramStock||0,
+        victory:!!S.victory, crypt:!!S.cryptDone, madre:!!S.bossMadre, alfa:!!S.bossAlfa, kills:S.kills||0, goldEarned:S.goldEarned||0, bramStock:S.bramStock||0,
         elapsed:Math.round(S.elapsed||0), clan:SOC.clan?{n:SOC.clan.name,t:SOC.clan.tag,c:SOC.clan.code}:null };
     }
     function saveGame(force){
       const o=saveBuild(); if(!o) return;
-      const sig=JSON.stringify([o.name,o.cls,o.x,o.y,o.lvl,o.xp,o.gold,o.potions,o.hp,o.mp,o.eq,o.bag,o.pets,o.tree,o.talentPoints,o.quest,o.victory,o.crypt,o.kills,o.clan]);
+      const sig=JSON.stringify([o.name,o.cls,o.x,o.y,o.lvl,o.xp,o.gold,o.potions,o.hp,o.mp,o.eq,o.bag,o.pets,o.tree,o.talentPoints,o.quest,o.victory,o.crypt,o.madre,o.alfa,o.kills,o.clan]);
       if(!force&&sig===saveSig) return;
       try{ localStorage.setItem(SAVE_KEY,JSON.stringify(o)); saveSig=sig; }catch(e){}
     }
@@ -5626,7 +5857,7 @@
           talentPoints:Math.floor(saveNum(o.talentPoints,0,999,0)), tree:{},
           eq:{arma:null,armadura:null,casco:null,hombreras:null,capa:null,amuleto:null,anillo:null}, bag:[],
           petsOwned:[], petActive:null,
-          quest:{stage:0,count:0,need:5}, victory:false, cryptDone:false, kills:0, goldEarned:0, bramStock:0, elapsed:0,
+          quest:{stage:0,count:0,need:5}, victory:false, cryptDone:false, bossMadre:false, bossAlfa:false, kills:0, goldEarned:0, bramStock:0, elapsed:0,
           migGold:0, fromSurvival:false, clan:null };
         sv.hp=saveNum(o.hp,1,sv.hpMax,sv.hpMax); sv.mp=saveNum(o.mp,0,sv.mpMax,sv.mpMax);
         if(o.tree&&typeof o.tree==='object'){
@@ -5655,15 +5886,25 @@
           if(Array.isArray(o.pets.owned)) o.pets.owned.slice(0,3).forEach(id=>{ if(typeof id==='string'&&PETS[id]&&!sv.petsOwned.includes(id)) sv.petsOwned.push(id); });
           if(typeof o.pets.active==='string'&&sv.petsOwned.includes(o.pets.active)) sv.petActive=o.pets.active;
         }
-        if(o.quest&&typeof o.quest==='object'){ sv.quest.stage=Math.floor(saveNum(o.quest.stage,0,3,0)); sv.quest.count=Math.floor(saveNum(o.quest.count,0,99,0)); sv.quest.need=Math.floor(saveNum(o.quest.need,1,99,5)); }
+        if(o.quest&&typeof o.quest==='object'){ sv.quest.stage=Math.floor(saveNum(o.quest.stage,0,6,0)); sv.quest.count=Math.floor(saveNum(o.quest.count,0,99,0)); sv.quest.need=Math.floor(saveNum(o.quest.need,1,99,5)); }
         if(o.clan&&typeof o.clan==='object'){ // clan guardado: nombre, etiqueta y código validados como texto limpio
           const cn=String(o.clan.n||'').replace(/[<>&"'`]/g,'').replace(/\s+/g,' ').trim().slice(0,16);
           const ct=String(o.clan.t||'').replace(/[^A-Za-z0-9]/g,'').slice(0,4).toUpperCase();
           const cc2=String(o.clan.c||'').replace(/[^A-Za-z0-9]/g,'').slice(0,6).toUpperCase();
           if(cn&&ct.length>=3&&cc2.length>=4) sv.clan={name:cn,tag:ct,code:cc2};
         }
-        sv.victory=!!o.victory||(!(o.supplies&&typeof o.supplies==='object')&&sv.quest.stage>=3); if(sv.victory) sv.quest.stage=3;
-        sv.cryptDone=!!o.crypt; // guardados antiguos sin la bandera: cripta sin superar (y puerta sellada si tampoco cayó el Coloso)
+        sv.victory=!!o.victory||(!(o.supplies&&typeof o.supplies==='object')&&sv.quest.stage>=3);
+        sv.cryptDone=!!o.crypt;
+        if(o.madre!==undefined){ sv.bossMadre=!!o.madre; sv.bossAlfa=!!o.alfa; } // guardado del mapa nuevo: sus banderas mandan
+        else if(!(o.supplies&&typeof o.supplies==='object')){
+          // guardado del MAPA ANTIGUO: su etapa se traduce a la cadena
+          // nueva y quien ya había llegado lejos no pierde el acceso
+          // a ninguna zona (sus muros cuentan como caídos)
+          if(sv.quest.stage>=2){ sv.bossMadre=true; sv.bossAlfa=true; }
+          if(sv.cryptDone) sv.quest.stage=6;
+          else if(sv.victory) sv.quest.stage=5;
+          else if(sv.quest.stage>=2) sv.quest.stage=4;
+        }
         sv.kills=Math.floor(saveNum(o.kills,0,1e7,0)); sv.goldEarned=Math.floor(saveNum(o.goldEarned,0,1e9,0));
         sv.bramStock=Math.floor(saveNum(o.bramStock,0,1e6,0)); sv.elapsed=saveNum(o.elapsed,0,1e7,0);
         // MIGRACIÓN DE VUELTA desde la etapa de supervivencia: los objetos
@@ -5712,15 +5953,15 @@
       p.bag=sv.bag.map(id=>GEAR[id]).filter(Boolean);
       p.petsOwned=(sv.petsOwned||[]).slice(); p.petActive=sv.petActive||null; S.pet=null; petEnsure();
       S.quest.stage=sv.quest.stage; S.quest.count=sv.quest.count; S.quest.need=sv.quest.need;
-      S.victory=sv.victory; S.cryptDone=!!sv.cryptDone; S.kills=sv.kills; S.goldEarned=sv.goldEarned; S.bramStock=sv.bramStock;
+      S.victory=sv.victory; S.cryptDone=!!sv.cryptDone; S.bossMadre=!!sv.bossMadre; S.bossAlfa=!!sv.bossAlfa; S.kills=sv.kills; S.goldEarned=sv.goldEarned; S.bramStock=sv.bramStock;
       S.startTime=performance.now()-sv.elapsed*1000;
       S.migGold=sv.migGold||0; // oro de la conversión al volver del modo supervivencia
       if(sv.migGold){ p.gold+=sv.migGold; S.goldEarned+=sv.migGold; }
       S.zone=zoneAt(p.x,p.y);
       if(sv.clan){ SOC.clan=sv.clan; try{ localStorage.setItem('valdoria-clan-v1',JSON.stringify(SOC.clan)); }catch(e){} } // el clan del guardado manda sobre la copia suelta
       if(!S.victory){ // el Coloso de la Fundición siempre acecha en la cantera: vuelve en silencio, sin fanfarria
-        const b={type:'boss',name:'Coloso de la Fundición',x:2260,y:900,r:44,hp:720,hpMax:720,atk:24,def:6,spd:62,
-          xp:320,gold:220,atkCd:1.2,specialCd:4,hurtT:0,stunT:0,walkPh:0,flash:0,home:{x:2260,y:900},enraged:false};
+        const b={type:'boss',name:'Coloso de la Fundición',x:COLOSO_POS.x,y:COLOSO_POS.y,r:44,hp:720,hpMax:720,atk:24,def:6,spd:62,
+          xp:320,gold:220,atkCd:1.2,specialCd:4,hurtT:0,stunT:0,walkPh:0,flash:0,home:{x:COLOSO_POS.x,y:COLOSO_POS.y},enraged:false};
         try{ b.mid=++CO.midSeq; }catch(err){ b.mid=0; }
         initMobMotion(b); S.boss=b; S.bossSpawned=true; S.enemies.push(b);
       }
@@ -6404,11 +6645,15 @@
         $('navText').textContent=dm+' m';
       } else $('navText').textContent='';
       // barra de jefe (arriba, en el centro): el Coloso fuera, el Heraldo dentro de la cripta
-      const bb=$('bossBar'), bEnt=S.inCrypt?S.herald:S.boss;
+      const bb=$('bossBar'), bEnt=S.inCrypt?S.herald:(S.dung?S.dungBoss:S.boss);
       if(bEnt&&!bEnt.dead&&dist(p,bEnt)<560){ bb.classList.add('on'); $('uiBossHp').style.width=Math.max(0,bEnt.hp/bEnt.hpMax*100)+'%';
         bb.classList.toggle('enraged',!!bEnt.enraged);
         const bnm=$('bossName'), bw=bEnt.type==='herald'
           ?(bEnt.enraged?'👑 EL HERALDO DE LA FUNDICIÓN · ¡ENFURECIDO! 👑':'👑 EL HERALDO DE LA FUNDICIÓN 👑')
+          : bEnt.type==='madre'
+          ?(bEnt.enraged?'🌿 LA MADRE ESPORA · ¡ENFURECIDA! 🌿':'🌿 LA MADRE ESPORA 🌿')
+          : bEnt.type==='alfa'
+          ?(bEnt.enraged?'🐺 EL ALFA DE CENIZA · ¡ENFURECIDO! 🐺':'🐺 EL ALFA DE CENIZA 🐺')
           :(bEnt.enraged?'🔥 COLOSO DE LA FUNDICIÓN · ¡ENFURECIDO! 🔥':'⚠ COLOSO DE LA FUNDICIÓN ⚠');
         if(bnm&&bnm.textContent!==bw) bnm.textContent=bw;
         const bht=$('bossHpTxt'), hw=Math.max(0,Math.ceil(bEnt.hp))+' / '+bEnt.hpMax;
@@ -6421,27 +6666,28 @@
        salida cuando se abre, enemigos, el Heraldo y tú. Fuera de la
        cripta este dibujo no se usa: el mundo abierto va por su cauce. */
     function drawCryptMap(g,W,H,big){
+      const D=S.inCrypt?DUNGEONS.cripta:DUNGEONS[S.dung]; if(!D) return;
       const p=S.player, t=S.t||0;
       const mx=big?34:12, my=big?30:10;
-      const sc=Math.min((W-2*mx)/(CRYPT.x1-CRYPT.x0),(H-2*my-16)/(CRYPT.y1-CRYPT.y0));
-      const ox=mx+((W-2*mx)-(CRYPT.x1-CRYPT.x0)*sc)/2, oy=my+((H-2*my-16)-(CRYPT.y1-CRYPT.y0)*sc)/2;
-      const X=v=>ox+(v-CRYPT.x0)*sc, Y=v=>oy+(v-CRYPT.y0)*sc;
+      const sc=Math.min((W-2*mx)/(D.B.x1-D.B.x0),(H-2*my-16)/(D.B.y1-D.B.y0));
+      const ox=mx+((W-2*mx)-(D.B.x1-D.B.x0)*sc)/2, oy=my+((H-2*my-16)-(D.B.y1-D.B.y0)*sc)/2;
+      const X=v=>ox+(v-D.B.x0)*sc, Y=v=>oy+(v-D.B.y0)*sc;
       g.fillStyle='#07070f'; g.fillRect(0,0,W,H);
-      for(const f of CRYPT_FLOORS){ g.fillStyle='#3a3d4d'; g.fillRect(X(f.x),Y(f.y),f.w*sc,f.h*sc); }
-      g.fillStyle='#14151f'; for(const w2 of CRYPT_WALLS) g.fillRect(X(w2.x),Y(w2.y),Math.max(1.5,w2.w*sc),Math.max(1.5,w2.h*sc));
-      g.fillStyle='#ffb84d'; for(const tc of CRYPT_TORCHES){ g.beginPath(); g.arc(X(tc.x),Y(tc.y),big?3.4:2,0,7); g.fill(); } // antorchas
+      for(const f of D.floors){ g.fillStyle='#3a3d4d'; g.fillRect(X(f.x),Y(f.y),f.w*sc,f.h*sc); }
+      g.fillStyle='#14151f'; for(const w2 of D.walls) g.fillRect(X(w2.x),Y(w2.y),Math.max(1.5,w2.w*sc),Math.max(1.5,w2.h*sc));
+      g.fillStyle='#ffb84d'; for(const tc of D.torches){ g.beginPath(); g.arc(X(tc.x),Y(tc.y),big?3.4:2,0,7); g.fill(); } // antorchas
       // la puerta de entrada (abajo): rombo dorado
-      g.save(); g.translate(X(CRYPT_IDOOR.x),Y(CRYPT.y1)); g.rotate(Math.PI/4);
+      g.save(); g.translate(X(D.idoor.x),Y(D.B.y1)); g.rotate(Math.PI/4);
       g.fillStyle='#ffd23c'; const ds=big?9:5; g.fillRect(-ds/1.6,-ds/1.6,ds*1.25,ds*1.25); g.strokeStyle='#fff'; g.lineWidth=1.4; g.strokeRect(-ds/1.6,-ds/1.6,ds*1.25,ds*1.25); g.restore();
       // portal de salida en la sala del jefe, cuando el Heraldo ha caído
       if(S.exitPortal){ const pr=(big?13:8)+Math.sin(t*6)*2; g.fillStyle='#c07dff'; g.beginPath(); g.arc(X(S.exitPortal.x),Y(S.exitPortal.y),pr,0,7); g.fill(); g.strokeStyle='#fff'; g.lineWidth=2; g.stroke(); }
       // enemigos de la cripta y el Heraldo
-      S.enemies.forEach(e=>{ if(e.dead||!inCryptArea(e.x,e.y)) return;
-        if(e.type==='herald'){ const pr=(big?15:9)+Math.sin(t*6)*2.5; g.fillStyle='#ff2222'; g.beginPath(); g.arc(X(e.x),Y(e.y),pr,0,7); g.fill(); g.strokeStyle='#ffd23c'; g.lineWidth=2.4; g.stroke(); }
+      S.enemies.forEach(e=>{ if(e.dead||!inDungeonArea(D,e.x,e.y)) return;
+        if(e.type==='herald'||e.type==='madre'||e.type==='alfa'){ const pr=(big?15:9)+Math.sin(t*6)*2.5; g.fillStyle='#ff2222'; g.beginPath(); g.arc(X(e.x),Y(e.y),pr,0,7); g.fill(); g.strokeStyle='#ffd23c'; g.lineWidth=2.4; g.stroke(); }
         else { g.fillStyle='#ff9040'; g.beginPath(); g.arc(X(e.x),Y(e.y),big?7:4.2,0,7); g.fill(); g.strokeStyle='rgba(60,10,0,.8)'; g.lineWidth=1.4; g.stroke(); }
       });
       // compañeros que estén TAMBIÉN dentro (los de fuera no existen aquí)
-      MP.peers.forEach(rp=>{ if(rp.z!==1) return;
+      MP.peers.forEach(rp=>{ if(rp.z!==D.zcode) return;
         g.fillStyle=rp.color; g.beginPath(); g.arc(X(rp.rx),Y(rp.ry),big?10:5.5,0,7); g.fill(); g.strokeStyle='#fff'; g.lineWidth=2; g.stroke();
       });
       // tú: flecha dorada hacia donde miras
@@ -6452,48 +6698,53 @@
       g.fillStyle='#fff'; g.beginPath(); g.arc(pxm,pym,5.5*as,0,7); g.fill(); g.strokeStyle='#ffc93c'; g.lineWidth=2.5; g.stroke();
       // nombre del lugar, solo aquí y en el mapa grande (nada de letras en el centro de la pantalla)
       g.fillStyle='#ffd9a0'; g.font='900 '+(big?25:11)+'px Trebuchet MS'; g.textAlign='left';
-      g.fillText('LA CRIPTA DE LA FUNDICIÓN',ox,Y(CRYPT.y1)+(big?34:15));
+      g.fillText(D.name.toUpperCase(),ox,Y(D.B.y1)+(big?34:15));
     }
     function drawMinimap(){
       const w=mini.width,h=mini.height; mctx.clearRect(0,0,w,h);
-      if(S.inCrypt){ drawCryptMap(mctx,w,h,false); return; }
+      if(S.inCrypt||S.dung){ drawCryptMap(mctx,w,h,false); return; }
       const sx=w/WORLD.w, sy=h/WORLD.h, X=v=>v*sx, Y=v=>v*sy;
       const p=S.player, t=S.t||0;
-      // zonas: pueblo empedrado / campo verde / arena del Bruto
-      mctx.fillStyle='#8d7d68'; mctx.fillRect(0,0,TOWN_EDGE*sx,h);
-      mctx.fillStyle='#2f6b2a'; mctx.fillRect(TOWN_EDGE*sx,0,w-TOWN_EDGE*sx,h);
-      mctx.fillStyle='#5d5952'; mctx.fillRect(X(EAST_X),Y(950),w-X(EAST_X),h-Y(950)); // Bosque de Ceniza: gris ceniza
-      mctx.fillStyle='#6e352a'; mctx.fillRect(X(EAST_X),0,w-X(EAST_X),Y(950)); // Páramo Carmesí: tierra roja
-      mctx.fillStyle='#7d5f42'; mctx.beginPath(); mctx.arc(X(2260),Y(900),190*sx,0,7); mctx.fill();
+      // zonas: Campo verde de base, Bosque gris al norte, Páramo
+      // rojo al este y Ferralla empedrada en el centro
+      mctx.fillStyle='#2f6b2a'; mctx.fillRect(0,0,w,h);
+      mctx.fillStyle='#5d5952'; mctx.fillRect(X(VILLAGE.x0),0,w-X(VILLAGE.x0),Y(VILLAGE.y0)); // Bosque de Ceniza
+      mctx.fillStyle='#6e352a'; mctx.fillRect(X(VILLAGE.x1),Y(VILLAGE.y0),w-X(VILLAGE.x1),Y(VILLAGE.y1)-Y(VILLAGE.y0)); // Páramo Carmesí
+      mctx.fillStyle='#8d7d68'; mctx.fillRect(X(VILLAGE.x0),Y(VILLAGE.y0),X(VILLAGE.x1)-X(VILLAGE.x0),Y(VILLAGE.y1)-Y(VILLAGE.y0)); // Ferralla
+      mctx.fillStyle='#7d5f42'; mctx.beginPath(); mctx.arc(X(COLOSO_POS.x),Y(COLOSO_POS.y),190*sx,0,7); mctx.fill();
       // caminos y plaza
-      mctx.fillStyle='#b08c58'; mctx.fillRect(0,Y(855),w,92*sy);
-      mctx.fillRect(X(408),0,94*sx,h);
-      mctx.fillStyle='#ab9678'; mctx.beginPath(); mctx.arc(X(455),Y(905),110*sx,0,7); mctx.fill();
+      mctx.fillStyle='#b08c58'; mctx.fillRect(0,Y(1240),w,120*sy);
+      mctx.fillRect(X(2140),0,120*sx,h);
+      mctx.fillStyle='#ab9678'; mctx.beginPath(); mctx.arc(X(PLAZA.x),Y(PLAZA.y),110*sx,0,7); mctx.fill();
       // meseta noreste con su borde de acantilado, cantera, río/cascada/lago y puente
       mctx.fillStyle='#b39b6d'; mctx.fillRect(X(PLAT.x0),0,w-X(PLAT.x0),Y(PLAT.y1));
       mctx.strokeStyle='#5f4630'; mctx.lineWidth=2.5; mctx.beginPath();
       mctx.moveTo(X(PLAT.x0),0); mctx.lineTo(X(PLAT.x0),Y(PLAT.y1)); mctx.lineTo(w,Y(PLAT.y1)); mctx.stroke();
-      mctx.strokeStyle='#6b5844'; mctx.lineWidth=3; mctx.beginPath(); mctx.arc(X(2260),Y(900),200*sx,0,7); mctx.stroke();
+      mctx.strokeStyle='#6b5844'; mctx.lineWidth=3; mctx.beginPath(); mctx.arc(X(COLOSO_POS.x),Y(COLOSO_POS.y),200*sx,0,7); mctx.stroke();
       mctx.strokeStyle='#57b6e8'; mctx.lineWidth=3.5; mctx.lineCap='round'; mctx.beginPath();
       RIVER.forEach((pt,i)=>{ if(i===0)mctx.moveTo(X(pt[0]),Y(pt[1])); else mctx.lineTo(X(pt[0]),Y(pt[1])); });
       mctx.stroke(); mctx.lineCap='butt';
       mctx.fillStyle='#57b6e8'; mctx.beginPath(); mctx.arc(X(LAKE.x),Y(LAKE.y),LAKE.r*sx,0,7); mctx.fill();
       mctx.fillStyle='#ffffff'; mctx.fillRect(X(1744),Y(438),7,26);
       mctx.fillStyle='#8a613c'; mctx.fillRect(X(BRIDGE.x0),Y(892),Math.max(4,(BRIDGE.x1-BRIDGE.x0)*sx),10);
-      mctx.fillStyle='rgba(198,47,78,.25)'; mctx.fillRect(X(EAST_X),0,w-X(EAST_X),Y(950)); // velo carmesí sobre la meseta del Páramo
+      mctx.fillStyle='rgba(198,47,78,.25)'; mctx.fillRect(X(VILLAGE.x1),Y(VILLAGE.y0),w-X(VILLAGE.x1),Y(VILLAGE.y1)-Y(VILLAGE.y0)); // velo carmesí sobre el Páramo
       mctx.fillStyle='rgba(255,255,255,.92)'; mctx.font='900 13px Trebuchet MS'; mctx.textAlign='left'; mctx.fillText('MESETA',X(2200),Y(120));
-      // muralla + puerta este (dorada, parpadea suave)
-      mctx.fillStyle='#5d5470'; mctx.fillRect(X(TOWN_EDGE),0,26*sx,Y(GATE.y)); mctx.fillRect(X(TOWN_EDGE),Y(GATE.y+GATE.h),26*sx,h-Y(GATE.y+GATE.h));
-      mctx.fillStyle=(Math.sin(t*4)>0)?'#ffd23c':'#fff0a0'; mctx.fillRect(X(GATE.x)-2,Y(GATE.y),10,GATE.h*sy);
+      // muralla del pueblo (perímetro + muros entre zonas) y las
+      // puertas de jefe: doradas si cayeron, rojas si siguen cerradas
+      mctx.strokeStyle='#5d5470'; mctx.lineWidth=3; mctx.strokeRect(X(VILLAGE.x0),Y(VILLAGE.y0),X(VILLAGE.x1)-X(VILLAGE.x0),Y(VILLAGE.y1)-Y(VILLAGE.y0));
+      mctx.beginPath(); mctx.moveTo(0,Y(VILLAGE.y0)); mctx.lineTo(X(VILLAGE.x0),Y(VILLAGE.y0)); mctx.moveTo(X(VILLAGE.x1),Y(VILLAGE.y0)); mctx.lineTo(w,Y(VILLAGE.y0)); mctx.moveTo(X(VILLAGE.x1),Y(VILLAGE.y1)); mctx.lineTo(w,Y(VILLAGE.y1)); mctx.stroke();
+      const gBlink=(Math.sin(t*4)>0);
+      mctx.fillStyle=gateOpen('norte')?(gBlink?'#ffd23c':'#fff0a0'):'#ff5d3a'; mctx.fillRect(X(GATE_N.x),Y(GATE_N.y)-2,GATE_N.w*sx,6);
+      mctx.fillStyle=gateOpen('este')?(gBlink?'#ffd23c':'#fff0a0'):'#ff5d3a'; mctx.fillRect(X(GATE_E.x)-2,Y(GATE_E.y),6,GATE_E.h*sy);
       // edificios del pueblo con su color de tejado
       houses.forEach(hs=>{ mctx.fillStyle=hs.roof; mctx.fillRect(X(hs.x),Y(hs.y),Math.max(5,hs.w*sx),Math.max(4,hs.h*sy)); mctx.strokeStyle='rgba(0,0,0,.45)'; mctx.lineWidth=1.5; mctx.strokeRect(X(hs.x),Y(hs.y),Math.max(5,hs.w*sx),Math.max(4,hs.h*sy)); });
       // etiquetas de zonas
       mctx.font='900 15px Trebuchet MS'; mctx.textAlign='left';
-      mctx.fillStyle='rgba(20,12,4,.85)'; mctx.fillText('PUEBLO',X(36),Y(120));
-      mctx.fillStyle='rgba(255,255,255,.92)'; mctx.fillText('CAMPO',X(1180),Y(120));
-      mctx.fillStyle='#ffd9c9'; mctx.fillText('CANTERA',X(2130),Y(700));
-      mctx.fillStyle='#e8e2d5'; mctx.fillText('BOSQUE DE CENIZA',X(3060),Y(1120));
-      mctx.fillStyle='#ffc9b8'; mctx.fillText('PÁRAMO CARMESÍ',X(3260),Y(120));
+      mctx.fillStyle='rgba(255,255,255,.92)'; mctx.fillText('CAMPO DE ESPORAS',X(120),Y(120));
+      mctx.fillStyle='rgba(20,12,4,.85)'; mctx.fillText('FERRALLA',X(1985),Y(1245));
+      mctx.fillStyle='#ffd9c9'; mctx.fillText('ARENA DEL COLOSO',X(3300),Y(1180));
+      mctx.fillStyle='#e8e2d5'; mctx.fillText('BOSQUE DE CENIZA',X(3050),Y(120));
+      mctx.fillStyle='#ffc9b8'; mctx.fillText('PÁRAMO CARMESÍ',X(3350),Y(1000));
       mctx.fillStyle='#241203'; mctx.font='900 12px Trebuchet MS'; mctx.fillText('N ↑',w-40,20);
       // línea guía discontinua jugador → objetivo
       const ob=getObjective();
@@ -6527,7 +6778,7 @@
       }
       // compañeros del mundo: punto de su color con anillo blanco y su inicial
       MP.peers.forEach(rp=>{
-        if(rp.z===1) return; // dentro de la cripta: no se le ve desde fuera
+        if(rp.z>=1) return; // dentro de una mazmorra: no se le ve desde fuera
         const cxp=X(rp.rx), cyp=Y(rp.ry), pulse=5.5+Math.sin(t*5+rp.rx)*1.1;
         const inPtyM=isPartyPeer(rp); // los de mi grupo: punto verde con anillo dorado, imposibles de perder
         mctx.fillStyle=inPtyM?'#7dff8a':rp.color; mctx.beginPath(); mctx.arc(cxp,cyp,pulse+2.5,0,7); mctx.fill();
@@ -6548,6 +6799,15 @@
         mctx.save(); mctx.translate(dxp,dyp); mctx.rotate(Math.PI/4);
         mctx.fillStyle=S.victory?'#ffd23c':'#8a7fb8'; const ds=8*pl; mctx.fillRect(-ds/1.6,-ds/1.6,ds*1.25,ds*1.25);
         mctx.strokeStyle='#fff'; mctx.lineWidth=1.6; mctx.strokeRect(-ds/1.6,-ds/1.6,ds*1.25,ds*1.25); mctx.restore(); }
+      // puertas de la Raíz Hueca (verde) y la Guarida Quemada (naranja)
+      { const dxp=X(RAIZ_DOOR.x), dyp=Y(RAIZ_DOOR.y);
+        mctx.save(); mctx.translate(dxp,dyp); mctx.rotate(Math.PI/4);
+        mctx.fillStyle='#7ac74f'; mctx.fillRect(-5,-5,10,10);
+        mctx.strokeStyle='#fff'; mctx.lineWidth=1.6; mctx.strokeRect(-5,-5,10,10); mctx.restore(); }
+      { const dxp=X(GUARIDA_DOOR.x), dyp=Y(GUARIDA_DOOR.y);
+        mctx.save(); mctx.translate(dxp,dyp); mctx.rotate(Math.PI/4);
+        mctx.fillStyle='#ff8a3c'; mctx.fillRect(-5,-5,10,10);
+        mctx.strokeStyle='#fff'; mctx.lineWidth=1.6; mctx.strokeRect(-5,-5,10,10); mctx.restore(); }
       // jugador: punto blanco/dorado con flecha de dirección (hacia dónde mira)
       const pxm=X(p.x), pym=Y(p.y), da=p.dir||0;
       mctx.save(); mctx.translate(pxm,pym); mctx.rotate(da);
@@ -6589,20 +6849,20 @@
       const c=wmCtx; if(!c||!wmCv) return;
       if(!S||!S.started||!S.player){ closeWorldMap(); return; }
       const W=wmCv.width,H=wmCv.height; c.clearRect(0,0,W,H);
-      if(S.inCrypt){ drawCryptMap(c,W,H,true); return; } // dentro, el mapa grande enseña el interior
+      if(S.inCrypt||S.dung){ drawCryptMap(c,W,H,true); return; } // dentro, el mapa grande enseña el interior
       const sx=W/WORLD.w, sy=H/WORLD.h, X=v=>v*sx, Y=v=>v*sy;
       const p=S.player, t=S.t||0;
       // zonas con la paleta del minimapa
-      c.fillStyle='#8d7d68'; c.fillRect(0,0,X(TOWN_EDGE),H);
-      c.fillStyle='#2f6b2a'; c.fillRect(X(TOWN_EDGE),0,W-X(TOWN_EDGE),H);
-      c.fillStyle='#5d5952'; c.fillRect(X(EAST_X),Y(950),W-X(EAST_X),H-Y(950)); // Bosque de Ceniza
-      c.fillStyle='#6e352a'; c.fillRect(X(EAST_X),0,W-X(EAST_X),Y(950)); // Páramo Carmesí
-      c.fillStyle='#7d5f42'; c.beginPath(); c.arc(X(2260),Y(900),190*sx,0,7); c.fill(); // arena del Coloso
-      c.fillStyle='#b08c58'; c.fillRect(0,Y(855),W,92*sy); c.fillRect(X(408),0,94*sx,H); // caminos
-      c.fillStyle='#ab9678'; c.beginPath(); c.arc(X(455),Y(905),110*sx,0,7); c.fill(); // plaza
+      c.fillStyle='#2f6b2a'; c.fillRect(0,0,W,H);
+      c.fillStyle='#5d5952'; c.fillRect(X(VILLAGE.x0),0,W-X(VILLAGE.x0),Y(VILLAGE.y0)); // Bosque de Ceniza
+      c.fillStyle='#6e352a'; c.fillRect(X(VILLAGE.x1),Y(VILLAGE.y0),W-X(VILLAGE.x1),Y(VILLAGE.y1)-Y(VILLAGE.y0)); // Páramo Carmesí
+      c.fillStyle='#8d7d68'; c.fillRect(X(VILLAGE.x0),Y(VILLAGE.y0),X(VILLAGE.x1)-X(VILLAGE.x0),Y(VILLAGE.y1)-Y(VILLAGE.y0)); // Ferralla
+      c.fillStyle='#7d5f42'; c.beginPath(); c.arc(X(COLOSO_POS.x),Y(COLOSO_POS.y),190*sx,0,7); c.fill(); // arena del Coloso
+      c.fillStyle='#b08c58'; c.fillRect(0,Y(1240),W,120*sy); c.fillRect(X(2140),0,120*sx,H); // caminos
+      c.fillStyle='#ab9678'; c.beginPath(); c.arc(X(PLAZA.x),Y(PLAZA.y),110*sx,0,7); c.fill(); // plaza
       c.fillStyle='#b39b6d'; c.fillRect(X(PLAT.x0),0,W-X(PLAT.x0),Y(PLAT.y1)); // meseta
       c.strokeStyle='#5f4630'; c.lineWidth=6; c.beginPath(); c.moveTo(X(PLAT.x0),0); c.lineTo(X(PLAT.x0),Y(PLAT.y1)); c.lineTo(W,Y(PLAT.y1)); c.stroke(); // acantilado
-      c.strokeStyle='#6b5844'; c.lineWidth=7; c.beginPath(); c.arc(X(2260),Y(900),200*sx,0,7); c.stroke(); // anillo de la cantera
+      c.strokeStyle='#6b5844'; c.lineWidth=7; c.beginPath(); c.arc(X(COLOSO_POS.x),Y(COLOSO_POS.y),200*sx,0,7); c.stroke(); // anillo de la arena
       // río, cascada, lago y puente
       c.strokeStyle='#57b6e8'; c.lineWidth=11; c.lineCap='round'; c.beginPath();
       RIVER.forEach((pt,i)=>{ if(i===0)c.moveTo(X(pt[0]),Y(pt[1])); else c.lineTo(X(pt[0]),Y(pt[1])); });
@@ -6610,21 +6870,23 @@
       c.fillStyle='#57b6e8'; c.beginPath(); c.arc(X(LAKE.x),Y(LAKE.y),LAKE.r*sx,0,7); c.fill();
       c.fillStyle='#ffffff'; c.fillRect(X(1740),Y(432),16,76); // cascada
       c.fillStyle='#8a613c'; c.fillRect(X(BRIDGE.x0),Y(886),(BRIDGE.x1-BRIDGE.x0)*sx,26); // puente
-      c.fillStyle='rgba(198,47,78,.25)'; c.fillRect(X(EAST_X),0,W-X(EAST_X),Y(950)); // velo carmesí sobre el Páramo
-      // muralla y puerta este del pueblo
-      c.fillStyle='#5d5470'; c.fillRect(X(TOWN_EDGE),0,Math.max(5,26*sx),Y(GATE.y)); c.fillRect(X(TOWN_EDGE),Y(GATE.y+GATE.h),Math.max(5,26*sx),H-Y(GATE.y+GATE.h));
-      c.fillStyle=(Math.sin(t*4)>0)?'#ffd23c':'#fff0a0'; c.fillRect(X(GATE.x)-5,Y(GATE.y),16,GATE.h*sy);
+      c.fillStyle='rgba(198,47,78,.25)'; c.fillRect(X(VILLAGE.x1),Y(VILLAGE.y0),W-X(VILLAGE.x1),Y(VILLAGE.y1)-Y(VILLAGE.y0)); // velo carmesí sobre el Páramo
+      // muralla del pueblo y las puertas de jefe
+      c.strokeStyle='#5d5470'; c.lineWidth=6; c.strokeRect(X(VILLAGE.x0),Y(VILLAGE.y0),X(VILLAGE.x1)-X(VILLAGE.x0),Y(VILLAGE.y1)-Y(VILLAGE.y0));
+      c.beginPath(); c.moveTo(0,Y(VILLAGE.y0)); c.lineTo(X(VILLAGE.x0),Y(VILLAGE.y0)); c.moveTo(X(VILLAGE.x1),Y(VILLAGE.y0)); c.lineTo(W,Y(VILLAGE.y0)); c.moveTo(X(VILLAGE.x1),Y(VILLAGE.y1)); c.lineTo(W,Y(VILLAGE.y1)); c.stroke();
+      c.fillStyle=gateOpen('norte')?'#ffd23c':'#ff5d3a'; c.fillRect(X(GATE_N.x),Y(GATE_N.y)-4,GATE_N.w*sx,10);
+      c.fillStyle=gateOpen('este')?'#ffd23c':'#ff5d3a'; c.fillRect(X(GATE_E.x)-4,Y(GATE_E.y),10,GATE_E.h*sy);
       // casas del pueblo con el color de su tejado
       houses.forEach(hs=>{ c.fillStyle=hs.roof; c.fillRect(X(hs.x),Y(hs.y),Math.max(10,hs.w*sx),Math.max(8,hs.h*sy)); c.strokeStyle='rgba(0,0,0,.45)'; c.lineWidth=2.5; c.strokeRect(X(hs.x),Y(hs.y),Math.max(10,hs.w*sx),Math.max(8,hs.h*sy)); });
       // nombres de zona
       c.textAlign='left'; c.font='900 34px Trebuchet MS'; c.lineWidth=6; c.strokeStyle='rgba(0,0,0,.45)';
       const zl=(txt,x,y,col)=>{ c.strokeText(txt,X(x),Y(y)); c.fillStyle=col; c.fillText(txt,X(x),Y(y)); };
-      zl('FERRALLA',52,150,'#fff3d6');
-      zl('CAMPO',1180,150,'rgba(255,255,255,.95)');
+      zl('CAMPO DE ESPORAS',150,200,'rgba(255,255,255,.95)');
+      zl('FERRALLA',1960,1240,'#fff3d6');
       zl('MESETA',2160,140,'rgba(255,255,255,.95)');
-      zl('LA CANTERA',2050,690,'#ffd9c9');
-      zl('BOSQUE DE CENIZA',2980,1130,'#e8e2d5');
-      zl('PÁRAMO CARMESÍ',3180,140,'#ffc9b8');
+      zl('BOSQUE DE CENIZA',3050,200,'#e8e2d5');
+      zl('PÁRAMO CARMESÍ',3250,1000,'#ffc9b8');
+      zl('ARENA DEL COLOSO',3250,1230,'#ffd9c9');
       c.fillStyle='#fff'; c.font='900 26px Trebuchet MS'; c.textAlign='right'; c.fillText('N ↑',W-22,40); c.textAlign='left';
       // línea guía jugador → objetivo
       const ob=getObjective();
@@ -6653,6 +6915,17 @@
         c.fillStyle=S.victory?'#ffd23c':'#8a7fb8'; c.fillRect(-11,-11,22,22); c.strokeStyle='#fff'; c.lineWidth=3; c.strokeRect(-11,-11,22,22); c.restore();
         c.font='900 21px Trebuchet MS'; c.textAlign='center'; c.lineWidth=4; c.strokeStyle='rgba(0,0,0,.7)';
         c.strokeText('LA CRIPTA',mx,my+42); c.fillStyle='#ffd9a0'; c.fillText('LA CRIPTA',mx,my+42); c.textAlign='left'; }
+      // puertas de la Raíz Hueca y la Guarida Quemada, con su nombre
+      { const mx=X(RAIZ_DOOR.x), my=Y(RAIZ_DOOR.y);
+        c.save(); c.translate(mx,my); c.rotate(Math.PI/4);
+        c.fillStyle='#7ac74f'; c.fillRect(-11,-11,22,22); c.strokeStyle='#fff'; c.lineWidth=3; c.strokeRect(-11,-11,22,22); c.restore();
+        c.font='900 21px Trebuchet MS'; c.textAlign='center'; c.lineWidth=4; c.strokeStyle='rgba(0,0,0,.7)';
+        c.strokeText('LA RAÍZ',mx,my+42); c.fillStyle='#b8ffb0'; c.fillText('LA RAÍZ',mx,my+42); c.textAlign='left'; }
+      { const mx=X(GUARIDA_DOOR.x), my=Y(GUARIDA_DOOR.y);
+        c.save(); c.translate(mx,my); c.rotate(Math.PI/4);
+        c.fillStyle='#ff8a3c'; c.fillRect(-11,-11,22,22); c.strokeStyle='#fff'; c.lineWidth=3; c.strokeRect(-11,-11,22,22); c.restore();
+        c.font='900 21px Trebuchet MS'; c.textAlign='center'; c.lineWidth=4; c.strokeStyle='rgba(0,0,0,.7)';
+        c.strokeText('LA GUARIDA',mx,my+42); c.fillStyle='#ffd9a0'; c.fillText('LA GUARIDA',mx,my+42); c.textAlign='left'; }
       // marcador del OBJETIVO: rombo dorado pulsante con anillo
       if(ob){
         const ox=X(ob.x), oy=Y(ob.y), pulse=1+Math.sin(t*5)*0.2, rr=26*pulse;
@@ -6666,7 +6939,7 @@
       }
       // compañeros del mundo compartido: punto de su color con su inicial
       MP.peers.forEach(rp=>{
-        if(rp.z===1) return; // dentro de la cripta: invisible desde el mundo abierto
+        if(rp.z>=1) return; // dentro de una mazmorra: invisible desde el mundo abierto
         const mx=X(rp.rx), my=Y(rp.ry), pulse=10+Math.sin(t*5+rp.rx)*2;
         c.fillStyle=rp.color; c.beginPath(); c.arc(mx,my,pulse+4,0,7); c.fill();
         c.strokeStyle='#fff'; c.lineWidth=3.5; c.stroke();
@@ -6709,14 +6982,14 @@
       for(const cl of S.clouds){ cl.x+=cl.sp*dt; if(cl.x-cl.s>WORLD.w) cl.x=-cl.s; }
       // mariposas de día en el campo y pájaros que cruzan
       const dl=dayLight();
-      if(!S.inCrypt&&dl.night<0.4&&S.butterflies.length<6&&Math.random()<dt*0.25) S.butterflies.push({x:p.x+rnd(-260,260),y:p.y+rnd(-180,180),a:rnd(0,6.3),t:rnd(0,9),col:['#ff9ecb','#c07dff','#ffd23c'][irnd(0,2)]});
+      if(!S.inCrypt&&!S.dung&&dl.night<0.4&&S.butterflies.length<6&&Math.random()<dt*0.25) S.butterflies.push({x:p.x+rnd(-260,260),y:p.y+rnd(-180,180),a:rnd(0,6.3),t:rnd(0,9),col:['#ff9ecb','#c07dff','#ffd23c'][irnd(0,2)]});
       for(const bf of S.butterflies){ bf.t+=dt; bf.a+=rnd(-1.4,1.4)*dt; bf.x+=Math.cos(bf.a)*26*dt; bf.y+=Math.sin(bf.a)*20*dt-4*dt; }
       S.butterflies=S.butterflies.filter(bf=>Math.hypot(bf.x-p.x,bf.y-p.y)<520);
-      if(!S.inCrypt&&Math.random()<dt*0.05&&S.birds.length<3) S.birds.push({x:S.cam.x-60,y:S.cam.y+rnd(30,150),vx:rnd(55,85),ph:rnd(0,9)});
+      if(!S.inCrypt&&!S.dung&&Math.random()<dt*0.05&&S.birds.length<3) S.birds.push({x:S.cam.x-60,y:S.cam.y+rnd(30,150),vx:rnd(55,85),ph:rnd(0,9)});
       for(const bd of S.birds){ bd.x+=bd.vx*dt; bd.ph+=dt*9; }
       S.birds=S.birds.filter(bd=>bd.x<S.cam.x+vW()+80);
       // luciérnagas nocturnas en el campo
-      if(dl.night>0.35&&p.x>TOWN_EDGE&&Math.random()<0.3&&S.atmo.length<250) S.atmo.push({kind:'firefly',x:p.x+rnd(-240,240),y:p.y+rnd(-160,160),vx:rnd(-7,7),vy:rnd(-5,5),life:rnd(1.6,3),maxLife:3,size:rnd(4,7),seed:rnd(0,9)});
+      if(dl.night>0.35&&!inVillage(p.x,p.y)&&Math.random()<0.3&&S.atmo.length<250) S.atmo.push({kind:'firefly',x:p.x+rnd(-240,240),y:p.y+rnd(-160,160),vx:rnd(-7,7),vy:rnd(-5,5),life:rnd(1.6,3),maxLife:3,size:rnd(4,7),seed:rnd(0,9)});
       // humo continuo de chimeneas
       if(Math.random()<0.35){ const h=houses[irnd(0,houses.length-1)]; S.atmo.push({kind:'smoke',x:h.x+h.w-34,y:h.y+h.h-Math.round((h.h+16)/KY)-4,vx:rnd(2,8),vy:rnd(-26,-16),life:rnd(1.8,3),maxLife:3,size:rnd(9,15),grow:10,seed:rnd(0,9)}); }
       if(p.talentsOpen||p.bagOpen||p.settingsOpen||p.mpOpen||p.chatOpen||p.petOpen||p.boutiqueOpen||p.profileOpen||p.fsGuideOpen||p.ctlEdit||p.mapOpen){ refreshHUD(); drawMinimap(); if(p.mapOpen){ const wk=(S.t*5)|0; if(wk!==(S._wmTick||0)){ S._wmTick=wk; drawWorldMap(); } } if(window.__mpTick) __mpTick(dt); return; } // pausa con un panel abierto (talentos, equipo o el mapa del mundo) o editando controles; el mapa grande se redibuja a ~5/s, de sobra para sus pulsos y marcadores
@@ -6761,8 +7034,9 @@
 
       // muerte / renacer
       if(p.dead){ p.respawnT-=dt; if(p.respawnT<=0){ p.dead=false; p.hp=Math.round(p.hpMax*0.7); p.mp=p.mpMax;
-        if(S.inCrypt){ S.inCrypt=false; cleanCrypt(); } // caer en la cripta: despiertas en el pueblo y la cripta te espera como estaba (jefe vivo si no cayó)
-        p.x=455; p.y=1000; p._hx=455; p._hy=1000; p._hh=0; petSnap(); toast('Despiertas en Ferralla con tu mochila intacta: a seguir la aventura','gold'); ring(p.x,p.y,'#fff',60); saveGame(true); } }
+        if(S.inCrypt){ S.inCrypt=false; cleanCrypt(); } // caer en una mazmorra: despiertas en el pueblo y la mazmorra te espera como estaba (jefe vivo si no cayó)
+        if(S.dung){ cleanDungeon(S.dung); S.dung=null; S.dungBoss=null; S.exitPortal=null; }
+        p.x=2200; p.y=1420; p._hx=2200; p._hy=1420; p._hh=0; petSnap(); toast('Despiertas en Ferralla con tu mochila intacta: a seguir la aventura','gold'); ring(p.x,p.y,'#fff',60); saveGame(true); } }
 
       // zona (mundo continuo: cruzar de una a otra no carga nada)
       const zone=zoneAt(p.x,p.y);
@@ -6774,20 +7048,24 @@
         const dRiv=riverDist(p.x,p.y);
         if(dRiv<210&&Math.random()<0.8) sfx.water(clamp(1.05-dRiv/210,0.15,1)); // el río se oye según la distancia
         else ambEvent(S.zone); }
+      updateNPCs(dt); // los vecinos pasean y charlan por el pueblo
       // NPC cercano
       S.nearNpc=null; let nd=86;
       for(const n of npcs){ const d=Math.hypot(p.x-n.x,p.y-n.y); if(d<nd){nd=d;S.nearNpc=n;} }
       if(!S.nearNpc&&!S.nearDoor&&S.dlg) closeDialog();
       // puerta de la cripta cercana (fuera: la del campo; dentro: la de la sala de entrada)
       S.nearDoor=null;
-      if(!S.inCrypt){ if(Math.hypot(p.x-CRYPT_DOOR.x,p.y-(CRYPT_DOOR.y+42))<98) S.nearDoor='out'; }
-      else if(Math.hypot(p.x-CRYPT_IDOOR.x,p.y-CRYPT_IDOOR.y)<98) S.nearDoor='in';
+      if(S.inCrypt){ if(Math.hypot(p.x-CRYPT_IDOOR.x,p.y-CRYPT_IDOOR.y)<98) S.nearDoor='in'; }
+      else if(S.dung){ const DD=DUNGEONS[S.dung]; if(Math.hypot(p.x-DD.idoor.x,p.y-DD.idoor.y)<98) S.nearDoor='in'; }
+      else { if(Math.hypot(p.x-CRYPT_DOOR.x,p.y-(CRYPT_DOOR.y+42))<98) S.nearDoor='cripta';
+        else if(Math.hypot(p.x-RAIZ_DOOR.x,p.y-(RAIZ_DOOR.y+42))<98) S.nearDoor='raiz';
+        else if(Math.hypot(p.x-GUARIDA_DOOR.x,p.y-(GUARIDA_DOOR.y+42))<98) S.nearDoor='guarida'; }
       // puesto de la Boutique cercano: ✦ abre el escaparate (sin NPC: es un puesto, no un vendedor)
-      S.nearBoutique=!S.inCrypt&&Math.hypot(p.x-BOUTIQUE_STALL.x,p.y-BOUTIQUE_STALL.y)<104;
+      S.nearBoutique=!S.inCrypt&&!S.dung&&Math.hypot(p.x-BOUTIQUE_STALL.x,p.y-BOUTIQUE_STALL.y)<104;
       // portal de salida de la cripta: brilla en la sala del Heraldo y te devuelve junto a la puerta del campo al pisarlo
-      if(S.exitPortal&&S.inCrypt){ const ep=S.exitPortal;
+      if(S.exitPortal&&(S.inCrypt||S.dung)){ const ep=S.exitPortal;
         if(Math.random()<0.55&&S.parts.length<420) S.parts.push({x:ep.x+rnd(-13,13),y:ep.y+rnd(-4,10),vx:rnd(-8,8),vy:rnd(-64,-30),life:0.5,maxLife:0.5,color:Math.random()<0.5?'#ffd23c':'#c07dff',size:3,grav:-40});
-        if(!p.dead&&Math.hypot(p.x-ep.x,p.y-ep.y)<34) exitCrypt();
+        if(!p.dead&&Math.hypot(p.x-ep.x,p.y-ep.y)<34){ if(S.inCrypt) exitCrypt(); else exitDungeon(); }
       }
       // estatua cercana y portal abierto: cuenta atrás, destellos y salto al pisarlo
       S.nearStatue=null; let sd=92;
@@ -6835,13 +7113,13 @@
         }
         // dormidas a lo lejos: sin IA ni física hasta que el héroe se
         // acerque — agrandar el mundo no puede costar FPS en el teléfono
-        if(e.type!=='boss'&&e.type!=='herald'&&!coopNearPlayer(e,1000)) continue;
+        if(e.type!=='boss'&&e.type!=='herald'&&e.type!=='madre'&&e.type!=='alfa'&&!coopNearPlayer(e,1000)) continue;
         // OBJETIVO: en solitario o en la cripta, yo; siendo anfitrión del
         // mundo cooperativo, el jugador (yo o un compañero) más cercano
         const TP=coopTargetFor(e);
         let d=dist(TP,e);
-        let aggroR=e.type==='boss'?430:(ETYPES[e.type].aggro);
-        const inTown=TP.x<TOWN_EDGE-10;
+        let aggroR=e.type==='boss'?430:((ETYPES[e.type]||{}).aggro||430); // los jefes de mazmorra (madre/alfa) no están en ETYPES: su aggro es de jefe
+        const inTown=inVillage(TP.x,TP.y);
         const homeD=Math.hypot(e.x-e.home.x,e.y-e.home.y);
         if(e.returning&&homeD<52)e.returning=false;
         if(!e.returning&&homeD>(e.type==='boss'?620:(e.type==='herald'?760:500)))e.returning=true;
@@ -6880,7 +7158,7 @@
         if(e.fearT>0&&!stunned){ desiredA=Math.atan2(e.y-TP.y,e.x-TP.x); faceTarget=desiredA; desiredSpeed=Math.max(desiredSpeed,e.spd*0.9); } // atemorizada: huye de la loba
         if(inWater(e.x,e.y)) desiredSpeed*=0.73; // los mobs también vadean: el río los frena igual
         // aceleración/frenada con inercia: la velocidad máxima no cambia, solo cómo se llega a ella
-        const accel=e.type==='wolf'?540:(e.type==='spore'?300:(e.type==='golem'?225:185));
+        const accel=(e.type==='wolf'||e.type==='alfa')?540:((e.type==='spore'||e.type==='madre')?300:(e.type==='golem'?225:185));
         const dvx=Math.cos(desiredA)*desiredSpeed-e.vx, dvy=Math.sin(desiredA)*desiredSpeed-e.vy;
         const dvl=Math.hypot(dvx,dvy), maxDv=(stunned?accel*1.2:accel)*dt;
         if(dvl>0.001){ const k=Math.min(1,maxDv/dvl); e.vx+=dvx*k; e.vy+=dvy*k; }
@@ -6893,14 +7171,14 @@
         // giro progresivo, inclinación al girar/acelerar y tambaleo breve al recibir daño
         const tvx=e.vx+e.kvx, tvy=e.vy+e.kvy, tsp=Math.hypot(tvx,tvy);
         if(tsp>58&&(Math.abs(e.kvx)+Math.abs(e.kvy))>Math.abs(e.vx)+Math.abs(e.vy)) faceTarget=Math.atan2(tvy,tvx);
-        turnMob(e,faceTarget,e.type==='wolf'?7.2:(e.type==='spore'?5.2:(e.type==='golem'?2.7:2.25)),dt);
+        turnMob(e,faceTarget,(e.type==='wolf'||e.type==='alfa')?7.2:((e.type==='spore'||e.type==='madre')?5.2:(e.type==='golem'?2.7:2.25)),dt);
         const lat=-Math.sin(e.face)*tvx+Math.cos(e.face)*tvy;
         const leanTarget=clamp(-(e.turnVel||0)*0.028+lat*0.0009,-0.3,0.3)*(e.type==='wolf'?1:0.55);
         e.lean+=(leanTarget-(e.lean||0))*Math.min(1,dt*8);
         e.wobbleLean=(e.wobbleT>0)?Math.sin((0.3-e.wobbleT)*34)*e.wobbleT*0.5:0;
         // pasos por especie, sincronizados con la distancia realmente recorrida
         const speedFrac=clamp(tsp/Math.max(1,e.spd),0,1.4);
-        if(e.type==='wolf'){
+        if(e.type==='wolf'||e.type==='alfa'){
           if(tsp>5)e.walkPh+=dt*(5+tsp*0.075);
           e.bodyBob+=(((tsp>5)?Math.sin(e.walkPh)*1.3*Math.min(1,speedFrac+0.2):0)-e.bodyBob)*Math.min(1,dt*11);
           if(tsp>60&&Math.random()<0.3) mobDust(e,1,10,2.6);
@@ -6916,7 +7194,7 @@
             const near=clamp(1-d/380,0,1); sfx.mobStep(near,e.stepSide,e.type==='boss');
             if(e.type==='boss'&&d<300) S.shake=Math.max(S.shake,1.5);
           }
-        } else if(e.type==='spore'){
+        } else if(e.type==='spore'||e.type==='madre'){
           if(tsp>4)e.walkPh+=dt*(2.6+tsp*0.06);
           e.bodyBob+=(((tsp>4)?Math.sin(e.walkPh)*1.1*Math.min(1,speedFrac+0.2):0)-e.bodyBob)*Math.min(1,dt*9);
           if(tsp>22&&Math.random()<0.2) mobDust(e,1,9,2.4);
@@ -6960,6 +7238,40 @@
               [-0.34,-0.17,0,0.17,0.34].forEach(off=>{ const a=baseA+off;
                 S.eprojs.push({x:e.x+Math.cos(a)*46,y:e.y-16+Math.sin(a)*46,vx:Math.cos(a)*300,vy:Math.sin(a)*300,dmg:e.enraged?19:16,r:9,life:2.4}); });
             }
+          }
+        }
+        // jefe LA MADRE ESPORA: nube de esporas telegrafiada si te
+        // acercas, lluvia radial de esporas a distancia, invocaciones
+        // al 60% y al 30%, y enfurecimiento al 30%
+        if(e.type==='madre'&&!TP.dead&&d<640){
+          if(!e.sum1&&e.hp<e.hpMax*0.6){ e.sum1=true; dungSummon(e,'spore'); }
+          if(!e.sum2&&e.hp<e.hpMax*0.3){ e.sum2=true; dungSummon(e,'spore');
+            if(!e.enraged){ e.enraged=true; e.spd=64; floatText(e.x,e.y-84,'¡LA MADRE ESPORA ENFUERECE!','#a6ff5e',true); sfx.roar(true); S.shake=Math.max(S.shake,8); } }
+          e.specialCd-=dt;
+          if(e.specialCd<=0){
+            if(d<180){ e.specialCd=e.enraged?3.0:3.8; sfx.roar(false);
+              S.tele.push({x:e.x,y:e.y,r:150,t:0.9,max:0.9,boss:e});
+              floatText(e.x,e.y-84,'🍄 ¡NUBE DE ESPORAS!','#a6ff5e',true);
+            } else { e.specialCd=e.enraged?3.4:4.6; sfx.roar(true); floatText(e.x,e.y-84,'🍄 ¡LLUVIA DE ESPORAS!','#a6ff5e',true);
+              for(let k=0;k<8;k++){ const a=k/8*Math.PI*2+S.t;
+                S.eprojs.push({x:e.x+Math.cos(a)*42,y:e.y-14+Math.sin(a)*42,vx:Math.cos(a)*240,vy:Math.sin(a)*240,dmg:e.enraged?14:11,r:9,life:2.2}); }
+            }
+          }
+        }
+        // jefe EL ALFA DE CENIZA: golpe de área si te acercas,
+        // EMBESTIDA veloz a media distancia, invocaciones al 60% y
+        // al 30%, y enfurecimiento al 30% (mucho más rápido)
+        if(e.type==='alfa'&&!TP.dead&&d<680){
+          if(!e.sum1&&e.hp<e.hpMax*0.6){ e.sum1=true; dungSummon(e,'wolf'); }
+          if(!e.sum2&&e.hp<e.hpMax*0.3){ e.sum2=true; dungSummon(e,'wolf');
+            if(!e.enraged){ e.enraged=true; e.spd=158; floatText(e.x,e.y-84,'¡EL ALFA ENFUERECE!','#ff5d3a',true); sfx.roar(true); S.shake=Math.max(S.shake,8); } }
+          e.specialCd-=dt;
+          if(e.specialCd<=0){
+            if(d<170){ e.specialCd=2.8; sfx.roar(false); S.shake=Math.max(S.shake,6); ring(e.x,e.y,'#ff8a3c',120); burst(e.x,e.y,'#8a5a44',14,180,0.5,5);
+              if(d<150) coopStrike(TP,17,e);
+            } else if(d<420){ e.specialCd=e.enraged?3.2:4.2; sfx.roar(true); floatText(e.x,e.y-84,'🐺 ¡EMBESTIDA!','#ffb52e',true);
+              const a=angTo(e,TP); e.kvx=Math.cos(a)*560; e.kvy=Math.sin(a)*560;
+            } else e.specialCd=1.2;
           }
         }
       }
@@ -7071,8 +7383,8 @@
       // Páramo Carmesí: brasas constantes sobre la tierra roja
       if(S.zone==='paramo'&&Math.random()<0.32) S.atmo.push({kind:'ember',x:p.x+rnd(-160,160),y:p.y+rnd(-80,80),vx:rnd(-6,10),vy:rnd(-32,-14),life:rnd(.7,1.4),maxLife:1.4,size:rnd(4,9),seed:rnd(0,9)});
       // Cripta: niebla baja que se arrastra entre las losas y polvo de siglos
-      if(S.inCrypt&&Math.random()<0.30) S.atmo.push({kind:'mist',x:p.x+rnd(-190,190),y:p.y+rnd(-100,100),vx:rnd(3,8),vy:rnd(-2,1),life:rnd(2.6,4.4),maxLife:4.4,size:rnd(30,58),grow:4,seed:rnd(0,9)});
-      if(S.inCrypt&&Math.random()<0.16) S.atmo.push({kind:'ember',x:p.x+rnd(-150,150),y:p.y+rnd(-80,60),vx:rnd(-4,4),vy:rnd(-16,-7),life:rnd(.8,1.5),maxLife:1.5,size:rnd(3,6),seed:rnd(0,9)});
+      if((S.inCrypt||S.dung)&&Math.random()<0.30) S.atmo.push({kind:'mist',x:p.x+rnd(-190,190),y:p.y+rnd(-100,100),vx:rnd(3,8),vy:rnd(-2,1),life:rnd(2.6,4.4),maxLife:4.4,size:rnd(30,58),grow:4,seed:rnd(0,9)});
+      if((S.inCrypt||S.dung)&&Math.random()<0.16) S.atmo.push({kind:'ember',x:p.x+rnd(-150,150),y:p.y+rnd(-80,60),vx:rnd(-4,4),vy:rnd(-16,-7),life:rnd(.8,1.5),maxLife:1.5,size:rnd(3,6),seed:rnd(0,9)});
       // bancos de niebla ambiental que cruzan la vista despacio
       S.atmoT-=dt;
       if(S.atmoT<=0){ S.atmoT=rnd(1.4,2.8); S.atmo.push({kind:'mist',x:S.cam.x+vW()/2+rnd(-vW()/2,vW()/2),y:S.cam.y+vH()/2+rnd(-vH()/2,vH()/2),vx:rnd(9,20),vy:rnd(-2,2),life:rnd(5,8),maxLife:8,size:rnd(90,160),grow:2,seed:rnd(0,9)}); }
@@ -7095,7 +7407,7 @@
       const zAng=camElevCur<=40?1+(40-camElevCur)*0.008:1-(camElevCur-40)*0.004;
       const zT=((terrainH(p.x,p.y)>=PLAT.h-3)?CAM_ZOOM*0.92:CAM_ZOOM)*zAng;
       ZOOM+=(zT-ZOOM)*Math.min(1,dt*2.5);
-      const bnd=S.inCrypt?{x0:CRYPT.x0,y0:CRYPT.y0,x1:CRYPT.x1,y1:CRYPT.y1}:{x0:0,y0:0,x1:WORLD.w,y1:WORLD.h};
+      const bnd=S.inCrypt?{x0:CRYPT.x0,y0:CRYPT.y0,x1:CRYPT.x1,y1:CRYPT.y1}:(S.dung?{x0:DUNGEONS[S.dung].B.x0,y0:DUNGEONS[S.dung].B.y0,x1:DUNGEONS[S.dung].B.x1,y1:DUNGEONS[S.dung].B.y1}:{x0:0,y0:0,x1:WORLD.w,y1:WORLD.h});
       const tx=clamp(p.x-vW()/2,bnd.x0,Math.max(bnd.x0,bnd.x1-vW())), ty=clamp(p.y-vH()/2,bnd.y0,Math.max(bnd.y0,bnd.y1-vH()));
       S.cam.x+=(tx-S.cam.x)*Math.min(1,dt*6); S.cam.y+=(ty-S.cam.y)*Math.min(1,dt*6);
 
@@ -7130,15 +7442,26 @@
     function rgrad(x,y,r,cIn,cOut){ const g=ctx.createRadialGradient(x-r*.35,y-r*.4,r*.12,x,y,r); g.addColorStop(0,cIn); g.addColorStop(1,cOut); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill(); }
     function shadow(x,y,r){ blob(x,y+r*0.55,r*1.3,r*0.66,'#0d0620',.26); ctx.fillStyle='rgba(10,5,22,.30)'; ctx.beginPath(); ctx.ellipse(x,y+r*0.66,r*0.92,r*0.34,0,0,7); ctx.fill(); }
 
+    function drawVillageGate(G,g,cam){
+      const open=gateOpen(g), x=G.x-cam.x, y=G.y-cam.y;
+      if(x+G.w<-50||y+G.h<-50||x>vW()+50||y>vH()+50) return;
+      ctx.fillStyle='#5d5470'; ctx.fillRect(x-5,y-5,12,12); ctx.fillRect(x+G.w-7,y+G.h-7,12,12); // los postes quedan siempre
+      if(open){ ctx.fillStyle='rgba(60,50,40,.5)'; ctx.fillRect(x+G.w*0.3,y+G.h*0.3,Math.max(6,G.w*0.4),Math.max(5,G.h*0.4)); return; } // escombro en el paso
+      const dg=ctx.createLinearGradient(0,y,0,y+G.h); dg.addColorStop(0,'#5a5348'); dg.addColorStop(1,'#2c2833');
+      ctx.fillStyle=dg; ctx.fillRect(x,y,G.w,G.h);
+      ctx.strokeStyle='#ffb52e'; ctx.lineWidth=2.4; ctx.strokeRect(x+1.5,y+1.5,G.w-3,G.h-3);
+      ctx.fillStyle='#ffd23c'; ctx.font='900 15px Trebuchet MS'; ctx.textAlign='center';
+      ctx.fillText('🔒', x+G.w/2, y+G.h/2+5);
+    }
     function drawGround(cam){
       // base: pradera con degradado cálido de luz de tarde
       vgrad(-cam.x,-cam.y,WORLD.w,WORLD.h,'#57b550','#3a8c37');
-      px(-cam.x,-cam.y,TOWN_EDGE,WORLD.h,'#8f7f68');
+      px(VILLAGE.x0-cam.x,VILLAGE.y0-cam.y,VILLAGE.x1-VILLAGE.x0,VILLAGE.y1-VILLAGE.y0,'#8f7f68');
       // textura suave por celdas (solo zona visible): luz, sombra y empedrado redondeado
       const T=104, x0=Math.max(0,Math.floor(cam.x/T)*T), x1=Math.min(WORLD.w,cam.x+vW()+T), y0=Math.max(0,Math.floor(cam.y/T)*T), y1=Math.min(WORLD.h,cam.y+vH()+T);
       for(let x=x0;x<x1;x+=T) for(let y=y0;y<y1;y+=T){
         const hsh=((x*31+y*57)%97+97)%97;
-        if(x<TOWN_EDGE){
+        if(inVillage(x+52,y+52)){
           rr2(x+3-cam.x,y+3-cam.y,T-6,T-6,14, (((x/T)|0)+((y/T)|0))%2?'#9a8970':'#a28f73');
           if(hsh<20) blob(x+52-cam.x,y+52-cam.y,46,34,'#dcc79c',.10);
         } else {
@@ -7158,46 +7481,42 @@
       // charcos que reflejan la luz (más visibles con lluvia)
       if(S&&S.puddles) for(const pu of S.puddles){ const pxp=pu.x-cam.x,pyp=pu.y-cam.y; if(pxp<-80||pyp<-60||pxp>vW()+80||pyp>vH()+60) continue; const sh=0.35+((S&&S.rainAmt)||0)*0.8; ctx.fillStyle='rgba(140,200,255,'+(0.20*sh+0.10)+')'; ctx.beginPath(); ctx.ellipse(pxp,pyp,pu.r,pu.r*0.38,0,0,7); ctx.fill(); ctx.strokeStyle='rgba(255,255,255,'+(0.28*sh)+')'; ctx.lineWidth=1.6; ctx.beginPath(); ctx.ellipse(pxp+Math.sin((S?S.t:0)*1.7+pu.x)*5,pyp,pu.r*0.55,pu.r*0.2,0,0,7); ctx.stroke(); }
       // plaza del pueblo: círculos de piedra suaves con anillo de luz
-      rgrad(455-cam.x,905-cam.y,126,'#bfa87e','#99835d');
-      ctx.strokeStyle='rgba(255,240,200,.32)'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(455-cam.x,905-cam.y,97,0,7); ctx.stroke();
-      rgrad(455-cam.x,905-cam.y,32,'#a68f66','#887450');
+      rgrad(PLAZA.x-cam.x,PLAZA.y-cam.y,126,'#bfa87e','#99835d');
+      ctx.strokeStyle='rgba(255,240,200,.32)'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(PLAZA.x-cam.x,PLAZA.y-cam.y,97,0,7); ctx.stroke();
+      rgrad(PLAZA.x-cam.x,PLAZA.y-cam.y,32,'#a68f66','#887450');
       // fuente de la plaza: agua con brillo y reflejo animado (sobre la piedra)
-      (function(){ const fx=455-cam.x, fy=905-cam.y; if(fx>-150&&fx<vW()+150&&fy>-150&&fy<vH()+150){ const tt=S?S.t:0; rgrad(fx,fy,27,'#9adfff','#2f7fc4'); ctx.strokeStyle='rgba(255,255,255,.65)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(fx+Math.sin(tt*2.2)*6,fy+Math.cos(tt*1.8)*3,12+Math.sin(tt*3)*2,0.4,2.4); ctx.stroke(); ctx.beginPath(); ctx.arc(fx,fy,19+Math.sin(tt*2)*1.5,3.4,5.6); ctx.stroke(); blob(fx-8,fy-7,11,6,'#ffffff',.4); } })();
+      (function(){ const fx=PLAZA.x-cam.x, fy=PLAZA.y-cam.y; if(fx>-150&&fx<vW()+150&&fy>-150&&fy<vH()+150){ const tt=S?S.t:0; rgrad(fx,fy,27,'#9adfff','#2f7fc4'); ctx.strokeStyle='rgba(255,255,255,.65)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(fx+Math.sin(tt*2.2)*6,fy+Math.cos(tt*1.8)*3,12+Math.sin(tt*3)*2,0.4,2.4); ctx.stroke(); ctx.beginPath(); ctx.arc(fx,fy,19+Math.sin(tt*2)*1.5,3.4,5.6); ctx.stroke(); blob(fx-8,fy-7,11,6,'#ffffff',.4); } })();
       // camino principal este-oeste con degradado y pisadas suaves
-      const pg=ctx.createLinearGradient(0,855-cam.y,0,947-cam.y);
+      const pg=ctx.createLinearGradient(0,1240-cam.y,0,1360-cam.y);
       pg.addColorStop(0,'#caa96d'); pg.addColorStop(.5,'#bb985e'); pg.addColorStop(1,'#a37f47');
-      ctx.fillStyle=pg; ctx.fillRect(-cam.x,855-cam.y,WORLD.w,92);
-      for(let x=20;x<WORLD.w;x+=86) blob(x+22-cam.x,898-cam.y,27,8,'#7d5c2c',.15);
+      ctx.fillStyle=pg; ctx.fillRect(-cam.x,1240-cam.y,WORLD.w,120);
+      for(let x=20;x<WORLD.w;x+=86) blob(x+22-cam.x,1300-cam.y,27,8,'#7d5c2c',.15);
       // camino norte-sur del pueblo
-      const pg2=ctx.createLinearGradient(408-cam.x,0,502-cam.x,0);
+      const pg2=ctx.createLinearGradient(2140-cam.x,0,2260-cam.x,0);
       pg2.addColorStop(0,'#b28e58'); pg2.addColorStop(.5,'#c2a068'); pg2.addColorStop(1,'#a37f47');
-      ctx.fillStyle=pg2; ctx.fillRect(408-cam.x,-cam.y,94,WORLD.h);
+      ctx.fillStyle=pg2; ctx.fillRect(2140-cam.x,-cam.y,120,WORLD.h);
       // arena del coloso: tierra quemada con resplandor de lava bajo el polvo
-      rgrad(2260-cam.x,886-cam.y,196,'#86643f','#5b422c');
-      blob(2260-cam.x,886-cam.y,182,142,'#ff7a29',.12,'lighter');
-      ctx.strokeStyle='rgba(255,140,60,.38)'; ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(2260-cam.x,886-cam.y,168,0,7); ctx.stroke();
-      rgrad(2260-cam.x,886-cam.y,62,'#6e5138','#4a3524');
-      // muralla con degradado y filo de luz
-      vgrad(TOWN_EDGE-cam.x,-cam.y,26,GATE.y,'#776c92','#4c4361');
-      vgrad(TOWN_EDGE-cam.x,GATE.y+GATE.h-cam.y,26,WORLD.h-(GATE.y+GATE.h),'#776c92','#4c4361');
-      px(TOWN_EDGE-cam.x,-cam.y,4,GATE.y,'rgba(255,255,255,.20)'); px(TOWN_EDGE-cam.x,GATE.y+GATE.h-cam.y,4,WORLD.h-(GATE.y+GATE.h),'rgba(255,255,255,.20)');
-      // puerta
-      rr2(GATE.x-cam.x,GATE.y-cam.y,GATE.w,11,4,'#5d4630'); rr2(GATE.x-cam.x,GATE.y+GATE.h-11-cam.y,GATE.w,11,4,'#5d4630');
-      ctx.fillStyle='#ffd23c'; ctx.font='900 13px Trebuchet MS'; ctx.textAlign='center';
-      ctx.fillText('SALIDA ESTE ▶', TOWN_EDGE+13-cam.x, GATE.y-12-cam.y);
+      rgrad(COLOSO_POS.x-cam.x,COLOSO_POS.y-14-cam.y,196,'#86643f','#5b422c');
+      blob(COLOSO_POS.x-cam.x,COLOSO_POS.y-14-cam.y,182,142,'#ff7a29',.12,'lighter');
+      ctx.strokeStyle='rgba(255,140,60,.38)'; ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(COLOSO_POS.x-cam.x,COLOSO_POS.y-14-cam.y,168,0,7); ctx.stroke();
+      rgrad(COLOSO_POS.x-cam.x,COLOSO_POS.y-14-cam.y,62,'#6e5138','#4a3524');
+      // murallas del pueblo y entre zonas, con degradado y filo de luz
+      for(const w of WALLSEGS){ vgrad(w.x-cam.x,w.y-cam.y,w.w,w.h,'#776c92','#4c4361'); px(w.x-cam.x,w.y-cam.y,Math.min(4,w.w),Math.min(4,w.h),'rgba(255,255,255,.20)'); }
+      // las dos puertas de jefe: losa con runas y candado mientras su
+      // jefe viva; solo postes y escombro cuando ya cayó
+      drawVillageGate(GATE_N,'norte',cam);
+      drawVillageGate(GATE_E,'este',cam);
       drawTerrain(cam); // meseta, cantera, río, cascada y puente sobre el suelo base
       // territorios nuevos sobre el suelo base: ceniza al este, tierra
       // carmesí al noreste y el sendero que lleva a la estatua del bosque
       (function(){
-        const bx0=EAST_X-cam.x, bw2=WORLD.w-EAST_X;
-        if(bx0>=vW()||bx0+bw2<=0) return;
-        const ag=ctx.createLinearGradient(0,950-cam.y,0,WORLD.h-cam.y);
+        const ag=ctx.createLinearGradient(0,-cam.y,0,VILLAGE.y0-cam.y);
         ag.addColorStop(0,'rgba(112,106,98,.90)'); ag.addColorStop(1,'rgba(82,78,72,.94)');
-        ctx.fillStyle=ag; ctx.fillRect(bx0,950-cam.y,bw2,WORLD.h-950);
-        const cg2=ctx.createLinearGradient(0,-cam.y,0,950-cam.y);
+        ctx.fillStyle=ag; ctx.fillRect(VILLAGE.x0-cam.x,-cam.y,WORLD.w-VILLAGE.x0,VILLAGE.y0);
+        const cg2=ctx.createLinearGradient(0,VILLAGE.y0-cam.y,0,VILLAGE.y1-cam.y);
         cg2.addColorStop(0,'rgba(146,64,48,.88)'); cg2.addColorStop(1,'rgba(114,50,40,.90)');
-        ctx.fillStyle=cg2; ctx.fillRect(bx0,-cam.y,bw2,950);
-        ctx.fillStyle='rgba(168,152,128,.45)'; ctx.fillRect(3348-cam.x,947-cam.y,104,622); // sendero a la estatua del Bosque
+        ctx.fillStyle=cg2; ctx.fillRect(VILLAGE.x1-cam.x,VILLAGE.y0-cam.y,WORLD.w-VILLAGE.x1,VILLAGE.y1-VILLAGE.y0);
+        ctx.fillStyle='rgba(168,152,128,.45)'; ctx.fillRect(3248-cam.x,290-cam.y,104,530); // sendero a la estatua del Bosque
         // manchas de ceniza y grietas carmesí, solo en la zona visible
         const T2=130, gx0=Math.max(EAST_X,Math.floor(cam.x/T2)*T2), gx1=Math.min(WORLD.w,cam.x+vW()+T2), gy0=Math.max(0,Math.floor(cam.y/T2)*T2), gy1=Math.min(WORLD.h,cam.y+vH()+T2);
         for(let gx=gx0;gx<gx1;gx+=T2) for(let gy=gy0;gy<gy1;gy+=T2){
@@ -7605,6 +7924,13 @@
       ctx.fillStyle='#fff'; ctx.font='900 11px Trebuchet MS';
       ctx.strokeStyle='rgba(0,0,0,.65)'; ctx.lineWidth=3; ctx.strokeText(n.short,x,y+30); ctx.fillText(n.short,x,y+30);
       if(S.nearNpc===n){ ctx.fillStyle='#ffd23c'; ctx.font='900 17px Trebuchet MS'; const bob=Math.sin(t*5)*3; ctx.fillText('▼',x,y+14-80*CHAR_SCALE+bob); }
+      if(n.bub){ // bocadillo de charla vecinal: nube blanca con su frase
+        ctx.font='700 11px Trebuchet MS'; const btw=ctx.measureText(n.bub).width+16, bx=x-btw/2, by=y+14-118*CHAR_SCALE;
+        ctx.globalAlpha=n.bubT<0.5?Math.max(0,n.bubT/0.5):0.96;
+        ctx.fillStyle='#ffffff'; roundRect(bx,by,btw,20,9); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(x-5,by+19); ctx.lineTo(x+5,by+19); ctx.lineTo(x,by+26); ctx.closePath(); ctx.fill();
+        ctx.fillStyle='#241f38'; ctx.textAlign='center'; ctx.fillText(n.bub,x,by+14); ctx.globalAlpha=1;
+      }
       // signo de misión
       if(n.id==='lyra'&&S.quest&&(S.quest.stage===0||S.quest.stage===1)){ ctx.fillStyle='#ffd23c'; ctx.font='900 20px Arial Black'; ctx.fillText('!',x+14,y+14-68*CHAR_SCALE+Math.sin(t*4)*2); }
       ctx.restore();
@@ -7698,7 +8024,7 @@
        queda al norte, junto al camino, y el corgi de muestra pasea su
        idle dentro. */
     function drawPetCorral(cam){
-      const x0=505,y0=980,x1=580,y1=1040;
+      const x0=2275,y0=1600,x1=2350,y1=1660;
       const sx=x0-cam.x, sy=y0-cam.y;
       if(sx<-160||sy<-140||sx>vW()+60||sy>vH()+60) return;
       const w=x1-x0,h=y1-y0;
@@ -7896,21 +8222,22 @@
     /* ----- La Cripta de la Fundición: suelo, paredes, antorchas y puertas ----- */
     function drawCryptGround(cam){
       // fuera de las salas solo hay negro de cueva: la penumbra manda
+      const D=S.inCrypt?DUNGEONS.cripta:DUNGEONS[S.dung]; if(!D) return;
       ctx.fillStyle='#04050a'; ctx.fillRect(-2,-2,vW()+4,vH()+4);
-      for(const f of CRYPT_FLOORS){
+      for(const f of D.floors){
         const fx=f.x-cam.x, fy=f.y-cam.y; if(fx+f.w<-40||fy+f.h<-40||fx>vW()+40||fy>vH()+40) continue;
-        vgrad(fx,fy,f.w,f.h,'#333644','#252732');
+        vgrad(fx,fy,f.w,f.h,D.floorA,D.floorB);
         // losas de piedra oscura con variación por celda y grietas, como el empedrado del pueblo pero en frío
         const T=88, x0=Math.max(f.x,Math.floor(cam.x/T)*T), x1=Math.min(f.x+f.w,cam.x+vW()+T), y0=Math.max(f.y,Math.floor(cam.y/T)*T), y1=Math.min(f.y+f.h,cam.y+vH()+T);
         for(let gx=x0;gx<x1;gx+=T) for(let gy=y0;gy<y1;gy+=T){
           const hsh=((gx*31+gy*57)%89+89)%89;
-          rr2(gx+2-cam.x,gy+2-cam.y,T-4,T-4,7,(((gx/T)|0)+((gy/T)|0))%2?'#31333f':'#2b2d38');
+          rr2(gx+2-cam.x,gy+2-cam.y,T-4,T-4,7,(((gx/T)|0)+((gy/T)|0))%2?D.cellA:D.cellB);
           if(hsh<14) blob(gx+44-cam.x,gy+44-cam.y,34,22,'#454a5e',.12);
           if(hsh>80){ ctx.strokeStyle='rgba(10,10,16,.5)'; ctx.lineWidth=1.4; ctx.beginPath(); const cx0=gx+14-cam.x, cy0=gy+18-cam.y; ctx.moveTo(cx0,cy0); ctx.lineTo(cx0+16,cy0+9); ctx.lineTo(cx0+26,cy0+4); ctx.stroke(); }
         }
       }
       // grietas de magma bajo las losas de la sala del jefe: la fundición respira ahí abajo
-      const bx=5750-cam.x, by=200-cam.y;
+      const bx=(D.key==='cripta')?5750-cam.x:-9999, by=200-cam.y;
       if(bx>-700&&by>-300&&bx<vW()+700&&by<vH()+300){ blob(bx,by,420,190,'#ff7a29',.07,'lighter');
         ctx.strokeStyle='rgba(255,122,46,.30)'; ctx.lineWidth=2; ctx.beginPath();
         ctx.moveTo(bx-330,by+96); ctx.lineTo(bx-210,by+62); ctx.lineTo(bx-120,by+104); ctx.lineTo(bx-10,by+70);
@@ -7963,8 +8290,8 @@
       ctx.globalAlpha=1;
       if(S.nearDoor==='out'){ ctx.fillStyle='#ffd23c'; ctx.font='900 16px Trebuchet MS'; ctx.textAlign='center'; ctx.fillText('▼',dx,dy-104+Math.sin(t*5)*3); }
     }
-    function drawCryptDoorInner(cam){
-      const dx=CRYPT_IDOOR.x-cam.x, dy=CRYPT.y1-cam.y; // la misma losa, vista desde la sala de entrada
+    function drawDungeonDoorInner(D,cam){
+      const dx=D.idoor.x-cam.x, dy=D.B.y1-cam.y; // la misma losa, vista desde la sala de entrada
       if(dx<-150||dy<-170||dx>vW()+150||dy>vH()+150) return;
       const t=S.t||0;
       blob(dx,dy-20,60,40,'#7ad0ff',.20+0.05*Math.sin(t*3),'lighter');
@@ -7974,6 +8301,30 @@
       ctx.fillStyle='#bfe9ff'; [[-13,-56],[13,-56],[0,-36],[-13,-14],[13,-14]].forEach(r=>{ ctx.beginPath(); ctx.arc(dx+r[0],dy+r[1],1.6,0,7); ctx.fill(); });
       if(S.nearDoor==='in'){ ctx.fillStyle='#ffd23c'; ctx.font='900 16px Trebuchet MS'; ctx.textAlign='center'; ctx.fillText('▼',dx,dy-102+Math.sin(t*5)*3); }
     }
+    function drawCryptDoorInner(cam){ drawDungeonDoorInner(DUNGEONS.cripta,cam); }
+    /* ----- Puerta de mazmorra en el mundo: la misma losa de piedra de
+       la Cripta, con las runas del color de su zona ----- */
+    function drawDungeonDoorField(door,rune,open,cam){
+      const dx=door.x-cam.x, dy=door.y-cam.y-tLift(door.x,door.y);
+      if(dx<-150||dy<-170||dx>vW()+150||dy>vH()+150) return;
+      const t=S.t||0;
+      blob(dx,dy-24,66,46,rune,.22+0.06*Math.sin(t*3),'lighter');
+      ctx.fillStyle='#38332e'; ctx.beginPath(); ctx.ellipse(dx,dy+6,80,34,0,0,7); ctx.fill();
+      ctx.fillStyle='#4a443c'; ctx.beginPath(); ctx.ellipse(dx,dy-8,64,44,0,0,7); ctx.fill();
+      ctx.fillStyle='#5a5348'; ctx.beginPath(); ctx.ellipse(dx-18,dy-26,26,14,-0.4,0,7); ctx.fill();
+      const dg=ctx.createLinearGradient(0,dy-86,0,dy+12); dg.addColorStop(0,'#4e4a55'); dg.addColorStop(1,'#2c2833');
+      ctx.fillStyle=dg; ctx.beginPath(); ctx.moveTo(dx-27,dy+12); ctx.lineTo(dx-27,dy-52); ctx.quadraticCurveTo(dx,dy-92,dx+27,dy-52); ctx.lineTo(dx+27,dy+12); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle=rune; ctx.lineWidth=2.4; ctx.stroke();
+      ctx.strokeStyle='rgba(0,0,0,.4)'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(dx,dy-78); ctx.lineTo(dx,dy+12); ctx.stroke();
+      ctx.strokeStyle=rune; ctx.fillStyle=rune;
+      [[-13,-58],[13,-58],[0,-38],[-13,-16],[13,-16]].forEach((r,i)=>{
+        const rx=dx+r[0], ry=dy+r[1];
+        ctx.globalAlpha=0.75+0.25*Math.sin(t*3.4+i*1.3); ctx.lineWidth=2;
+        ctx.beginPath(); ctx.moveTo(rx,ry-5); ctx.lineTo(rx+4,ry); ctx.lineTo(rx,ry+5); ctx.lineTo(rx-4,ry); ctx.closePath(); ctx.stroke();
+      });
+      ctx.globalAlpha=1;
+      if(S.nearDoor&&S.nearDoor!=='in'&&Math.hypot(S.player.x-door.x,S.player.y-door.y)<98){ ctx.fillStyle='#ffd23c'; ctx.font='900 16px Trebuchet MS'; ctx.textAlign='center'; ctx.fillText('▼',dx,dy-102+Math.sin(t*5)*3); }
+    }
     function drawEnemy(e,cam){
       const x=e.x-cam.x,y=e.y-cam.y-tLift(e.x,e.y);
       if(x<-90||y<-90||x>vW()+90||y>vH()+230) return;
@@ -7982,14 +8333,14 @@
       const dying=!!e.dead;
       if(dying){ ctx.save(); ctx.globalAlpha=clamp(1-(e.deathAge||0)/0.9,0,1); ctx.translate(x,y+(e.deathY||0)); ctx.rotate(e.deathRot||0); ctx.translate(-x,-y); }
       const bob=(typeof e.bodyBob==='number')?e.bodyBob:Math.sin(e.walkPh)*1.8;
-      const shadowScale=(e.type==='golem'||e.type==='boss'||e.type==='herald')?1+Math.max(0,bob)*0.022:1+Math.abs(bob)*0.008;
+      const shadowScale=(e.type==='golem'||e.type==='boss'||e.type==='herald'||e.type==='madre'||e.type==='alfa')?1+Math.max(0,bob)*0.022:1+Math.abs(bob)*0.008;
       ctx.save(); ctx.translate(x,y+2); ctx.scale(shadowScale,shadowScale); ctx.translate(-x,-(y+2)); shadow(x,y+2,e.r*CHAR_SCALE); ctx.restore();
-      const eAnch=y+((e.type==='boss'||e.type==='herald')?32:14);
+      const eAnch=y+((e.type==='boss'||e.type==='herald'||e.type==='madre'||e.type==='alfa')?32:14);
       ctx.save(); pinY(x,eAnch); ctx.save(); charScale(x,eAnch); // bestia ~28% más pequeña que el mundo (el Coloso sigue siendo el más grande), anclada donde pisa
       if(e.vscale&&e.vscale!==1){ ctx.translate(x,eAnch); ctx.scale(e.vscale,e.vscale); ctx.translate(-x,-eAnch); } // variante de zona: mayor, joven o élite
       const fl=e.flash>0, lean=(e.lean||0)+(e.wobbleLean||0);
       const base=fl?'#ffffff':(ETYPES[e.type]?ETYPES[e.type].color:'#ff8a3c');
-      if(e.type==='spore'){
+      if(e.type==='spore'||e.type==='madre'){
         // ESPORA: un hongo viviente — sombrero ancho con motas, cuerpo
         // rechoncho que se balancea y piececitos que corretean
         const flip=Math.cos(e.face||0)<0?-1:1;
@@ -8017,7 +8368,7 @@
         circle(x-5+gx,y-6+bob,0.9,'#20301a'); circle(x+5+gx,y-6+bob,0.9,'#20301a');
         ctx.strokeStyle=skinD; ctx.lineWidth=1.6; ctx.beginPath(); ctx.arc(x,y-1.5+bob,2.6,0.15*Math.PI,0.85*Math.PI); ctx.stroke();
         ctx.restore();
-      } else if(e.type==='wolf'){
+      } else if(e.type==='wolf'||e.type==='alfa'){
         // LOBO DE BRASA: cuadrúpedo oscuro con melena de fuego y cola de ascua
         const flip=Math.cos(e.face||0)<0?-1:1;
         const fur=fl?'#ffffff':(e.tint||'#6e4a38'), furD=fl?'#ffffff':(e.tint?shade(e.tint,0.7):'#4c3226'), belly=fl?'#ffffff':'#8a5f47';
@@ -8093,7 +8444,7 @@
       ctx.clearRect(0,0,VW,VH);
       const cam={x:S.cam.x+(S.shake?rnd(-S.shake,S.shake):0), y:S.cam.y+(S.shake?rnd(-S.shake,S.shake):0)};
       ctx.save(); ctx.scale(ZOOM,ZOOM*KY); // proyección «más de atrás» (40°) con la cámara más lejos (ZOOM): el suelo se comprime en vertical y se ve más mundo
-      if(S.inCrypt) drawCryptGround(cam); else drawGround(cam);
+      if(S.inCrypt||S.dung) drawCryptGround(cam); else drawGround(cam);
       // sombras de nubes que cruzan el suelo
       if(S.clouds) for(const cl of S.clouds){ const cxp=cl.x-cam.x, cyp=cl.y-cam.y; if(cxp+cl.s<0||cyp+cl.s*0.5<0||cxp-cl.s>vW()||cyp-cl.s*0.5>vH()) continue; blob(cxp,cyp,cl.s,cl.s*0.42,'#10240f',.13); blob(cxp+cl.s*0.4,cyp+18,cl.s*0.6,cl.s*0.3,'#10240f',.10); }
       decos.filter(d=>d.kind==='grass'||d.kind==='flower'||d.kind==='ash'||d.kind==='shard').forEach(d=>drawDeco(d,cam));
@@ -8124,19 +8475,22 @@
       }
       // orden por profundidad (tres cuartos): lo que está más abajo en pantalla se dibuja delante
       const drawList=[];
-      if(S.inCrypt){
-        CRYPT_WALLS.forEach(w=>drawList.push({y:w.y+w.h,f:()=>drawCryptWall(w,cam)}));
-        CRYPT_TORCHES.forEach(tc=>drawList.push({y:tc.y+8,f:()=>drawCryptTorch(tc,cam)}));
-        drawList.push({y:1150,f:()=>drawCryptDoorInner(cam)});
+      if(S.inCrypt||S.dung){
+        const DD=S.inCrypt?DUNGEONS.cripta:DUNGEONS[S.dung];
+        DD.walls.forEach(w=>drawList.push({y:w.y+w.h,f:()=>drawCryptWall(w,cam)}));
+        DD.torches.forEach(tc=>drawList.push({y:tc.y+8,f:()=>drawCryptTorch(tc,cam)}));
+        drawList.push({y:DD.B.y1+50,f:()=>drawDungeonDoorInner(DD,cam)});
       } else {
         houses.forEach(h=>drawList.push({y:h.y+h.h,f:()=>drawHouse(h,cam)}));
         decos.filter(d=>d.kind!=='grass'&&d.kind!=='flower'&&d.kind!=='ash'&&d.kind!=='shard').forEach(d=>drawList.push({y:d.y+10,f:()=>drawDeco(d,cam)}));
         KP_EXTRA.forEach(ex=>drawList.push({y:ex.solid.y+ex.solid.h,f:()=>drawExtraProp(ex,cam)}));
         npcs.forEach(n=>drawList.push({y:n.y+12,f:()=>drawNPC(n,cam,S.t)}));
-        drawList.push({y:1040,f:()=>drawPetCorral(cam)});
+        drawList.push({y:1660,f:()=>drawPetCorral(cam)});
         drawList.push({y:PET_SAMPLE.y+8,f:()=>drawSamplePetWorld(cam)});
         STATUES.forEach(st=>drawList.push({y:st.y+12,f:()=>drawStatue(st,cam)}));
         drawList.push({y:CRYPT_DOOR.y+16,f:()=>drawCryptDoorField(cam)});
+        drawList.push({y:RAIZ_DOOR.y+16,f:()=>drawDungeonDoorField(RAIZ_DOOR,'#7ac74f',true,cam)});
+        drawList.push({y:GUARIDA_DOOR.y+16,f:()=>drawDungeonDoorField(GUARIDA_DOOR,'#ff8a3c',true,cam)});
       }
       S.enemies.forEach(e=>{ if(!e.dead||(e.deathAge||0)<0.9) drawList.push({y:e.y+e.r*0.6,f:()=>drawEnemy(e,cam)}); });
       (MP.drawn||[]).forEach(rp=>{ drawList.push({y:rp.ry+10,f:()=>drawRemotePlayer(rp,cam)}); });
@@ -8246,14 +8600,16 @@
       wg.addColorStop(0,'rgba(255,176,92,'+(0.16*dlNow.warm)+')'); wg.addColorStop(.55,'rgba(255,176,92,0)'); wg.addColorStop(1,'rgba(30,10,50,.10)');
       ctx.fillStyle=wg; ctx.fillRect(0,0,VW,VH);
       // CICLO DÍA/NOCHE: velo nocturno legible (tope .52) + luces encendidas
-      if(S.inCrypt){
-        // penumbra de cripta: velo frío constante y las luces que lo rompen
-        // (antorchas, el héroe, el núcleo del Heraldo y el portal de salida)
+      if(S.inCrypt||S.dung){
+        // penumbra de mazmorra: velo frío constante y las luces que lo rompen
+        // (antorchas, el héroe, el núcleo del jefe y el portal de salida)
+        const DD2=S.inCrypt?DUNGEONS.cripta:DUNGEONS[S.dung];
         ctx.fillStyle='rgba(6,6,18,0.60)'; ctx.fillRect(0,0,VW,VH);
         ctx.save(); ctx.scale(ZOOM,ZOOM*KY);
-        CRYPT_TORCHES.forEach(tc=>{ const lx=tc.x-cam.x, ly=tc.y-cam.y; if(lx<-130||ly<-130||lx>vW()+130||ly>vH()+130) return; const fl=0.85+0.15*Math.sin(S.t*11+tc.x); blob(lx,ly,66*fl,46*fl,'#ff9a3c',.30,'lighter'); blob(lx,ly,26,18,'#ffd9a0',.32,'lighter'); });
+        DD2.torches.forEach(tc=>{ const lx=tc.x-cam.x, ly=tc.y-cam.y; if(lx<-130||ly<-130||lx>vW()+130||ly>vH()+130) return; const fl=0.85+0.15*Math.sin(S.t*11+tc.x); blob(lx,ly,66*fl,46*fl,'#ff9a3c',.30,'lighter'); blob(lx,ly,26,18,'#ffd9a0',.32,'lighter'); });
         blob(S.player.x-cam.x,S.player.y-cam.y-tLift(S.player.x,S.player.y),58,42,'#ffd9a0',.20,'lighter');
-        if(S.herald&&!S.herald.dead) blob(S.herald.x-cam.x,S.herald.y-cam.y,95,62,'#ff5d3a',.20+0.05*Math.sin(S.t*5),'lighter');
+        const bb2=S.inCrypt?S.herald:S.dungBoss;
+        if(bb2&&!bb2.dead) blob(bb2.x-cam.x,bb2.y-cam.y,95,62,'#ff5d3a',.20+0.05*Math.sin(S.t*5),'lighter');
         if(S.exitPortal) blob(S.exitPortal.x-cam.x,S.exitPortal.y-cam.y,62,44,'#c07dff',.35,'lighter');
         ctx.restore();
       }
@@ -8265,7 +8621,7 @@
           // el halo de cada ventana cae sobre la ventana de la casa contra-escalada (misma fórmula que su fachada)
           houses.forEach(h=>{ if(kpHouseOn(h._i)) return; const hx=h.x-cam.x+h.w/2, hy=h.y-cam.y+h.h-Math.round((h.h-50)/KY); if(hx<-90||hy<-90||hx>vW()+90||hy>vH()+90) return; blob(hx-28,hy,26,17,'#ffb84d',.34*na,'lighter'); blob(hx+28,hy,26,17,'#ffb84d',.30*na,'lighter'); });
           // faroles de la plaza, la puerta y el camino + fragua de Bram
-          [[455,905],[TOWN_EDGE+14,880],[455,700],[250,905],[660,905]].forEach(lp=>{ const lx=lp[0]-cam.x, ly=lp[1]-cam.y; if(lx<-90||ly<-90||lx>vW()+90||ly>vH()+90) return; blob(lx,ly,44,32,'#ffc46b',.32*na,'lighter'); circle(lx,ly-8,2.6,'#ffe9a8'); });
+          [[2200,1300],[1830,1300],[2570,1300],[2200,1010],[2200,1590]].forEach(lp=>{ const lx=lp[0]-cam.x, ly=lp[1]-cam.y; if(lx<-90||ly<-90||lx>vW()+90||ly>vH()+90) return; blob(lx,ly,44,32,'#ffc46b',.32*na,'lighter'); circle(lx,ly-8,2.6,'#ffe9a8'); });
           blob(522-cam.x,322-cam.y,58,38,'#ff8a3c',.4*na,'lighter'); // la fragua alumbra su rincón
           if(S.boss&&!S.boss.dead) blob(S.boss.x-cam.x,S.boss.y-cam.y-tLift(S.boss.x,S.boss.y),80,55,'#ff5d3a',.22*na,'lighter');
           blob(S.player.x-cam.x,S.player.y-cam.y-tLift(S.player.x,S.player.y),54,40,'#ffd9a0',.20*na,'lighter'); // luz suave que acompaña al héroe: nunca a oscuras del todo
@@ -8292,7 +8648,7 @@
       // aviso de la puerta de la cripta: sellada hasta que caiga el Coloso
       if(!S.nearNpc&&!S.nearStatue&&S.nearDoor&&!S.dlg){ ctx.fillStyle='rgba(10,8,24,.78)'; const tw=290; roundRect(VW/2-tw/2,VH-176,tw,32,10); ctx.fill();
         ctx.fillStyle='#ffd9a0'; ctx.font='800 13px Trebuchet MS'; ctx.textAlign='center';
-        ctx.fillText(S.nearDoor==='in'?'✦ Salir de la cripta':(S.victory?'✦ Entrar en la Cripta de la Fundición':'✦ La puerta sellada de la cripta'),VW/2,VH-155); }
+        ctx.fillText(S.nearDoor==='in'?('✦ Salir de '+(S.inCrypt?'la Cripta':DUNGEONS[S.dung].name)):(S.nearDoor==='cripta'?(S.victory?'✦ Entrar en la Cripta de la Fundición':'✦ La puerta sellada de la Cripta'):('✦ Entrar en '+DUNGEONS[S.nearDoor].name)),VW/2,VH-155); }
       // aviso de la Boutique: su puesto está en el sureste de la plaza
       if(!S.nearNpc&&!S.nearStatue&&!S.nearDoor&&S.nearBoutique&&!S.dlg){ ctx.fillStyle='rgba(24,8,38,.82)'; const tw=292; roundRect(VW/2-tw/2,VH-176,tw,32,10); ctx.fill();
         ctx.fillStyle='#ffe98a'; ctx.font='800 13px Trebuchet MS'; ctx.textAlign='center';
@@ -8342,7 +8698,7 @@
       const dying=!!e.dead;
       if(dying){ ctx.save(); ctx.globalAlpha=clamp(1-(e.deathAge||0)/0.9,0,1); }
       const bob=(typeof e.bodyBob==='number')?e.bodyBob:Math.sin(e.walkPh)*1.8;
-      const shadowScale=(e.type==='golem'||e.type==='boss'||e.type==='herald')?1+Math.max(0,bob)*0.022:1+Math.abs(bob)*0.008;
+      const shadowScale=(e.type==='golem'||e.type==='boss'||e.type==='herald'||e.type==='madre'||e.type==='alfa')?1+Math.max(0,bob)*0.022:1+Math.abs(bob)*0.008;
       ctx.save(); ctx.translate(x,y+2); ctx.scale(shadowScale,shadowScale); ctx.translate(-x,-(y+2)); shadow(x,y+2,e.r*CHAR_SCALE); ctx.restore();
       if(!dying&&e.type==='boss') blob(x,y+26,46,19,'#ff5d3a',.18+.06*Math.sin(S.t*5),'lighter');
       if(!dying&&e.type==='herald') blob(x,y+26,52,21,'#ff5d3a',.20+.06*Math.sin(S.t*5),'lighter');
@@ -8381,6 +8737,11 @@
       ctx.fillStyle='#fff'; ctx.font='900 11px Trebuchet MS';
       ctx.strokeStyle='rgba(0,0,0,.65)'; ctx.lineWidth=3; ctx.strokeText(n.short,x,y+30); ctx.fillText(n.short,x,y+30);
       if(S.nearNpc===n){ ctx.fillStyle='#ffd23c'; ctx.font='900 17px Trebuchet MS'; const bob=Math.sin(t*5)*3; ctx.fillText('▼',x,topY-34+bob); }
+      if(n.bub){ ctx.font='700 11px Trebuchet MS'; const btw=ctx.measureText(n.bub).width+16, bx=x-btw/2, by=topY-66;
+        ctx.globalAlpha=n.bubT<0.5?Math.max(0,n.bubT/0.5):0.96;
+        ctx.fillStyle='#ffffff'; roundRect(bx,by,btw,20,9); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(x-5,by+19); ctx.lineTo(x+5,by+19); ctx.lineTo(x,by+26); ctx.closePath(); ctx.fill();
+        ctx.fillStyle='#241f38'; ctx.textAlign='center'; ctx.fillText(n.bub,x,by+14); ctx.globalAlpha=1; }
       if(n.id==='lyra'&&S.quest&&(S.quest.stage===0||S.quest.stage===1)){ ctx.fillStyle='#ffd23c'; ctx.font='900 20px Arial Black'; ctx.fillText('!',x+16,topY-4+Math.sin(t*4)*2); }
       ctx.restore();
     }
@@ -8617,7 +8978,7 @@
        Maga/Druida), Sana=Rogue con capucha (el MISMO archivo que la
        Cazadora: se descarga una vez y se clona por esqueleto) y
        Bram=Barbarian (la única descarga extra, solo por él). */
-    const KK_FILES={warrior:'Knight.glb',mage:'Mage.glb',hunter:'Rogue_Hooded.glb',druid:'Mage.glb',lyra:'Mage.glb',sana:'Rogue_Hooded.glb',bram:'Barbarian.glb',milo:'Rogue_Hooded.glb'};
+    const KK_FILES={warrior:'Knight.glb',mage:'Mage.glb',hunter:'Rogue_Hooded.glb',druid:'Mage.glb',lyra:'Mage.glb',sana:'Rogue_Hooded.glb',bram:'Barbarian.glb',milo:'Rogue_Hooded.glb',pilar:'Mage.glb',tomas:'Knight.glb'};
     const KK_BASES=['adv/','https://cdn.jsdelivr.net/gh/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0@main/addons/kaykit_character_pack_adventures/Characters/gltf/',
       'https://raw.githubusercontent.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/main/addons/kaykit_character_pack_adventures/Characters/gltf/'];
     const KK_LOADER_URLS=['lib/GLTFLoader.js','https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js','https://unpkg.com/three@0.147.0/examples/js/loaders/GLTFLoader.js'];
@@ -8660,7 +9021,7 @@
        escalado en grande con núcleo. El lobo de brasa NO tiene modelo:
        ningún pack de KayKit trae cuadrúpedos (solo personajes con rig y
        props), así que conserva su modelo de código de siempre. */
-    const KK_MOB={spore:'Skeleton_Minion.glb',golem:'Skeleton_Warrior.glb',boss:'Skeleton_Warrior.glb',herald:'Skeleton_Warrior.glb'};
+    const KK_MOB={spore:'Skeleton_Minion.glb',madre:'Skeleton_Minion.glb',golem:'Skeleton_Warrior.glb',boss:'Skeleton_Warrior.glb',herald:'Skeleton_Warrior.glb'};
     const KK_MOB_BASES=['skl/','https://cdn.jsdelivr.net/gh/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0@main/addons/kaykit_character_pack_skeletons/Characters/gltf/',
       'https://raw.githubusercontent.com/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0/main/addons/kaykit_character_pack_skeletons/Characters/gltf/'];
     function kkNeedMob(type){ const file=KK_MOB[type]; if(file) kkNeedFile(file,KK_MOB_BASES); }
@@ -9485,6 +9846,8 @@
               : n.id==='sana'
               ? {kind:null,wcol:'#cfd8e6',wrar:0,attackClip:'Spellcast_Shoot',body:'#eafff2',cape:'#5effa1',helm:'#baf7d4',emblem:'cross',idleTs:0.7}
               : n.id==='milo' ? {kind:null,wcol:'#cfd8e6',wrar:0,body:'#527a34',cape:'#8a5a2b',helm:'#7a9a4d',idleTs:0.85}
+              : n.id==='pilar' ? {kind:null,wcol:'#cfd8e6',wrar:0,body:'#a34fd0',cape:'#5d3a8a',helm:'#7a4fd0',idleTs:0.9}
+              : n.id==='tomas' ? {kind:null,wcol:'#cfd8e6',wrar:0,body:'#5a6e7a',cape:'#37474f',helm:'#455a64',idleTs:0.95}
               : {kind:'hammer',wcol:'#cfd8e6',wrar:0,attackClip:'1H_Melee_Attack_Chop',body:'#8a4b2a',helm:'#5a3a22'};
             rm=kkChar(n.id,npcOpts); if(rm){ G3.npcReal.set(n.id,rm); G3.scene.add(rm); }
           }
@@ -9626,6 +9989,8 @@
             if(!rm){
               const mobOpts=e.type==='spore'
                 ? {kind:null,wcol:'#cfd8e6',wrar:0,attackClip:'1H_Melee_Attack_Chop',body:e.tint||'#7fae4c',cape:'#5d8a3a',emblem:'cap',scaleMul:(e.vscale||1)}
+                : e.type==='madre'
+                ? {kind:null,wcol:'#cfd8e6',wrar:0,attackClip:'1H_Melee_Attack_Chop',body:'#4c7a38',cape:'#33511f',emblem:'cap',scaleMul:2.0}
                 : e.type==='boss'
                 ? {kind:null,wcol:'#cfd8e6',wrar:0,attackClip:'2H_Melee_Attack_Chop',body:'#7d7f76',helm:'#5d5f58',scaleMul:2.1,core:'#a8e063'}
                 : e.type==='herald'
@@ -9643,7 +10008,7 @@
         }
         if(!vis){ if(m) m.visible=false; const rm0=G3.mobReal.get(e); if(rm0) rm0.visible=false; return; }
         if(!m){
-          m=e.type==='spore'?g3Spore():(e.type==='wolf'?g3Wolf():g3Golem(e.type==='boss'?2:(e.type==='herald'?2.4:1),e.type==='boss'));
+          m=(e.type==='spore'||e.type==='madre')?g3Spore():((e.type==='wolf'||e.type==='alfa')?g3Wolf():g3Golem(e.type==='boss'?2:(e.type==='herald'?2.4:1),e.type==='boss'));
           if(e.vscale&&e.vscale!==1) m.scale.multiplyScalar(e.vscale); // variante de zona también en el modelo de código
           G3.mobModels.set(e,m); G3.scene.add(m);
         }
@@ -9969,6 +10334,11 @@
           try{ clearSave(); }catch(_){}
           setTimeout(()=>toast('⚠ Tu guardado anterior no pudo restaurarse: entras de cero en la plaza, héroe',''),1400);
         }
+        // Migración de mapa: quien guardó en el pueblo antiguo (hoy
+        // campo abierto) o dentro de una zona cuyo muro sigue en pie
+        // para él, despierta en la plaza nueva, con todo lo suyo
+        { const pp=S.player, zz=zoneAt(pp.x,pp.y);
+          if(pp.x<920||(zz==='bosque'&&!gateOpen('norte'))||(zz==='paramo'&&!gateOpen('este'))){ pp.x=2200; pp.y=1420; pp._hx=2200; pp._hy=1420; pp._hh=0; } }
       }
       else spawnBoss(true); // partida nueva: el Coloso ya acecha en la cantera
       MP.name=sv?sv.name:mpStartName();
@@ -9992,11 +10362,11 @@
       updateQuestUI(); refreshHUD(); drawMinimap();
       try{ mpWorldStart(); }catch(e){} // entrada automática al mundo compartido, sin códigos
       try{ if(window.g3LoadLib) g3LoadLib(); }catch(e){} // la capa 3D también intenta cargar al entrar a jugar
-      if(S.player.x<TOWN_EDGE) showZone('Pueblo de Ferralla','Habla con Lyra ⚜ o sal por la puerta este');
+      if(inVillage(S.player.x,S.player.y)) showZone('Pueblo de Ferralla','Habla con Lyra ⚜ o sal por la puerta oeste');
       else showZone(ZONE_INFO[zoneAt(S.player.x,S.player.y)].name,'Sigues justo donde lo dejaste: ojo con las bestias');
       if(sv) setTimeout(()=>toast('💾 Partida restaurada: nivel '+S.player.lvl+', en tu sitio y con todo tu equipo','gold'),900);
       if(sv&&sv.fromSurvival) setTimeout(()=>toast('🧳 Vuelta al RPG: tus suministros de supervivencia se convirtieron en '+((sv&&sv.migGold)||0)+' de oro y la misión de Lyra te espera en la plaza','gold'),1800);
-      setTimeout(()=>{ if(S&&S.quest.stage===0) toast('Lyra ⚜ te espera en la plaza: sal a cazar '+S.quest.need+' bestias por la puerta este',''); },600);
+      setTimeout(()=>{ if(S&&S.quest.stage===0) toast('Lyra ⚜ te espera en la plaza: sal a cazar '+S.quest.need+' esporas por la puerta oeste',''); },600);
       sfx.quest();
     }
     // Entrada al mundo a prueba de fallos: si cualquier paso inesperado
@@ -10021,7 +10391,7 @@
     // Si hay un guardado válido, la pantalla de inicio ofrece CONTINUAR
     (function initSaveUI(){
       const sv=loadSave(); if(!sv) return;
-      const qTxt=sv.quest.stage===0?'Misión: caza de Lyra '+(sv.quest.count||0)+'/'+(sv.quest.need||5):(sv.quest.stage===1?'Misión: vuelve con Lyra':(sv.quest.stage===2?'Misión: el Coloso de la Fundición':'Modo libre'));
+      const qTxt=sv.quest.stage===0?'Misión: caza de Lyra '+(sv.quest.count||0)+'/'+(sv.quest.need||5):(sv.quest.stage===1?'Misión: vuelve con Lyra':(sv.quest.stage===2?'Misión: la Madre Espora':(sv.quest.stage===3?'Misión: el Alfa de Ceniza':(sv.quest.stage===4?'Misión: el Coloso de la Fundición':(sv.quest.stage===5?'Misión: el Heraldo de la Cripta':'Modo libre')))));
       $('saveInfo').textContent='💾 '+sv.name+' · '+CLASSES[sv.cls].name+' · Nv '+sv.lvl+' · '+qTxt+' · '+sv.gold+' de oro';
       $('saveBox').style.display='block';
       $('btnContinue').style.display=''; // CONTINUAR vive en la barra fija inferior, siempre alcanzable
