@@ -119,6 +119,12 @@
       .credits-box{grid-column:1/-1}
       .credits-box>summary{cursor:pointer;font-family:var(--display);font-size:.92rem;letter-spacing:.04em;list-style:none;padding:2px 0}
       .credits-box .set-card{margin-top:10px;background:rgba(255,255,255,.04);border-width:1.5px}
+      #fsPill{position:absolute;left:50%;bottom:30px;transform:translateX(-50%);z-index:55;pointer-events:auto;display:none;align-items:center;gap:8px;background:linear-gradient(180deg,#ffd34d,#ff8a1e);color:#2a1200;border:2px solid #fff0b3;border-radius:99px;font-weight:900;font-size:.8rem;padding:9px 14px;box-shadow:0 8px 22px rgba(0,0,0,.5);cursor:pointer}
+      #fsPill.show{display:inline-flex}
+      #fsPill .fs-x{background:rgba(0,0,0,.18);border-radius:50%;width:20px;height:20px;display:grid;place-items:center;font-size:.7rem}
+      .fs-steps{text-align:left;display:grid;gap:9px;margin:12px 0 4px}
+      .fs-steps div{background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.18);border-radius:12px;padding:9px 12px;font-size:.82rem;font-weight:700;line-height:1.45}
+      .fs-steps b{color:var(--gold)}
       .pc-avatar{width:40px;height:40px;flex:0 0 40px;border-radius:50%;display:grid;place-items:center;font-size:1.25rem;background:radial-gradient(circle at 35% 30%,#ffe9a8,#f5a623 70%);border:2px solid rgba(255,255,255,.75);box-shadow:0 3px 10px rgba(0,0,0,.45)}
       .player-card{cursor:pointer}
       .player-card:active{transform:translateY(1px)}
@@ -848,6 +854,7 @@
           </div>
         </div>
 
+        <button id="fsPill" type="button" aria-label="Jugar a pantalla completa, sin bordes">⛶ PANTALLA COMPLETA <span class="fs-x" id="fsPillX" aria-label="Ocultar">✕</span></button>
         <div id="xpDock"><div class="bar xp"><i id="uiXp"></i><span id="uiXpTxt"></span></div></div>
 
         <div id="zoneBanner"><div class="z-name" id="zoneName">Pueblo de Ferralla</div><div class="z-sub" id="zoneSub">Zona segura · Las bestias no entran</div></div>
@@ -1059,6 +1066,23 @@
           </div>
           <div style="display:flex;gap:10px;justify-content:center;margin-top:14px">
             <button class="big-btn" id="btnCloseProfile" type="button">✔ SEGUIR JUGANDO</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- GUÍA DE PANTALLA COMPLETA (iPhone) -->
+      <div class="overlay hidden" id="fsGuide">
+        <div class="sheet" style="max-width:520px">
+          <span class="kicker">Sin bordes · Sin barras</span>
+          <h1 style="font-size:clamp(1.3rem,4.5vw,1.9rem);margin:2px 0 0">⛶ <em>PANTALLA COMPLETA</em></h1>
+          <p style="font-size:.85rem;font-weight:700;line-height:1.5;margin-top:8px">En iPhone, Safari no deja que una página se ponga a pantalla completa sola — pero con su icono propio sí, y queda como una app:</p>
+          <div class="fs-steps">
+            <div>1️⃣ Toca el botón <b>Compartir</b> de Safari (el cuadrado con la flecha hacia arriba).</div>
+            <div>2️⃣ Elige <b>«Añadir a pantalla de inicio»</b> y confirma con <b>Añadir</b>.</div>
+            <div>3️⃣ Abre VALDORIA desde el <b>icono nuevo</b> de tu pantalla de inicio: entrará a pantalla completa, sin hora, sin batería y sin barras.</div>
+          </div>
+          <div style="display:flex;gap:10px;justify-content:center;margin-top:14px">
+            <button class="big-btn" id="btnCloseFsGuide" type="button">✔ ENTENDIDO</button>
           </div>
         </div>
       </div>
@@ -1747,8 +1771,8 @@
     function resize(){
       DPR = Math.min(window.devicePixelRatio || 1, 2);
       const vv = window.visualViewport;
-      let iw = window.innerWidth, ih = window.innerHeight;
-      if(vv && vv.width > iw*0.6 && vv.height > ih*0.6){ iw = Math.round(vv.width); ih = Math.round(vv.height); } // lo realmente visible (barras del navegador/app fuera); el 0,6 evita que el teclado al abrir el chat encoja el escenario
+      let iw = window.innerWidth, ih = window.innerHeight, ox = 0, oy = 0;
+      if(vv && vv.width > iw*0.6 && vv.height > ih*0.6){ iw = Math.round(vv.width); ih = Math.round(vv.height); ox = Math.round(vv.offsetLeft||0); oy = Math.round(vv.offsetTop||0); } // tamaño Y centro de lo realmente visible (la barra de Safari ya no tapa ni recoge el juego); el 0,6 evita que el teclado al abrir el chat encoja el escenario
       // Vista horizontal SIEMPRE: si el dispositivo está en vertical, el
       // escenario completo se gira 90° para que el lado largo sea el ancho.
       // Así el HUD se reparte entre las esquinas — estado arriba a la
@@ -1760,9 +1784,10 @@
         appEl.style.transform = 'translate(-50%,-50%) rotate(90deg)';
       } else {
         VW = iw; VH = ih;
-        appEl.style.width = '100%'; appEl.style.height = '100%';
+        appEl.style.width = iw + 'px'; appEl.style.height = ih + 'px';
         appEl.style.transform = 'translate(-50%,-50%)';
       }
+      appEl.style.left = (ox + iw/2) + 'px'; appEl.style.top = (oy + ih/2) + 'px'; // centrado sobre la vista visible, no sobre la maquetación
       document.body.classList.toggle('rotated', ROT);
       document.body.classList.toggle('stage-short', VH < 560);
       document.documentElement.style.setProperty('--sw', VW + 'px');
@@ -3905,6 +3930,21 @@
           else if(canFs){ const r=(document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen).call(document.documentElement); if(r&&r.catch) r.catch(()=>{}); bf.textContent='⛶ SALIR DE PANTALLA COMPLETA'; }
           else { bf.textContent='📲 COMPARTE → «AÑADIR A PANTALLA DE INICIO»'; }
         }catch(e){} }); }
+      const pill=$('fsPill');
+      const fsStandalone=()=>{ try{ return (window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true||!!document.fullscreenElement; }catch(e){ return false; } };
+      const fsPillSync=()=>{ if(!pill) return; let off=false; try{ off=localStorage.getItem('valdoria-fs-pill')==='off'; }catch(e){}
+        pill.classList.toggle('show', !off && !fsStandalone()); };
+      const openFsG=()=>{ const g=$('fsGuide'); if(g){ g.classList.remove('hidden'); if(S) S.player.fsGuideOpen=true; } };
+      const closeFsG=()=>{ const g=$('fsGuide'); if(g){ g.classList.add('hidden'); if(S) S.player.fsGuideOpen=false; } };
+      if(pill){ fsPillSync();
+        pill.addEventListener('click',ev=>{ if(ev.target&&ev.target.id==='fsPillX') return;
+          const canFs=!!(document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen);
+          if(canFs){ try{ const r=(document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen).call(document.documentElement); if(r&&r.catch) r.catch(()=>{ openFsG(); }); }catch(e){ openFsG(); } }
+          else { openFsG(); } });
+        const px=$('fsPillX'); if(px) px.addEventListener('click',ev=>{ ev.stopPropagation(); try{ localStorage.setItem('valdoria-fs-pill','off'); }catch(e){} fsPillSync(); });
+        document.addEventListener('fullscreenchange', fsPillSync);
+        const bg=$('btnCloseFsGuide'); if(bg) bg.addEventListener('click',()=>{ closeFsG(); });
+      }
       const be=$('btnStart'); if(be) be.addEventListener('click',()=>{ try{ if(!document.fullscreenElement&&document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(()=>{}); }catch(e){} });
     })();
     function setVol(lv){ ac(); volLevel=lv; applyVol(); if(lv>0) tone(700,0,0.07,'triangle',0.05); }
@@ -6676,7 +6716,7 @@
       if(dl.night>0.35&&p.x>TOWN_EDGE&&Math.random()<0.3&&S.atmo.length<250) S.atmo.push({kind:'firefly',x:p.x+rnd(-240,240),y:p.y+rnd(-160,160),vx:rnd(-7,7),vy:rnd(-5,5),life:rnd(1.6,3),maxLife:3,size:rnd(4,7),seed:rnd(0,9)});
       // humo continuo de chimeneas
       if(Math.random()<0.35){ const h=houses[irnd(0,houses.length-1)]; S.atmo.push({kind:'smoke',x:h.x+h.w-34,y:h.y+h.h-Math.round((h.h+16)/KY)-4,vx:rnd(2,8),vy:rnd(-26,-16),life:rnd(1.8,3),maxLife:3,size:rnd(9,15),grow:10,seed:rnd(0,9)}); }
-      if(p.talentsOpen||p.bagOpen||p.settingsOpen||p.mpOpen||p.chatOpen||p.petOpen||p.boutiqueOpen||p.profileOpen||p.ctlEdit||p.mapOpen){ refreshHUD(); drawMinimap(); if(p.mapOpen){ const wk=(S.t*5)|0; if(wk!==(S._wmTick||0)){ S._wmTick=wk; drawWorldMap(); } } if(window.__mpTick) __mpTick(dt); return; } // pausa con un panel abierto (talentos, equipo o el mapa del mundo) o editando controles; el mapa grande se redibuja a ~5/s, de sobra para sus pulsos y marcadores
+      if(p.talentsOpen||p.bagOpen||p.settingsOpen||p.mpOpen||p.chatOpen||p.petOpen||p.boutiqueOpen||p.profileOpen||p.fsGuideOpen||p.ctlEdit||p.mapOpen){ refreshHUD(); drawMinimap(); if(p.mapOpen){ const wk=(S.t*5)|0; if(wk!==(S._wmTick||0)){ S._wmTick=wk; drawWorldMap(); } } if(window.__mpTick) __mpTick(dt); return; } // pausa con un panel abierto (talentos, equipo o el mapa del mundo) o editando controles; el mapa grande se redibuja a ~5/s, de sobra para sus pulsos y marcadores
       // --- movimiento ---
       let mx=0,my=0;
       if(keys['w']||keys['arrowup'])my-=1; if(keys['s']||keys['arrowdown'])my+=1;
