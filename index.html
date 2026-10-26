@@ -4025,6 +4025,7 @@
        Si el broker o el CDN fallan, no hay compañeros y el juego
        sigue en solitario sin romperse. Enemigos, misión y botín
        siguen siendo de cada jugador (alcance v1). */
+    const MP_BROKER_NAMES=['Eclipse','EMQX','Mosquitto','HiveMQ'];
     const MP_BROKERS=['wss://mqtt.eclipseprojects.io:443/mqtt','wss://broker.emqx.io:8084/mqtt','wss://test.mosquitto.org:8081/mqtt','wss://broker.hivemq.com:8884/mqtt'];
     const MP_LIB_URLS=['lib/mqtt.min.js','https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js','https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js'];
     const MP_COLORS=['#37c8ff','#ff5d8f','#8dff57','#c07dff','#ffe259'];
@@ -4033,7 +4034,7 @@
     const MP_CHAT='valdoria-mundo/v1/chat/'; // chat: g = global, p/<código> = grupo
     const MP_UNI='valdoria-mundo/v1/u/'; // mensajes directos a un jugador: golpes, daño, invitaciones, susurros
     const MP_MAX_PEERS=60, MP_DRAW_MAX=20, MP_MSG_MAX=1200, MP_MSG_MIN_MS=45;
-    const MP={client:null,state:'idle',name:'',id:'p'+Math.random().toString(36).slice(2,11),peers:new Map(),pubAcc:0,heartAcc:0,lastSig:'',brokerIdx:0,colorSeq:0,drawn:[],retryT:null};
+    const MP={client:null,state:'idle',client2:null,state2:'idle',brokerIdx2:-1,retryT2:null,name:'',id:'p'+Math.random().toString(36).slice(2,11),peers:new Map(),pubAcc:0,heartAcc:0,lastSig:'',brokerIdx:0,colorSeq:0,drawn:[],retryT:null};
     function mpTopic(id){ return MP_WORLD+id; }
     function mpHex(v){ return (typeof v==='string'&&/^#[0-9a-fA-F]{6}$/.test(v))?v:null; }
     function mpCleanName(v){ return String(v||'').replace(/[<>&"'`]/g,'').replace(/\s+/g,' ').trim().slice(0,14); }
@@ -4430,7 +4431,7 @@
     function mpRenderPanel(){
       const st=$('mpStatus'); if(!st) return;
       const total=MP.peers.size+(MP.state==='online'?1:0);
-      if(MP.state==='online') st.innerHTML='<span class="ok">● EN EL MUNDO</span> · <b>'+total+' jugador'+(total===1?'':'es')+' conectado'+(total===1?'':'s')+'</b> · '+(MP.peers.size?MP.peers.size+' compañero(s) compartiendo tu mapa':'ahora mismo estás solo en el mundo: quien abra el enlace aparecerá aquí contigo');
+      if(MP.state==='online') st.innerHTML='<span class="ok">● EN EL MUNDO</span> · <b>'+total+' jugador'+(total===1?'':'es')+' conectado'+(total===1?'':'s')+'</b> · '+(MP.peers.size?MP.peers.size+' compañero(s) compartiendo tu mapa':'ahora mismo estás solo en el mundo: quien abra el enlace aparecerá aquí contigo')+' · Servidor: '+MP_BROKER_NAMES[MP.brokerIdx]+(MP.state2==='online'?' + '+MP_BROKER_NAMES[MP.brokerIdx2]+' (espejo)':'');
       else if(MP.state==='connecting') st.innerHTML='Conectando con el mundo compartido…';
       else if(MP.state==='offline') st.innerHTML='<span class="bad">● CONEXIÓN PERDIDA</span> · Reintentando entrar al mundo…';
       else if(MP.state==='error') st.innerHTML='<span class="bad">Sin conexión</span> con el servidor gratuito ahora mismo. Sigues jugando en solitario, sin problema; el mundo se reintenta solo.';
@@ -4497,7 +4498,7 @@
           will:{topic:mpTopic(MP.id),payload:JSON.stringify({bye:1,id:MP.id,n:MP.name}),qos:0,retain:false}});
       }catch(e){ mpBrokerFail(); return; }
       MP.client=client;
-      client.on('connect',()=>{ if(MP.client!==client) return; MP.state='online'; try{ client.subscribe(MP_WORLD+'+',{qos:0}); client.subscribe(MP_WTOPIC+'+',{qos:0}); client.subscribe(MP_CHAT+'g',{qos:0}); client.subscribe(MP_UNI+MP.id,{qos:0}); }catch(e){} try{ coopChatSub(); }catch(e){} mpRenderPanel(); toast('🌍 Estás en el mundo compartido','gold'); MP.lastSig=''; mpPublishState(); });
+      client.on('connect',()=>{ if(MP.client!==client) return; MP.state='online'; try{ client.subscribe(MP_WORLD+'+',{qos:0}); client.subscribe(MP_WTOPIC+'+',{qos:0}); client.subscribe(MP_CHAT+'g',{qos:0}); client.subscribe(MP_UNI+MP.id,{qos:0}); }catch(e){} try{ coopChatSub(); }catch(e){} mpRenderPanel(); toast('🌍 Estás en el mundo compartido','gold'); MP.lastSig=''; mpPublishState(); try{ mpConnect2(); }catch(e){} });
       client.on('message',(topic,payload)=>{ if(MP.client!==client) return;
         if(topic.indexOf(MP_WORLD)===0) mpOnMsg(payload);
         else if(topic.indexOf(MP_WTOPIC)===0){ try{ coopOnWorld(payload); }catch(e){} }
@@ -4515,8 +4516,58 @@
       if(MP.brokerIdx<MP_BROKERS.length-1){ MP.brokerIdx++; MP.state='connecting'; mpRenderPanel(); mpConnect(); }
       else { MP.state='error'; mpRenderPanel(); toast('Sin conexión con el servidor · sigues en solitario',''); mpScheduleRetry(); }
     }
+    /* ---------- enlace espejo (v1.4.0) ----------
+       La cadena de brokers se prueba en el mismo orden para todos,
+       pero cada red responde distinto: dos amigos pueden aterrizar
+       en brokers diferentes y ser invisibles entre sí aunque ambos
+       figuren «en el mundo». El espejo mantiene una SEGUNDA conexión
+       al siguiente broker de la cadena y repite en ella la presencia,
+       el chat y los mensajes directos (nunca el estado de bestias,
+       que es solo del enlace principal). Compartir cualquiera de los
+       dos enlaces basta para verse. */
+    function mpMirror(topic,payload){
+      if(!MP.client2||MP.state2!=='online') return;
+      try{ MP.client2.publish(topic,payload,{qos:0}); }catch(e){}
+    }
+    function mpCand2(){
+      const c=[]; for(let i=0;i<MP_BROKERS.length;i++){ if(i!==MP.brokerIdx) c.push(i); } return c;
+    }
+    function mpConnect2(){
+      if(MP.client2||MP.state2==='connecting'||MP.state2==='online') return;
+      if(typeof window.mqtt==='undefined'||!window.mqtt||!window.mqtt.connect) return;
+      const cand=mpCand2(); if(!cand.length) return;
+      if(MP.brokerIdx2<0||cand.indexOf(MP.brokerIdx2)<0) MP.brokerIdx2=cand[0];
+      MP.state2='connecting';
+      let client=null;
+      try{
+        client=mqtt.connect(MP_BROKERS[MP.brokerIdx2],{clientId:'valdoria-'+MP.id+'-m'+Math.random().toString(36).slice(2,6),clean:true,connectTimeout:12000,reconnectPeriod:2500,keepalive:30,
+          will:{topic:mpTopic(MP.id),payload:JSON.stringify({bye:1,id:MP.id,n:MP.name}),qos:0,retain:false}});
+      }catch(e){ mpBroker2Fail(); return; }
+      MP.client2=client;
+      client.on('connect',()=>{ if(MP.client2!==client) return; MP.state2='online';
+        try{ client.subscribe(MP_WORLD+'+',{qos:0}); client.subscribe(MP_CHAT+'g',{qos:0}); client.subscribe(MP_UNI+MP.id,{qos:0}); if(typeof PTY!=='undefined'&&PTY&&PTY.id) client.subscribe(MP_CHAT+'p/'+PTY.id,{qos:0}); }catch(e){}
+        mpRenderPanel(); MP.lastSig=''; mpPublishState(); });
+      client.on('message',(topic,payload)=>{ if(MP.client2!==client) return;
+        if(topic.indexOf(MP_WORLD)===0) mpOnMsg(payload);
+        else if(topic===MP_CHAT+'g'){ try{ chatOnMsg('g',payload); }catch(e){} }
+        else if(topic.indexOf(MP_CHAT+'p/')===0){ try{ chatOnMsg('p',payload); }catch(e){} }
+        else if(topic===MP_UNI+MP.id){ try{ socialOnUni(payload); }catch(e){} }
+      });
+      client.on('error',()=>{});
+      client.on('close',()=>{ if(MP.client2!==client) return; if(MP.state2==='online') MP.state2='offline'; });
+      setTimeout(()=>{ if(MP.client2===client&&MP.state2==='connecting') mpBroker2Fail(); },12500);
+    }
+    function mpBroker2Fail(){
+      const old=MP.client2; MP.client2=null; MP.state2='idle';
+      if(old){ try{ old.end(true); }catch(e){} }
+      const cand=mpCand2(); const ix=cand.indexOf(MP.brokerIdx2);
+      if(ix>=0&&ix<cand.length-1){ MP.brokerIdx2=cand[ix+1]; mpConnect2(); }
+      else { MP.brokerIdx2=-1; if(!MP.retryT2){ MP.retryT2=setTimeout(()=>{ MP.retryT2=null; mpConnect2(); },30000); } }
+    }
     function mpDisconnect(){
       const c=MP.client;
+      try{ mpMirror(mpTopic(MP.id),JSON.stringify({bye:1,id:MP.id,n:MP.name})); }catch(e){}
+      const c2=MP.client2; MP.client2=null; MP.state2='idle'; if(c2){ try{ c2.end(true); }catch(e){} }
       MP.client=null; MP.state='idle'; MP.peers.clear(); MP.drawn=[];
       try{ coopResetSocial(); }catch(e){} // sin conexión no hay grupo: la sesión social se cierra (el clan, guardado, queda)
       if(c){ try{ c.publish(mpTopic(MP.id),JSON.stringify({bye:1,id:MP.id,n:MP.name}),{qos:0}); }catch(e){} try{ c.end(true); }catch(e){} }
@@ -4535,7 +4586,9 @@
     function mpPublishState(){
       if(!MP.client||MP.state!=='online') return;
       const msg=mpBuildMsg(); if(!msg) return;
-      try{ MP.client.publish(mpTopic(MP.id),JSON.stringify(msg),{qos:0}); }catch(e){}
+      const pl=JSON.stringify(msg);
+      try{ MP.client.publish(mpTopic(MP.id),pl,{qos:0}); }catch(e){}
+      mpMirror(mpTopic(MP.id),pl);
       MP.lastSig=JSON.stringify(msg); MP.heartAcc=0;
     }
     /* Canal abierto = cualquiera puede publicar: todo lo recibido se
@@ -4656,7 +4709,7 @@
     function peerNameCol(rp){ return isPartyPeer(rp)?PARTY_COLOR:(rp?rp.color:'#fff'); }
     function peerColorOf(id){ const rp=MP.peers.get(id); return rp?rp.color:'#9fd8ff'; }
     function socCode(n){ const A='ABCDEFGHJKMNPQRSTUVWXYZ23456789'; let s=''; for(let i=0;i<n;i++) s+=A[Math.floor(Math.random()*A.length)]; return s; }
-    function socPublish(topic,obj){ if(MP.client&&MP.state==='online'){ try{ MP.client.publish(topic,JSON.stringify(obj),{qos:0}); }catch(e){} } }
+    function socPublish(topic,obj){ const pl=JSON.stringify(obj); if(MP.client&&MP.state==='online'){ try{ MP.client.publish(topic,pl,{qos:0}); }catch(e){} } if(topic.indexOf(MP_WTOPIC)!==0) mpMirror(topic,pl); }
     function socUni(to,obj){ obj.from=MP.id; socPublish(MP_UNI+to,obj); }
     function myPartyOf(id){ if(id===MP.id) return PTY.id; const rp=MP.peers.get(id); return rp?rp.pg:null; }
     /* ---------- elección de anfitrión y transiciones de modo ---------- */
@@ -5099,9 +5152,9 @@
       if(!MP.client||MP.state!=='online') return;
       const want=PTY.id?(MP_CHAT+'p/'+PTY.id):null;
       if(CH.pSub===want) return;
-      if(CH.pSub){ try{ MP.client.unsubscribe(CH.pSub); }catch(e){} }
+      if(CH.pSub){ try{ MP.client.unsubscribe(CH.pSub); }catch(e){} if(MP.client2&&MP.state2==='online'){ try{ MP.client2.unsubscribe(CH.pSub); }catch(e){} } }
       CH.pSub=want;
-      if(want){ try{ MP.client.subscribe(want,{qos:0}); }catch(e){} }
+      if(want){ try{ MP.client.subscribe(want,{qos:0}); }catch(e){} if(MP.client2&&MP.state2==='online'){ try{ MP.client2.subscribe(want,{qos:0}); }catch(e){} } }
     }
     function chatOnMsg(chan,payload){
       let raw=''; try{ raw=payload.toString(); }catch(e){ return; }
