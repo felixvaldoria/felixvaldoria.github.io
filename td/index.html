@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Torres del Valle · Tower Defense (muestra)</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overflow:hidden;font-family:'Trebuchet MS','Segoe UI',system-ui,sans-serif;background:linear-gradient(180deg,#79c7f2 0%,#aee3ff 45%,#cdeffd 100%)}
+  #game{position:fixed;inset:0}
+  canvas{display:block}
+  .hud{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;gap:8px;padding:8px 10px;pointer-events:none;z-index:5}
+  .pill{pointer-events:auto;display:flex;align-items:center;gap:6px;background:rgba(18,32,24,.82);color:#fff;border:2px solid rgba(255,255,255,.25);border-radius:99px;padding:6px 13px;font-weight:900;font-size:.92rem;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+  .pill b{color:#ffd23c}
+  .pill .heart{color:#ff6b81}
+  .spacer{flex:1}
+  .btn{pointer-events:auto;border:0;cursor:pointer;border-radius:99px;font:900 .85rem 'Trebuchet MS',sans-serif;padding:9px 16px;color:#fff;background:linear-gradient(160deg,#57d977,#2e9e4f);border:2px solid #d8ffb0;box-shadow:0 5px 16px rgba(20,90,40,.35)}
+  .btn:active{transform:scale(.95)}
+  .btn.blue{background:linear-gradient(160deg,#54c8ff,#3a7bd0);border-color:#bdeaff}
+  .btn:disabled{filter:grayscale(.7);opacity:.6}
+  .shop{position:fixed;left:0;right:0;bottom:0;display:flex;gap:9px;justify-content:center;align-items:stretch;padding:9px 10px calc(9px + env(safe-area-inset-bottom));z-index:5;pointer-events:none}
+  .card{pointer-events:auto;cursor:pointer;width:118px;border-radius:16px;padding:8px 9px 7px;background:linear-gradient(170deg,#fffdf4,#ffeec2);border:3px solid #d8a94e;box-shadow:0 6px 18px rgba(60,40,0,.3);text-align:center;transition:transform .08s,border-color .08s}
+  .card:active{transform:scale(.96)}
+  .card.sel{border-color:#57d977;box-shadow:0 0 0 3px #57d977,0 8px 20px rgba(20,90,40,.4)}
+  .card.poor{opacity:.55}
+  .card .ic{font-size:1.45rem;line-height:1}
+  .card .nm{font-weight:900;font-size:.8rem;color:#4a3200;margin-top:2px}
+  .card .ds{font-size:.62rem;color:#7a5c14;line-height:1.25;min-height:2em}
+  .card .pr{font-weight:900;font-size:.82rem;color:#b8860b;margin-top:2px}
+  .card .pr::before{content:'🪙 '}
+  #toast{position:fixed;top:58px;left:50%;transform:translateX(-50%);background:rgba(18,32,24,.88);color:#ffe98a;border:2px solid rgba(255,210,60,.5);padding:8px 18px;border-radius:99px;font-weight:900;font-size:.9rem;z-index:6;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
+  #toast.on{opacity:1}
+  .overlay{position:fixed;inset:0;background:rgba(10,24,16,.55);display:flex;align-items:center;justify-content:center;z-index:9}
+  .overlay.hidden{display:none}
+  .panel{background:linear-gradient(170deg,#fffdf4,#ffe9b8);border:4px solid #d8a94e;border-radius:24px;padding:26px 30px;text-align:center;max-width:88vw;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+  .panel h1{font-size:1.9rem;color:#2e6b1e;letter-spacing:.5px}
+  .panel h2{font-size:1.5rem;color:#2e6b1e}
+  .panel p{color:#5c4a12;margin:9px 0 15px;font-size:.95rem;line-height:1.45}
+  #sellBar{position:fixed;left:50%;bottom:118px;transform:translateX(-50%);z-index:7;display:none;gap:8px;align-items:center;background:rgba(18,32,24,.88);border:2px solid rgba(255,255,255,.3);border-radius:99px;padding:7px 8px 7px 16px;color:#fff;font-weight:900;font-size:.85rem}
+  #sellBar.on{display:flex}
+  #sellBar button{border:0;cursor:pointer;border-radius:99px;font:900 .8rem 'Trebuchet MS',sans-serif;padding:8px 14px;color:#fff;background:linear-gradient(160deg,#ff9a3c,#e2483d)}
+  #load{position:fixed;inset:0;background:linear-gradient(180deg,#79c7f2,#cdeffd);z-index:20;display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;color:#14532d;font-weight:900;font-size:1.1rem}
+</style>
+</head>
+<body>
+<div id="game"></div>
+<div class="hud">
+  <div class="pill">🪙 <b id="uiGold">150</b></div>
+  <div class="pill"><span class="heart">❤️</span> <b id="uiLives" style="color:#ff9fb0">20</b></div>
+  <div class="pill">🌊 Oleada <b id="uiWave">0</b>/10</div>
+  <div class="spacer"></div>
+  <button class="btn blue" id="btnSpeed" type="button">⏩ ×1</button>
+  <button class="btn" id="btnWave" type="button">▶ ¡Que vengan!</button>
+</div>
+<div id="toast"></div>
+<div id="sellBar"><span id="sellTxt">Torre</span><button id="btnSell" type="button">Vender</button></div>
+<div class="shop" id="shop"></div>
+
+<div class="overlay hidden" id="endOverlay">
+  <div class="panel">
+    <h2 id="endTitle">🏆</h2>
+    <p id="endText"></p>
+    <button class="btn" id="btnAgain" type="button">↻ Jugar otra vez</button>
+  </div>
+</div>
+<div class="overlay" id="introOverlay">
+  <div class="panel">
+    <h1>🏰 Torres del Valle</h1>
+    <p>Los ovnis vienen a por el cristal del valle. Toca una torre, luego toca una casilla de hierba para construirla.<br>Defiende el camino durante <b>10 oleadas</b>. ¡Que no pasen!</p>
+    <button class="btn" id="btnStart" type="button">▶ A JUGAR</button>
+    <p style="font-size:.72rem;color:#8a6d1f;margin-top:12px">Muestra hecha con el pack gratuito (CC0) «Tower Defense Kit» de Kenney · kenney.nl</p>
+  </div>
+</div>
+<div id="load">🌱 Plantando el valle…</div>
+
+<script src="lib/three.min.js"></script>
+<script src="lib/GLTFLoader.js"></script>
+<script>
+'use strict';
+/* ================= TORRES DEL VALLE · muestra tower defense ================= */
+const $=id=>document.getElementById(id);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const TILE=1, COLS=12, ROWS=8;
+const gx2w=gx=>gx-(COLS-1)/2, gz2w=gz=>gz-(ROWS-1)/2;
+
+/* camino: lista de casillas [gx,gz] en orden, de la entrada al cristal */
+const PATH=[[0,4],[1,4],[2,4],[3,4],[4,4],[4,3],[4,2],[4,1],[5,1],[6,1],[7,1],[8,1],[8,2],[8,3],[8,4],[8,5],[8,6],[9,6],[10,6],[11,6]];
+const PATHSET=new Set(PATH.map(p=>p[0]+','+p[1]));
+const WAYPOINTS=PATH.map(p=>({x:gx2w(p[0]),z:gz2w(p[1])}));
+WAYPOINTS.unshift({x:gx2w(-1.2),z:gz2w(4)}); WAYPOINTS.push({x:gx2w(12.2),z:gz2w(6)});
+
+const TOWERS={
+  turret:  {name:'Torreta',  ic:'🔫', cost:50,  range:2.7, dmg:6,  rate:3.6, proj:'bullet',    pSpeed:9,  weapon:'weapon-turret',  desc:'Rápida y barata. Ideal contra ovnis veloces.'},
+  ballista:{name:'Ballesta', ic:'🏹', cost:80,  range:3.7, dmg:17, rate:1.05,proj:'arrow',     pSpeed:11, weapon:'weapon-ballista', desc:'Gran alcance y buen daño.'},
+  cannon:  {name:'Cañón',    ic:'💣', cost:110, range:2.4, dmg:24, rate:0.62,proj:'cannonball',pSpeed:6,  weapon:'weapon-cannon',   desc:'Daño en área: los grupos lo temen.', splash:0.95}
+};
+const FOES={
+  a:{hp:22, spd:0.92, bounty:6,  model:'enemy-ufo-a', scale:0.72, tint:0xffffff},
+  b:{hp:16, spd:1.5,  bounty:7,  model:'enemy-ufo-b', scale:0.66, tint:0xffffff},
+  c:{hp:78, spd:0.64, bounty:14, model:'enemy-ufo-c', scale:0.84, tint:0xffffff},
+  d:{hp:680,spd:0.5,  bounty:150,model:'enemy-ufo-d', scale:1.35, tint:0xffffff}
+};
+const WAVES=[['a',8],['a',12],['a',10,'b',4],['a',14,'b',6],['c',6,'a',10],['b',16],['c',10,'b',8],['a',20,'c',8],['c',14,'b',10],['d',1,'b',8]];
+/* utilidades de audio mínimas (sin archivos) */
+let AC=null; function beep(f,d,type,g){ try{ if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)(); const o=AC.createOscillator(), gn=AC.createGain(); o.type=type||'square'; o.frequency.value=f; gn.gain.setValueAtTime(g||0.05,AC.currentTime); gn.gain.exponentialRampToValueAtTime(0.001,AC.currentTime+(d||0.08)); o.connect(gn); gn.connect(AC.destination); o.start(); o.stop(AC.currentTime+(d||0.08)); }catch(e){} }
+const sfx={ shoot(){beep(720,0.05,'square',0.02)}, pop(){beep(190,0.09,'sawtooth',0.05)}, coin(){beep(1180,0.07,'sine',0.045)}, leak(){beep(120,0.22,'sawtooth',0.07)}, build(){beep(420,0.09,'triangle',0.06)}, win(){[523,659,784,1046].forEach((f,i)=>setTimeout(()=>beep(f,0.16,'triangle',0.06),i*130))}, lose(){[392,330,262,196].forEach((f,i)=>setTimeout(()=>beep(f,0.18,'sawtooth',0.05),i*150))} };
+
+/* ============================ ESCENA ============================ */
+const scene=new THREE.Scene();
+scene.fog=new THREE.Fog(0xaee3ff,26,46);
+const camera=new THREE.PerspectiveCamera(46,innerWidth/innerHeight,0.1,120);
+function placeCamera(){ const a=innerWidth/innerHeight; const d=a<1?15.5:11.5; camera.position.set(0,d*0.82,d*0.92); camera.lookAt(0,-0.4,0.3); }
+placeCamera();
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth,innerHeight);
+renderer.outputEncoding=THREE.sRGBEncoding;
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+$('game').appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xcfe8ff,0x5da244,0.95));
+const sun=new THREE.DirectionalLight(0xfff1d6,0.95);
+sun.position.set(7,13,5); sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.left=-9; sun.shadow.camera.right=9; sun.shadow.camera.top=9; sun.shadow.camera.bottom=-9; sun.shadow.camera.far=32;
+scene.add(sun);
+/* suelo suave más allá del tablero */
+{ const g=new THREE.Mesh(new THREE.CircleGeometry(30,40),new THREE.MeshStandardMaterial({color:0x77c04e,roughness:1}));
+  g.rotation.x=-Math.PI/2; g.position.y=-0.06; g.receiveShadow=true; scene.add(g); }
+
+/* ============================ MODELOS ============================ */
+const loader=new THREE.GLTFLoader();
+const cache={};
+function loadModel(name){
+  if(cache[name]) return cache[name];
+  cache[name]=new Promise((res,rej)=>loader.load('assets/models/'+name+'.glb',g=>res(g.scene),undefined,rej));
+  return cache[name];
+}
+async function instance(name){
+  const src=await loadModel(name);
+  const o=src.clone(true);
+  o.traverse(m=>{ if(m.isMesh){ m.castShadow=true; m.receiveShadow=false; } });
+  return o;
+}
+function boxOf(o){ const b=new THREE.Box3().setFromObject(o); return {size:b.getSize(new THREE.Vector3()),min:b.min,max:b.max}; }
+
+/* ============================ TABLERO ============================ */
+const cellTower={}; // "gx,gz" -> torre
+let hoverMarker=null, rangeRing=null, baseCrystal=null;
+const boardGroup=new THREE.Group(); scene.add(boardGroup);
+function dirOf(a,b){ return [Math.sign(b[0]-a[0]),Math.sign(b[1]-a[1])]; }
+async function buildBoard(){
+  // rotación de rectas y esquinas según de dónde viene y a dónde va el camino
+  const rotStraight=(dx,dz)=> dz!==0? Math.PI/2 : 0;
+  function cornerRot(from,to){
+    // la esquina redonda del pack une, en su pose base, el oeste con el sur; giramos según el par (entrada,salida)
+    const key=from[0]+','+from[1]+'>'+to[0]+','+to[1];
+    const table={ '-1,0>0,1':0, '0,1>-1,0':0, '1,0>0,-1':Math.PI, '0,-1>1,0':Math.PI,
+                  '-1,0>0,-1':Math.PI/2, '0,-1>-1,0':Math.PI/2, '1,0>0,1':-Math.PI/2, '0,1>1,0':-Math.PI/2 };
+    return table[key]||0;
+  }
+  for(let gz=0;gz<ROWS;gz++) for(let gx=0;gx<COLS;gx++){
+    const key=gx+','+gz, pi=PATH.findIndex(p=>p[0]===gx&&p[1]===gz);
+    let name='tile', rotY=0;
+    if(pi===0){ name='tile-spawn'; }
+    else if(pi===PATH.length-1){ name='tile-end'; }
+    else if(pi>0){
+      const prev=PATH[pi-1], next=PATH[pi+1], cur=PATH[pi];
+      const din=dirOf(prev,cur), dout=dirOf(cur,next);
+      if(din[0]===-dout[0]&&din[1]===-dout[1]){ name='tile-straight'; rotY=rotStraight(dout[0],dout[1]); }
+      else { name='tile-corner-round'; rotY=cornerRot([-din[0],-din[1]],dout); }
+    } else if(Math.random()<0.14){ name='tile'; }
+    const t=await instance(name);
+    if(pi<0){ const alt=['tile','tile-tree','tile-rock'][Math.floor(Math.random()*3)]; if(Math.random()<0.30){ const t2=await instance(alt); t2.position.set(gx2w(gx),0,gz2w(gz)); boardGroup.add(t2); t.visible=false; } }
+    t.position.set(gx2w(gx),0,gz2w(gz)); t.rotation.y=rotY;
+    t.traverse(m=>{ if(m.isMesh) m.receiveShadow=true; });
+    boardGroup.add(t);
+  }
+  // el cristal que hay que defender, al final del camino
+  baseCrystal=await instance('detail-crystal-large');
+  baseCrystal.position.set(gx2w(11),0.1,gz2w(6)); baseCrystal.scale.setScalar(1.15); boardGroup.add(baseCrystal);
+  // adornos fuera del tablero
+  const decoSpots=[[-7.4,-4.6],[-6.8,3.8],[7.2,-4.4],[6.9,4.2],[-3.5,-4.9],[3.8,-5.0],[0.5,4.9],[-7.6,0.5],[7.7,-0.6]];
+  for(const [x,z] of decoSpots){ const d=await instance(Math.random()<0.7?'detail-tree-large':'detail-rocks-large'); d.position.set(x,0,z); d.rotation.y=Math.random()*6.28; boardGroup.add(d); }
+  // marcador de casilla y anillo de alcance
+  hoverMarker=await instance('selection-a'); hoverMarker.visible=false; hoverMarker.traverse(m=>{ if(m.isMesh) m.castShadow=false; }); scene.add(hoverMarker);
+  rangeRing=new THREE.Mesh(new THREE.RingGeometry(0.93,1.0,48),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.55,side:THREE.DoubleSide}));
+  rangeRing.rotation.x=-Math.PI/2; rangeRing.position.y=0.06; rangeRing.visible=false; scene.add(rangeRing);
+}
+
+/* ============================ JUEGO ============================ */
+const G={ gold:150, lives:20, wave:0, started:false, over:false, speed:1, sel:'turret', selTower:null,
+          enemies:[], projs:[], parts:[], spawning:null, waveActive:false, t:0 };
+const shop=$('shop');
+Object.keys(TOWERS).forEach(k=>{
+  const d=TOWERS[k], el=document.createElement('div'); el.className='card'+(k==='turret'?' sel':''); el.id='card_'+k;
+  el.innerHTML='<div class="ic">'+d.ic+'</div><div class="nm">'+d.name+'</div><div class="ds">'+d.desc+'</div><div class="pr">'+d.cost+'</div>';
+  el.addEventListener('click',()=>{ G.sel=k; G.selTower=null; $('sellBar').classList.remove('on'); rangeRing.visible=false;
+    document.querySelectorAll('.card').forEach(c=>c.classList.remove('sel')); el.classList.add('sel'); sfx.build(); });
+  shop.appendChild(el);
+});
+function toast(msg,ms){ const t=$('toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('on'),ms||1800); }
+function refreshHUD(){ $('uiGold').textContent=G.gold; $('uiLives').textContent=G.lives; $('uiWave').textContent=G.wave;
+  Object.keys(TOWERS).forEach(k=>{ $('card_'+k).classList.toggle('poor',G.gold<TOWERS[k].cost); });
+  $('btnWave').disabled=G.waveActive||G.over; $('btnWave').textContent=G.wave>=WAVES.length?'✔':'▶ ¡Que vengan!'; }
+function burst(x,y,z,color,n){
+  for(let i=0;i<(n||10);i++){ const m=new THREE.Mesh(burstGeo,burstMat.clone()); m.material.color.set(color);
+    m.position.set(x,y,z); m.userData={vx:(Math.random()-0.5)*2.4,vy:Math.random()*2.2+0.6,vz:(Math.random()-0.5)*2.4,life:0.5+Math.random()*0.25,t:0};
+    m.scale.setScalar(0.05+Math.random()*0.05); scene.add(m); G.parts.push(m); }
+}
+const burstGeo=new THREE.SphereGeometry(1,6,5);
+const burstMat=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true});
+
+async function buildTower(gx,gz,kind){
+  const def=TOWERS[kind];
+  const grp=new THREE.Group();
+  const base=await instance('tower-round-bottom-a'); grp.add(base);
+  const bb=boxOf(base);
+  const weapon=await instance(def.weapon); weapon.position.y=bb.size.y*0.92; grp.add(weapon);
+  grp.position.set(gx2w(gx),0,gz2w(gz));
+  const wb=boxOf(grp); const f=1.0/Math.max(wb.size.x,wb.size.z); grp.scale.setScalar(Math.min(f,1.15));
+  scene.add(grp);
+  const tw={gx,gz,kind,def,grp,weapon,cd:0,target:null,recoil:0};
+  cellTower[gx+','+gz]=tw; return tw;
+}
+function foeBar(f){
+  const cv=document.createElement('canvas'); cv.width=64; cv.height=9;
+  const tex=new THREE.CanvasTexture(cv); const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,depthTest:false}));
+  sp.scale.set(0.85,0.12,1); sp.position.y=1.02; sp.renderOrder=5;
+  f.barCv=cv; f.barTex=tex; f.grp.add(sp); drawFoeBar(f);
+}
+function drawFoeBar(f){ const c=f.barCv.getContext('2d'); const p=clamp(f.hp/f.hpMax,0,1);
+  c.fillStyle='rgba(10,10,10,.72)'; c.fillRect(0,0,64,9); c.fillStyle=p>0.5?'#57d977':(p>0.25?'#ffb52e':'#ff5d5d'); c.fillRect(1,1,62*p,7); f.barTex.needsUpdate=true; }
+
+async function spawnFoe(kind){
+  const def=FOES[kind];
+  const grp=await instance(def.model); grp.scale.setScalar(def.scale);
+  const f={kind,def,grp,hp:def.hp*(1+0.13*(G.wave-1)),hpMax:0,spd:def.spd,wp:0,x:WAYPOINTS[0].x,z:WAYPOINTS[0].z,dist:0,phase:Math.random()*6.28,dead:false};
+  f.hpMax=f.hp;
+  grp.position.set(f.x,0.55,f.z); scene.add(grp); foeBar(f);
+  G.enemies.push(f);
+}
+function startWave(){
+  if(G.waveActive||G.over||G.wave>=WAVES.length) return;
+  G.wave++; G.waveActive=true;
+  const comp=WAVES[G.wave-1], queue=[];
+  for(let i=0;i<comp.length;i+=2) for(let j=0;j<comp[i+1];j++) queue.push(comp[i]);
+  // mezcla ligera manteniendo el orden de tandas
+  G.spawning={queue, t:0, every:Math.max(0.42,0.95-G.wave*0.045)};
+  toast('🌊 ¡Oleada '+G.wave+'!'); refreshHUD();
+}
+function damage(f,dmg,splash,sx,sz){
+  if(f.dead) return;
+  const hit=[f]; if(splash){ for(const o of G.enemies){ if(o!==f&&!o.dead&&Math.hypot(o.x-f.x,o.z-f.z)<=splash) hit.push(o); } }
+  for(const o of hit){ o.hp-=dmg*(o===f?1:0.7); drawFoeBar(o);
+    if(o.hp<=0&&!o.dead){ o.dead=true; G.gold+=o.def.bounty; burst(o.x,0.7,o.z,0xffd23c,12); sfx.pop();
+      scene.remove(o.grp); } }
+  refreshHUD();
+}
+function fire(tw,f){
+  const def=tw.def; tw.cd=1/def.rate; tw.recoil=1;
+  const y=0.95*tw.grp.scale.y+0.35;
+  instance(def.proj==='bullet'?'weapon-ammo-bullet':(def.proj==='arrow'?'weapon-ammo-arrow':'weapon-ammo-cannonball')).then(m=>{
+    m.scale.setScalar(def.proj==='bullet'?0.55:0.8); m.position.set(tw.grp.position.x,0.95,tw.grp.position.z); scene.add(m);
+    G.projs.push({m,from:{x:tw.grp.position.x,z:tw.grp.position.z},target:f,speed:def.pSpeed,def,tw,t:0});
+  });
+  sfx.shoot();
+}
+function stepGame(dt){
+  G.t+=dt;
+  // aparición de enemigos
+  if(G.spawning){ G.spawning.t-=dt;
+    if(G.spawning.t<=0&&G.spawning.queue.length){ spawnFoe(G.spawning.queue.shift()); G.spawning.t=G.spawning.every; }
+    if(!G.spawning.queue.length) G.spawning=null;
+  }
+  // mover enemigos por el camino
+  for(const f of G.enemies){ if(f.dead) continue;
+    const tgt=WAYPOINTS[f.wp+1]; if(!tgt){ continue; }
+    const dx=tgt.x-f.x, dz=tgt.z-f.z, d=Math.hypot(dx,dz), step=f.spd*dt;
+    if(d<step){ f.x=tgt.x; f.z=tgt.z; f.wp++; f.dist+=d;
+      if(f.wp>=WAYPOINTS.length-1){ f.dead=true; scene.remove(f.grp); G.lives--; sfx.leak(); burst(f.x,0.6,f.z,0xff5d5d,14); refreshHUD();
+        if(G.lives<=0) return gameOver(false); continue; } }
+    else { f.x+=dx/d*step; f.z+=dz/d*step; f.dist+=step; }
+    f.grp.position.set(f.x,0.55+Math.sin(G.t*3.1+f.phase)*0.05,f.z);
+    f.grp.rotation.z=Math.sin(G.t*2.2+f.phase)*0.07;
+    if(d>0.01) f.grp.rotation.y=Math.atan2(dx,dz)-Math.PI/2;
+  }
+  G.enemies=G.enemies.filter(f=>!f.dead);
+  // fin de oleada
+  if(G.waveActive&&!G.spawning&&!G.enemies.length){ G.waveActive=false;
+    if(G.wave>=WAVES.length) return gameOver(true);
+    G.gold+=25; toast('✔ Oleada superada · +25 🪙 de botín'); sfx.coin(); refreshHUD(); }
+  // torres: apuntar y disparar (al enemigo más avanzado dentro del alcance)
+  for(const key in cellTower){ const tw=cellTower[key]; tw.cd-=dt;
+    let best=null,bd=-1;
+    for(const f of G.enemies){ if(f.dead) continue; const dd=Math.hypot(f.x-tw.grp.position.x,f.z-tw.grp.position.z);
+      if(dd<=tw.def.range&&f.dist>bd){ bd=f.dist; best=f; } }
+    tw.target=best;
+    if(best){ const ang=Math.atan2(best.x-tw.grp.position.x,best.z-tw.grp.position.z);
+      tw.weapon.rotation.y+=(((ang-tw.weapon.rotation.y+Math.PI*3)%(Math.PI*2))-Math.PI)*Math.min(1,dt*10);
+      if(tw.cd<=0) fire(tw,best); }
+    if(tw.recoil>0){ tw.recoil=Math.max(0,tw.recoil-dt*6); tw.weapon.position.z=-0.07*tw.recoil; }
+  }
+  // proyectiles
+  for(const p of G.projs){ if(p.dead) continue; const f=p.target;
+    if(!f||f.dead){ p.dead=true; scene.remove(p.m); continue; }
+    p.t+=dt*p.speed/ Math.max(0.001,Math.hypot(f.x-p.m.position.x,f.z-p.m.position.z));
+    const k=Math.min(1,p.t), arc=p.def.proj==='cannonball'? Math.sin(k*Math.PI)*0.7 : Math.sin(k*Math.PI)*0.15;
+    p.m.position.x=p.from.x+(f.x-p.from.x)*k; p.m.position.z=p.from.z+(f.z-p.from.z)*k; p.m.position.y=0.95+(0.55-0.95)*k+arc;
+    p.m.rotation.x+=dt*9;
+    if(k>=1){ p.dead=true; scene.remove(p.m); damage(f,p.def.dmg,p.def.splash||0,f.x,f.z); burst(f.x,0.62,f.z,0xfff0a0,5); }
+  }
+  G.projs=G.projs.filter(p=>!p.dead);
+  // partículas
+  for(const m of G.parts){ m.userData.t+=dt; const u=m.userData;
+    m.position.x+=u.vx*dt; m.position.y+=u.vy*dt; m.position.z+=u.vz*dt; u.vy-=3.2*dt;
+    m.material.opacity=1-u.t/u.life; if(u.t>=u.life){ m.userData.gone=true; scene.remove(m); } }
+  G.parts=G.parts.filter(m=>!m.userData.gone);
+  if(baseCrystal) baseCrystal.rotation.y+=dt*0.7;
+}
+function gameOver(won){
+  if(G.over) return; G.over=true;
+  $('endTitle').textContent=won?'🏆 ¡El valle está a salvo!':'💥 El cristal ha caído';
+  $('endText').textContent=won?('Has superado las 10 oleadas con '+G.lives+' vidas. El valle respira tranquilo… por ahora.'):('Los ovnis llegaron al cristal en la oleada '+G.wave+'. Reorganiza tus torres y vuelve a intentarlo.');
+  $('endOverlay').classList.remove('hidden');
+  won?sfx.win():sfx.lose();
+}
+
+/* ============================ ENTRADA ============================ */
+const ray=new THREE.Raycaster(), mouseV=new THREE.Vector2(), groundPlane=new THREE.Plane(new THREE.Vector3(0,1,0),0);
+let downAt=null;
+function evtCell(ev){
+  const r=renderer.domElement.getBoundingClientRect();
+  const cx=(ev.touches?ev.touches[0].clientX:ev.clientX), cy=(ev.touches?ev.touches[0].clientY:ev.clientY);
+  mouseV.set(((cx-r.left)/r.width)*2-1,-((cy-r.top)/r.height)*2+1);
+  ray.setFromCamera(mouseV,camera);
+  const pt=new THREE.Vector3(); if(!ray.ray.intersectPlane(groundPlane,pt)) return null;
+  const gx=Math.round(pt.x+(COLS-1)/2), gz=Math.round(pt.z+(ROWS-1)/2);
+  if(gx<0||gz<0||gx>=COLS||gz>=ROWS) return null;
+  return {gx,gz,wx:gx2w(gx),wz:gz2w(gz)};
+}
+renderer.domElement.addEventListener('pointermove',ev=>{
+  if(!G.started||G.over) return; const c=evtCell(ev); if(!c||!hoverMarker) return;
+  const occ=cellTower[c.gx+','+c.gz], onPath=PATHSET.has(c.gx+','+c.gz);
+  hoverMarker.visible=true; hoverMarker.position.set(c.wx,0.04,c.wz);
+  hoverMarker.traverse(m=>{ if(m.isMesh&&m.material&&m.material.color) m.material.color.set(occ||onPath?0xff7a6b:0x9dff70); });
+  if(occ){ rangeRing.visible=true; rangeRing.scale.setScalar(occ.def.range); rangeRing.position.set(c.wx,0.06,c.wz); }
+  else if(!G.selTower) rangeRing.visible=false;
+});
+renderer.domElement.addEventListener('pointerdown',ev=>{ downAt={x:ev.clientX,y:ev.clientY}; });
+renderer.domElement.addEventListener('pointerup',ev=>{
+  if(!G.started||G.over||!downAt) return;
+  if(Math.hypot(ev.clientX-downAt.x,ev.clientY-downAt.y)>8) return; // fue un arrastre
+  const c=evtCell(ev); if(!c) return;
+  const key=c.gx+','+c.gz, occ=cellTower[key];
+  if(occ){ G.selTower=occ; $('sellTxt').textContent=occ.def.ic+' '+occ.def.name+' · vendes por 🪙 '+Math.floor(occ.def.cost*0.7);
+    $('sellBar').classList.add('on'); rangeRing.visible=true; rangeRing.scale.setScalar(occ.def.range); rangeRing.position.set(c.wx,0.06,c.wz); return; }
+  $('sellBar').classList.remove('on'); G.selTower=null;
+  if(PATHSET.has(key)){ toast('🚫 Ahí va el camino: construye en la hierba'); return; }
+  const def=TOWERS[G.sel];
+  if(G.gold<def.cost){ toast('Te faltan 🪙 para la '+def.name); return; }
+  G.gold-=def.cost; sfx.build(); buildTower(c.gx,c.gz,G.sel).then(()=>refreshHUD()); refreshHUD();
+});
+$('btnSell').addEventListener('click',()=>{
+  const tw=G.selTower; if(!tw) return;
+  G.gold+=Math.floor(tw.def.cost*0.7); scene.remove(tw.grp); delete cellTower[tw.gx+','+tw.gz];
+  G.selTower=null; $('sellBar').classList.remove('on'); rangeRing.visible=false; sfx.coin(); refreshHUD();
+});
+$('btnWave').addEventListener('click',startWave);
+$('btnSpeed').addEventListener('click',()=>{ G.speed=G.speed===1?2:1; $('btnSpeed').textContent='⏩ ×'+G.speed; });
+$('btnAgain').addEventListener('click',()=>location.reload());
+$('btnStart').addEventListener('click',()=>{ $('introOverlay').classList.add('hidden'); G.started=true; beep(660,0.1,'triangle',0.05); });
+addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); placeCamera(); });
+
+/* ============================ BUCLE ============================ */
+let last=performance.now();
+function loop(now){
+  requestAnimationFrame(loop);
+  const rawDt=Math.min(0.05,(now-last)/1000); last=now;
+  if(G.started&&!G.over) stepGame(rawDt*G.speed);
+  else if(baseCrystal) baseCrystal.rotation.y+=rawDt*0.7;
+  renderer.render(scene,camera);
+}
+(async function init(){
+  try{ await buildBoard(); }catch(e){ console.log('board',e); }
+  // calentar la caché: que la primera torre no tarde en aparecer
+  ['tower-round-bottom-a','weapon-turret','weapon-ballista','weapon-cannon','weapon-ammo-bullet','weapon-ammo-arrow','weapon-ammo-cannonball','enemy-ufo-a','enemy-ufo-b','enemy-ufo-c','enemy-ufo-d'].forEach(n=>loadModel(n).catch(()=>{}));
+  $('load').style.display='none';
+  refreshHUD();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
