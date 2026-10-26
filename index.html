@@ -1126,6 +1126,7 @@
               <h3>🖥 PANTALLA COMPLETA</h3>
               <p>Juega ocupando <strong>toda la pantalla</strong>, sin la barra del teléfono (hora, batería…) encima. En iPhone: botón <strong>Compartir → «Añadir a pantalla de inicio»</strong> y abre VALDORIA desde ese icono para el mismo efecto.</p>
               <button class="ghost-btn" id="btnFs" type="button" style="width:100%">⛶ PANTALLA COMPLETA</button>
+              <p id="diagTxt" style="font-size:.66rem;opacity:.8;margin:8px 0 0">Pantalla: …</p>
             </div>
             <div class="set-card">
               <h3>🎮 CONTROLES A TU MEDIDA</h3>
@@ -3860,8 +3861,9 @@
     function closeBag(silent){ if(!S) return; const was=S.player.bagOpen; S.player.bagOpen=false; invSel=null; invSellArm=-1; $('bagScreen').classList.add('hidden'); if(was&&!silent) sfx.panelClose(); }
     /* ---------------- Ajustes (engranaje): sonido + transparencia ---------------- */
     function toggleSettings(){ if(!S) return; if(S.player.settingsOpen) closeSettings(); else openSettings(); }
-    function openSettings(){ if(!S) return; closeProfile(true); closeTalents(true); closeBag(true); closeMp(true); closePets(true); closeChat(true); closeBoutique(true); S.player.settingsOpen=true; $('settingsScreen').classList.remove('hidden'); applyVol(); ac(); sfx.panelOpen(); }
+    function openSettings(){ if(!S) return; closeProfile(true); closeTalents(true); closeBag(true); closeMp(true); closePets(true); closeChat(true); closeBoutique(true); S.player.settingsOpen=true; $('settingsScreen').classList.remove('hidden'); applyVol(); try{ diagFill(); }catch(e){} ac(); sfx.panelOpen(); }
     function closeSettings(silent){ if(!S) return; const was=S.player.settingsOpen; S.player.settingsOpen=false; $('settingsScreen').classList.add('hidden'); if(was&&!silent) sfx.panelClose(); }
+    function diagFill(){ const el=$('diagTxt'); if(!el) return; try{ const vv=window.visualViewport; const sa=((window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true); el.textContent='Pantalla: '+window.innerWidth+'×'+window.innerHeight+' · visible: '+(vv?(Math.round(vv.width)+'×'+Math.round(vv.height)+' (+'+Math.round(vv.offsetLeft||0)+','+Math.round(vv.offsetTop||0)+')'):'—')+' · física: '+screen.width+'×'+screen.height+' · app instalada: '+(sa?'sí':'no'); }catch(e){} }
     /* ---------- PERFIL: tu modelo 3D con el equipo, tus cifras y tu ⚡ Poder (base del futuro ranking) ---------- */
     const PROF_SLOTS=['casco','hombreras','armadura','arma','capa','amuleto','anillo'];
     let profRenderer=null, profScene=null, profCam=null, profCache={sig:'',url:null};
