@@ -4025,8 +4025,8 @@
        Si el broker o el CDN fallan, no hay compañeros y el juego
        sigue en solitario sin romperse. Enemigos, misión y botín
        siguen siendo de cada jugador (alcance v1). */
-    const MP_BROKER_NAMES=['Eclipse','EMQX','Mosquitto','HiveMQ'];
-    const MP_BROKERS=['wss://mqtt.eclipseprojects.io:443/mqtt','wss://broker.emqx.io:8084/mqtt','wss://test.mosquitto.org:8081/mqtt','wss://broker.hivemq.com:8884/mqtt'];
+    const MP_BROKER_NAMES=['EMQX'];
+    const MP_BROKERS=['wss://broker.emqx.io:8084/mqtt']; // UN SOLO SERVIDOR MUNDIAL (decisión de Felix, 2026-10-25): todos los jugadores aterrizan en el mismo sitio y se ven entre sí; sin cadena de servidores ni espejos activos (el código del espejo queda dormido: sin más candidatos no arranca).
     const MP_LIB_URLS=['lib/mqtt.min.js','https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js','https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js'];
     const MP_COLORS=['#37c8ff','#ff5d8f','#8dff57','#c07dff','#ffe259'];
     const MP_WORLD='valdoria-mundo/v1/p/'; // canal mundial único: todos en el mismo tema
