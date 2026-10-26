@@ -3022,7 +3022,7 @@
         enemies:[], projs:[], eprojs:[], parts:[], atmo:[], floats:[], drops:[], rings:[], trails:[],
         spawnT:0, boss:null, bossSpawned:false, shake:0, dlg:null, nearNpc:null, nearStatue:null, nearBoutique:false, portal:null, flashT:0, ambT:2.5, atmoT:0, pet:null, petMode:'mine',
         inCrypt:false, cryptDone:false, herald:null, exitPortal:null, tele:[], nearDoor:null,
-        bossMadre:false, bossAlfa:false, dung:null, dungBoss:null,
+        bossMadre:false, bossAlfa:false, dung:null, dungBoss:null, treeLoot:false,
         gems:0, owned:[], skin:null, weaponSkin:null, aura:null, contracts:null, musaLog:[], musa:null, musaChest:null, renacer:0, lastPhase:'',
         dayT:0.52, bossIntroT:0, weather:'clear', weatherT:55, rainAmt:0,
         butterflies:[], birds:[], clouds:[{x:300,y:200,s:190,sp:11},{x:1500,y:500,s:260,sp:8},{x:2100,y:120,s:210,sp:10}], puddles:[{x:1180,y:620,r:42},{x:1680,y:1020,r:54},{x:520,y:760,r:36},{x:1980,y:1350,r:46}]
@@ -3045,6 +3045,8 @@
       spore:{name:'Espora', hp:36, atk:8, def:0, spd:54, r:16, xp:22, gold:[3,9], color:'#e0584a', aggro:250},
       wolf:{name:'Lobo de brasa', hp:32, atk:11, def:0, spd:148, r:15, xp:30, gold:[5,12], color:'#8a5a44', aggro:340},
       golem:{name:'Gólem', hp:150, atk:18, def:4, spd:50, r:22, xp:58, gold:[12,24], color:'#7d8f6e', aggro:270},
+      spitter:{name:'Espora Bombardera', hp:30, atk:6, def:0, spd:66, r:16, xp:26, gold:[4,10], color:'#e08a3c', aggro:430},
+      frag:{name:'Fragmento de gólem', hp:26, atk:7, def:1, spd:122, r:10, xp:9, gold:[1,3], color:'#8a8d84', aggro:320},
       herald:{name:'El Heraldo de la Fundición', hp:980, atk:26, def:7, spd:66, r:50, xp:420, gold:[260,320], color:'#ffb52e', aggro:430}
     };
     /* ----- Física y locomoción de mobs -----
@@ -3127,6 +3129,7 @@
       return clamp(1+Math.floor(Math.max(0,d-600)/330)+irnd(0,1),1,5);
     }
     const VARIANTS={
+      field:{ spitter:{name:'Espora Bombardera',tint:'#e08a3c'} },
       bosque:{ spore:{name:'Espora mayor',vscale:1.3,tint:'#a34fd0'}, wolf:{name:'Lobo de ceniza',vscale:1.08,tint:'#5d564e'}, golem:{name:'Gólem joven',vscale:0.8,tint:'#9aa48c'} },
       paramo:{ spore:{name:'Espora carmesí ✦',vscale:1.55,tint:'#c22f4e'}, wolf:{name:'Lobo infernal ✦',vscale:1.35,tint:'#7a2e22'}, golem:{name:'Gólem carmesí ✦',vscale:1.5,tint:'#9a4a3a'} },
       cripta:{ spore:{name:'Guardián menor',vscale:1.15,tint:'#4a3b57'}, wolf:{name:'Sabueso de ceniza',vscale:1.06,tint:'#38302e'}, golem:{name:'Guardián de la cripta',vscale:1.12,tint:'#7d6430'} },
@@ -3152,10 +3155,10 @@
     /* Puntos de aparición por zona: cada territorio se puebla y se
        repone en los suyos, con la misma separación entre bestias */
     const ZSPAWN={
-      field:{target:18,spots:[[1400,500,'spore'],[1100,800,'spore'],[800,600,'spore'],[500,900,'spore'],[300,500,'spore'],
-        [1200,1500,'spore'],[900,1750,'spore'],[600,1400,'spore'],[350,1850,'spore'],[1400,2150,'spore'],
-        [1000,2350,'spore'],[600,2250,'spore'],[1580,950,'spore'],[1550,1780,'spore'],[2400,2250,'spore'],
-        [2900,2380,'spore'],[3400,2180,'spore'],[3950,2320,'spore']]},
+      field:{target:18,spots:[[1400,500,'spore'],[1100,800,'spitter'],[800,600,'spore'],[500,900,'spore'],[300,500,'spore'],
+        [1200,1500,'spore'],[900,1750,'spitter'],[600,1400,'spore'],[350,1850,'spore'],[1400,2150,'spore'],
+        [1000,2350,'spore'],[600,2250,'spore'],[1580,950,'spore'],[1550,1780,'spitter'],[2400,2250,'spore'],
+        [2900,2380,'spore'],[3400,2180,'spitter'],[3950,2320,'spore']]},
       bosque:{target:12,spots:[[2000,300,'wolf'],[2400,180,'wolf'],[2800,350,'wolf'],[3200,200,'wolf'],[3600,400,'wolf'],[4000,250,'wolf'],
         [1900,620,'wolf'],[2600,560,'wolf'],[3100,660,'wolf'],[3700,660,'wolf'],[4200,620,'wolf'],[2300,460,'wolf']]},
       paramo:{target:10,spots:[[2900,1000,'golem'],[3200,1250,'golem'],[3500,1000,'golem'],[3800,1300,'golem'],[4100,1050,'golem'],
@@ -3317,8 +3320,10 @@
       burst(e.x,e.y,'#ffd23c',4,90,0.25,3);
       if(e.hp<=0) killEnemy(e);
     }
+    function packAlert(e){ if(!e||e.type!=='wolf') return; for(const o of S.enemies){ if(o&&o!==e&&!o.dead&&o.type==='wolf'&&Math.hypot(o.x-e.x,o.y-e.y)<300) o.alertT=Math.max(o.alertT||0,3.5); } }
     function damageEnemy(e,dmg,knock,ang){
       if(e.musa){ floatText(e.x,e.y-42,'✨ Musa es intocable','#ffd9a0'); return; }
+      packAlert(e);
       const p=S.player;
       let cc=critChance();
       if(hasSeal('ojo')){ cc+=0.10; if(e.hpMax&&e.hp>e.hpMax*0.7) cc+=0.15; } // sello Ojo del halcón
@@ -3357,7 +3362,13 @@
       ring(e.x,e.y,'#ffd23c', e.type==='boss'?130:60);
       if(e.type==='boss'){ sfx.boom(); S.shake=14; }
       if(CO.mode==='host'&&e.mid!=null&&!(e.zone==='cripta'||e.zone==='raiz'||e.zone==='guarida')){ try{ coopQueueDeath(e); }catch(err){} } // el anfitrión anuncia cada muerte compartida (con sus participantes) a todo el mundo
-      if(!e.noReward){ S.kills++; contractKill(e); // sin recompensa (muerte compartida en la que no participé): solo el cuerpo y el espectáculo, ni XP ni botín ni misión
+      if(!e.noReward){ S.kills++; contractKill(e);
+      if(e.type==='golem'&&!e.champ){ // el gólem se parte en dos Fragmentos vivos
+        for(const off of [[-26,8],[26,8]]){ const n0=S.enemies.length; spawnEnemy('frag',e.x+off[0],e.y+off[1]); const f=S.enemies[S.enemies.length-1]; if(f&&S.enemies.length>n0){ f.vscale=0.55; f.alertT=4; } }
+      }
+      if(e.champ){ addGems(25,true); floatText(e.x,e.y-64,'👑 ¡Campeón caído! +25 💎','#ffd23c');
+        try{ const it=rollGearDrop({type:'boss',zone:e.zone,lvl:e.lvl||5,x:e.x,y:e.y}); if(it) S.drops.push({kind:'gear',item:it,x:e.x+rnd(-14,14),y:e.y+rnd(-8,14),vx:0,vy:0,t:0}); }catch(err){}
+      } // sin recompensa (muerte compartida en la que no participé): solo el cuerpo y el espectáculo, ni XP ni botín ni misión
       gainXP(e.xp);
       // Botín: monedas que vuelan al jugador + posible poción
       const coins=irnd(2,4);
@@ -3915,6 +3926,34 @@
       floatText(p.x,p.y-58,'🦊 ¡Tesoro de Musa! +'+g+' oro · +'+gm+' 💎','#ffd23c');
       musaLogAdd('🦊 Musa te guió a un tesoro en '+z+'.');
       saveGame(true);
+    }
+    /* ================= CAMPEONES Y LUGARES CON HISTORIA =================
+       Cada zona guarda un lugar que explica su peligro, y en él vive su
+       campeón: el Rey Hongo en el Círculo de Setas (de ahí salen las
+       esporas), la Matriarca junto al Árbol Hueco (la madre de la manada)
+       y el Guardián en la Forja Antigua (donde nació el Coloso). */
+    const FAIRY_RING={x:950,y:1050,r:115};
+    const TREE_POS={x:3050,y:330}, TREE_CHEST={x:3050,y:398};
+    const FORGE_POS={x:3750,y:900};
+    const CHAMPS=[
+      {key:'rey', type:'spore', name:'El Rey Hongo', x:950, y:1050, hp:430, atk:15, def:2, spd:40, r:40, xp:170, gold:130, lvl:4, tint:'#c94f43', vscale:2.2},
+      {key:'matriarca', type:'wolf', name:'La Matriarca', x:3050, y:330, hp:540, atk:19, def:2, spd:118, r:36, xp:220, gold:160, lvl:6, tint:'#5a3a30', vscale:1.6},
+      {key:'guardian', type:'golem', name:'El Guardián de la Forja', x:3750, y:900, hp:700, atk:23, def:6, spd:46, r:42, xp:280, gold:200, lvl:8, tint:'#7d6a4a', vscale:1.9}
+    ];
+    function spawnChamp(def){
+      const b={type:def.type,name:def.name,x:def.x,y:def.y,r:def.r,hp:def.hp,hpMax:def.hp,atk:def.atk,def:def.def,spd:def.spd,
+        xp:def.xp,gold:def.gold,atkCd:1.1,specialCd:3,hurtT:0,stunT:0,walkPh:0,flash:0,home:{x:def.x,y:def.y},enraged:false,
+        zone:zoneAt(def.x,def.y),lvl:def.lvl,tint:def.tint,vscale:def.vscale,champ:def.key,sum50:false};
+      initMobMotion(b); try{ b.mid=++CO.midSeq; }catch(err){ b.mid=0; }
+      S.enemies.push(b); return b;
+    }
+    function champTick(dt){
+      if(!S.champs) S.champs={};
+      for(const def of CHAMPS){
+        const st=S.champs[def.key]||(S.champs[def.key]={t:0});
+        if(S.enemies.some(e=>e.champ===def.key&&!e.dead)){ st.t=240; continue; }
+        st.t-=dt; if(st.t<=0){ spawnChamp(def); st.t=240; }
+      }
     }
     function enterDungeon(D){
       const p=S.player; if(p.dead||S.inCrypt||S.dung) return;
@@ -5953,7 +5992,7 @@
         pets:{owned:p.petsOwned.slice(), active:p.petActive||null},
         quest:{stage:S.quest.stage,count:S.quest.count,need:S.quest.need},
         victory:!!S.victory, crypt:!!S.cryptDone, madre:!!S.bossMadre, alfa:!!S.bossAlfa, kills:S.kills||0, goldEarned:S.goldEarned||0, bramStock:S.bramStock||0,
-        gems:S.gems||0, owned:(S.owned||[]).slice(), skin:S.skin||null, wskin:S.weaponSkin||null, aura:S.aura||null, contracts:S.contracts||null, musaLog:(S.musaLog||[]).slice(-12), renacer:S.renacer||0,
+        gems:S.gems||0, treeLoot:!!S.treeLoot, owned:(S.owned||[]).slice(), skin:S.skin||null, wskin:S.weaponSkin||null, aura:S.aura||null, contracts:S.contracts||null, musaLog:(S.musaLog||[]).slice(-12), renacer:S.renacer||0,
         elapsed:Math.round(S.elapsed||0), clan:SOC.clan?{n:SOC.clan.name,t:SOC.clan.tag,c:SOC.clan.code}:null };
     }
     function saveGame(force){
@@ -6033,7 +6072,7 @@
           else if(sv.quest.stage>=2) sv.quest.stage=4;
         }
         sv.kills=Math.floor(saveNum(o.kills,0,1e7,0)); sv.goldEarned=Math.floor(saveNum(o.goldEarned,0,1e9,0));
-        sv.gems=Math.floor(saveNum(o.gems,0,1e9,0)); sv.owned=Array.isArray(o.owned)?o.owned.filter(x=>typeof x==='string').slice(0,64):[]; sv.skin=(typeof o.skin==='string')?o.skin:null; sv.wskin=(typeof o.wskin==='string')?o.wskin:null; sv.aura=(typeof o.aura==='string')?o.aura:null; sv.contracts=(o.contracts&&typeof o.contracts==='object')?o.contracts:null; sv.musaLog=Array.isArray(o.musaLog)?o.musaLog.filter(x=>typeof x==='string').slice(-12):[]; sv.renacer=o.renacer?1:0;
+        sv.gems=Math.floor(saveNum(o.gems,0,1e9,0)); sv.treeLoot=!!o.treeLoot; sv.owned=Array.isArray(o.owned)?o.owned.filter(x=>typeof x==='string').slice(0,64):[]; sv.skin=(typeof o.skin==='string')?o.skin:null; sv.wskin=(typeof o.wskin==='string')?o.wskin:null; sv.aura=(typeof o.aura==='string')?o.aura:null; sv.contracts=(o.contracts&&typeof o.contracts==='object')?o.contracts:null; sv.musaLog=Array.isArray(o.musaLog)?o.musaLog.filter(x=>typeof x==='string').slice(-12):[]; sv.renacer=o.renacer?1:0;
         sv.bramStock=Math.floor(saveNum(o.bramStock,0,1e6,0)); sv.elapsed=saveNum(o.elapsed,0,1e7,0);
         // MIGRACIÓN DE VUELTA desde la etapa de supervivencia: los objetos
         // de supervivencia (comida, vendas, botiquines, materiales y
@@ -6082,7 +6121,7 @@
       p.petsOwned=(sv.petsOwned||[]).slice(); p.petActive=sv.petActive||null; S.pet=null; petEnsure();
       S.quest.stage=sv.quest.stage; S.quest.count=sv.quest.count; S.quest.need=sv.quest.need;
       S.victory=sv.victory; S.cryptDone=!!sv.cryptDone; S.bossMadre=!!sv.bossMadre; S.bossAlfa=!!sv.bossAlfa; S.kills=sv.kills; S.goldEarned=sv.goldEarned; S.bramStock=sv.bramStock;
-      S.gems=sv.gems||0; S.owned=Array.isArray(sv.owned)?sv.owned.slice():[]; S.skin=sv.skin||null; S.weaponSkin=sv.wskin||null; S.aura=sv.aura||null; S.contracts=sv.contracts||null; S.musaLog=Array.isArray(sv.musaLog)?sv.musaLog.slice():[]; S.renacer=sv.renacer||0;
+      S.gems=sv.gems||0; S.treeLoot=!!sv.treeLoot; S.owned=Array.isArray(sv.owned)?sv.owned.slice():[]; S.skin=sv.skin||null; S.weaponSkin=sv.wskin||null; S.aura=sv.aura||null; S.contracts=sv.contracts||null; S.musaLog=Array.isArray(sv.musaLog)?sv.musaLog.slice():[]; S.renacer=sv.renacer||0;
       S.startTime=performance.now()-sv.elapsed*1000;
       S.migGold=sv.migGold||0; // oro de la conversión al volver del modo supervivencia
       if(sv.migGold){ p.gold+=sv.migGold; S.goldEarned+=sv.migGold; }
@@ -6775,7 +6814,8 @@
         $('navText').textContent=dm+' m';
       } else $('navText').textContent='';
       // barra de jefe (arriba, en el centro): el Coloso fuera, el Heraldo dentro de la cripta
-      const bb=$('bossBar'), bEnt=S.inCrypt?S.herald:(S.dung?S.dungBoss:S.boss);
+      const bb=$('bossBar'); let bEnt=S.inCrypt?S.herald:(S.dung?S.dungBoss:S.boss);
+      if(!bEnt||bEnt.dead||dist(p,bEnt)>=560){ const ch=S.enemies.find(en=>en.champ&&!en.dead&&dist(p,en)<560); if(ch) bEnt=ch; }
       if(bEnt&&!bEnt.dead&&dist(p,bEnt)<560){ bb.classList.add('on'); $('uiBossHp').style.width=Math.max(0,bEnt.hp/bEnt.hpMax*100)+'%';
         bb.classList.toggle('enraged',!!bEnt.enraged);
         const bnm=$('bossName'), bw=bEnt.type==='herald'
@@ -6784,6 +6824,8 @@
           ?(bEnt.enraged?'🌿 LA MADRE ESPORA · ¡ENFURECIDA! 🌿':'🌿 LA MADRE ESPORA 🌿')
           : bEnt.type==='alfa'
           ?(bEnt.enraged?'🐺 EL ALFA DE CENIZA · ¡ENFURECIDO! 🐺':'🐺 EL ALFA DE CENIZA 🐺')
+          : bEnt.champ
+          ?('👑 '+(bEnt.name||'CAMPEÓN').toUpperCase()+(bEnt.enraged?' · ¡ENFURECIDO!':'')+' 👑')
           :(bEnt.enraged?'🔥 COLOSO DE LA FUNDICIÓN · ¡ENFURECIDO! 🔥':'⚠ COLOSO DE LA FUNDICIÓN ⚠');
         if(bnm&&bnm.textContent!==bw) bnm.textContent=bw;
         const bht=$('bossHpTxt'), hw=Math.max(0,Math.ceil(bEnt.hp))+' / '+bEnt.hpMax;
@@ -7211,7 +7253,7 @@
       // --- enemigos: dirección deseada → física → contacto con el suelo ---
       for(const e of S.enemies){
         if(e.vx===undefined) initMobMotion(e);
-        if(e.flash>0)e.flash-=dt; if(e.hurtT>0)e.hurtT-=dt; if(e.atkCd>0)e.atkCd-=dt; if(e.slowT>0)e.slowT-=dt; if(e.fearT>0)e.fearT-=dt;
+        if(e.flash>0)e.flash-=dt; if(e.hurtT>0)e.hurtT-=dt; if(e.atkCd>0)e.atkCd-=dt; if(e.slowT>0)e.slowT-=dt; if(e.fearT>0)e.fearT-=dt; if(e.alertT>0)e.alertT-=dt; if(e._pkT>0)e._pkT-=dt;
         if(e.wobbleT>0)e.wobbleT-=dt; if(e.landT>0)e.landT-=dt;
         if(e.dead){
           e.deathAge=(e.deathAge||0)+dt;
@@ -7259,8 +7301,9 @@
         if(!stunned&&e.returning){
           targetX=e.home.x; targetY=e.home.y; desiredSpeed=e.spd*0.88;
           desiredA=mobSteer(e,Math.atan2(targetY-e.y,targetX-e.x),targetX,targetY); faceTarget=desiredA;
-        } else if(!stunned&&!TP.dead&&!inTown&&d<aggroR){
+        } else if(!stunned&&!TP.dead&&!inTown&&(d<aggroR||(e.alertT||0)>0)){
           chasing=true;
+          if(e.type==='wolf'&&!(e._pkT>0)){ e._pkT=5; packAlert(e); }
           if(d>e.r+TP.r+4){
             // leve predicción: apunta a donde el jugador va a estar, no a donde estaba
             const pvx=TP.moving?Math.cos(TP.moveAng)*TP.spd*(TP.buffSpdT>0?1.45:1):0;
@@ -7286,11 +7329,15 @@
             }
           }
         }
+        if(e.type==='spitter'&&chasing){ // su sitio es lejos: ni se pega ni se deja cazar
+          if(d<215){ desiredA=Math.atan2(e.y-TP.y,e.x-TP.x); faceTarget=desiredA; desiredSpeed=e.spd*0.95; }
+          else if(d<400){ desiredSpeed=0; faceTarget=angTo(e,TP); }
+        }
         if(e.slowT>0) desiredSpeed*=(e.slowF||0.5); // raíces atrapantes / aullido lunar de la Druida
         if(e.fearT>0&&!stunned){ desiredA=Math.atan2(e.y-TP.y,e.x-TP.x); faceTarget=desiredA; desiredSpeed=Math.max(desiredSpeed,e.spd*0.9); } // atemorizada: huye de la loba
         if(inWater(e.x,e.y)) desiredSpeed*=0.73; // los mobs también vadean: el río los frena igual
         // aceleración/frenada con inercia: la velocidad máxima no cambia, solo cómo se llega a ella
-        const accel=(e.type==='wolf'||e.type==='alfa')?540:((e.type==='spore'||e.type==='madre')?300:(e.type==='golem'?225:185));
+        const accel=(e.type==='wolf'||e.type==='alfa')?540:((e.type==='spore'||e.type==='madre'||e.type==='spitter')?300:(e.type==='golem'?225:185));
         const dvx=Math.cos(desiredA)*desiredSpeed-e.vx, dvy=Math.sin(desiredA)*desiredSpeed-e.vy;
         const dvl=Math.hypot(dvx,dvy), maxDv=(stunned?accel*1.2:accel)*dt;
         if(dvl>0.001){ const k=Math.min(1,maxDv/dvl); e.vx+=dvx*k; e.vy+=dvy*k; }
@@ -7303,7 +7350,7 @@
         // giro progresivo, inclinación al girar/acelerar y tambaleo breve al recibir daño
         const tvx=e.vx+e.kvx, tvy=e.vy+e.kvy, tsp=Math.hypot(tvx,tvy);
         if(tsp>58&&(Math.abs(e.kvx)+Math.abs(e.kvy))>Math.abs(e.vx)+Math.abs(e.vy)) faceTarget=Math.atan2(tvy,tvx);
-        turnMob(e,faceTarget,(e.type==='wolf'||e.type==='alfa')?7.2:((e.type==='spore'||e.type==='madre')?5.2:(e.type==='golem'?2.7:2.25)),dt);
+        turnMob(e,faceTarget,(e.type==='wolf'||e.type==='alfa')?7.2:((e.type==='spore'||e.type==='madre'||e.type==='spitter')?5.2:(e.type==='golem'?2.7:2.25)),dt);
         const lat=-Math.sin(e.face)*tvx+Math.cos(e.face)*tvy;
         const leanTarget=clamp(-(e.turnVel||0)*0.028+lat*0.0009,-0.3,0.3)*(e.type==='wolf'?1:0.55);
         e.lean+=(leanTarget-(e.lean||0))*Math.min(1,dt*8);
@@ -7315,7 +7362,7 @@
           e.bodyBob+=(((tsp>5)?Math.sin(e.walkPh)*1.3*Math.min(1,speedFrac+0.2):0)-e.bodyBob)*Math.min(1,dt*11);
           if(tsp>60&&Math.random()<0.3) mobDust(e,1,10,2.6);
           if(tsp>40&&Math.random()<0.25&&S.parts.length<420) S.parts.push({x:e.x-Math.cos(e.face||0)*14,y:e.y-8,vx:rnd(-16,0),vy:rnd(-30,-12),life:0.3,maxLife:0.3,color:'#ff8a3c',size:3,grav:0}); // chispas de la melena de brasa
-        } else if(e.type==='golem'||e.type==='boss'||e.type==='herald'){
+        } else if(e.type==='golem'||e.type==='boss'||e.type==='herald'||e.type==='frag'){
           const before=Math.floor(e.walkPh/Math.PI), s=e.type==='boss'?2:1;
           if(tsp>4)e.walkPh+=dt*(2+tsp*0.042);
           const after=Math.floor(e.walkPh/Math.PI);
@@ -7326,7 +7373,7 @@
             const near=clamp(1-d/380,0,1); sfx.mobStep(near,e.stepSide,e.type==='boss');
             if(e.type==='boss'&&d<300) S.shake=Math.max(S.shake,1.5);
           }
-        } else if(e.type==='spore'||e.type==='madre'){
+        } else if(e.type==='spore'||e.type==='madre'||e.type==='spitter'){
           if(tsp>4)e.walkPh+=dt*(2.6+tsp*0.06);
           e.bodyBob+=(((tsp>4)?Math.sin(e.walkPh)*1.1*Math.min(1,speedFrac+0.2):0)-e.bodyBob)*Math.min(1,dt*9);
           if(tsp>22&&Math.random()<0.2) mobDust(e,1,9,2.4);
@@ -7339,6 +7386,17 @@
         }
         // jefe Coloso de la Fundición: golpe de área si te acercas y, a distancia,
         // escupe proyectiles de magma; al bajar del 45% de vida, enfurece
+        if(e.type==='spitter'&&!TP.dead&&d<430){
+          e.specialCd-=dt;
+          if(e.specialCd<=0&&d>120){ e.specialCd=2.3; const a2=angTo(e,TP);
+            S.eprojs.push({x:e.x+Math.cos(a2)*30,y:e.y-12+Math.sin(a2)*30,vx:Math.cos(a2)*265,vy:Math.sin(a2)*265,dmg:8+Math.round((e.lvl||1)*0.8),r:8,life:2.2,col:'#a8e063',col2:'#eaffb0'});
+            burst(e.x,e.y-14,'#a8e063',5,60,0.3,3); }
+        }
+        // la Matriarca, a media vida, aúlla y llama a dos lobos de su manada
+        if(e.champ==='matriarca'&&!e.sum50&&e.hp<e.hpMax*0.5){
+          e.sum50=true; floatText(e.x,e.y-72,'🐺 ¡La Matriarca llama a su manada!','#ffb52e'); if(sfx.roar) sfx.roar(true);
+          spawnEnemy('wolf',e.x-90,e.y+34); spawnEnemy('wolf',e.x+90,e.y+34);
+        }
         if(e.type==='boss'&&!TP.dead&&d<560){
           e.specialCd-=dt;
           if(e.specialCd<=0){
@@ -7491,6 +7549,19 @@
           else if(d.kind==='potion'){ p.potions=Math.min(99,(p.potions||0)+1); contractLoot('loot',1); sfx.pickup(); floatText(p.x,p.y-30,'🧪 +1 poción','#5effa1'); toast('🧪 Poción recogida: llevas '+p.potions+' (botón ✚)',''); }
           saveGame(true); // evento importante: botín recogido
         }
+      }
+      champTick(dt);
+      if(Math.hypot(p.x-FAIRY_RING.x,p.y-FAIRY_RING.y)<FAIRY_RING.r&&!p.dead){ // dentro del Círculo de Setas, la pradera te cuida
+        p.hp=Math.min(p.hpMax,p.hp+2.5*dt);
+        if(Math.random()<0.10) S.parts.push({x:p.x+rnd(-16,16),y:p.y-8,vx:rnd(-5,5),vy:rnd(-22,-10),life:0.7,maxLife:0.7,color:'#a8e063',size:3,grav:-8});
+        const dl2=dayLight(); if(dl2.night>0.25&&Math.random()<0.2) S.atmo.push({kind:'firefly',x:FAIRY_RING.x+rnd(-100,100),y:FAIRY_RING.y+rnd(-70,70),vx:rnd(-4,4),vy:rnd(-3,3),life:rnd(1.5,3),maxLife:3,size:rnd(2,3.4),seed:rnd(0,9)});
+      }
+      if(!S.treeLoot&&Math.hypot(p.x-TREE_CHEST.x,p.y-TREE_CHEST.y)<52){ // el tesoro guardado en el Árbol Hueco, una sola vez
+        S.treeLoot=true; const g2=120; p.gold+=g2; S.goldEarned=(S.goldEarned||0)+g2; addGems(30,true);
+        try{ const it=rollGearDrop({type:'boss',zone:'bosque',lvl:6,x:TREE_CHEST.x,y:TREE_CHEST.y}); if(it) S.drops.push({kind:'gear',item:it,x:TREE_CHEST.x,y:TREE_CHEST.y,vx:0,vy:0,t:0}); }catch(err){}
+        burst(TREE_CHEST.x,TREE_CHEST.y,'#ffd23c',24,160,0.6,4); if(sfx.loot) sfx.loot(2);
+        floatText(p.x,p.y-58,'🌳 ¡El tesoro del Árbol Hueco! +'+g2+' oro · +30 💎','#ffd23c');
+        saveGame(true);
       }
       if(S.musaChest){ const mc=S.musaChest; mc.t+=dt; if(Math.random()<0.35) S.parts.push({x:mc.x+rnd(-14,14),y:mc.y-6,vx:rnd(-6,6),vy:rnd(-34,-16),life:0.6,maxLife:0.6,color:'#ffd23c',size:3.4,grav:-12}); if(Math.hypot(p.x-mc.x,p.y-mc.y)<54) openMusaChest(); }
       S.drops=S.drops.filter(d=>!d.got&&(d.kind==='gear'||d.t<25)); // el equipo no caduca: espera en el suelo
@@ -8476,7 +8547,7 @@
       if(e.vscale&&e.vscale!==1){ ctx.translate(x,eAnch); ctx.scale(e.vscale,e.vscale); ctx.translate(-x,-eAnch); } // variante de zona: mayor, joven o élite
       const fl=e.flash>0, lean=(e.lean||0)+(e.wobbleLean||0);
       const base=fl?'#ffffff':(ETYPES[e.type]?ETYPES[e.type].color:'#ff8a3c');
-      if(e.type==='spore'||e.type==='madre'){
+      if(e.type==='spore'||e.type==='madre'||e.type==='spitter'){
         // ESPORA: un hongo viviente — sombrero ancho con motas, cuerpo
         // rechoncho que se balancea y piececitos que corretean
         const flip=Math.cos(e.face||0)<0?-1:1;
@@ -8532,7 +8603,7 @@
         circle(x+31.5,y-5+bob,1.9,'#2b1a12'); // nariz
         blob(x+19,y-8.5+bob,4.6,4.6,'#ffb52e',.6,'lighter'); circle(x+19,y-8.5+bob,1.8,fl?'#ffffff':'#ffe98a'); circle(x+19,y-8.5+bob,0.85,'#3a1503'); // ojo
         ctx.restore();
-      } else if(e.type==='golem'||e.type==='boss'||e.type==='herald'){
+      } else if(e.type==='golem'||e.type==='boss'||e.type==='herald'||e.type==='frag'){
         const s=e.type==='boss'?2:(e.type==='herald'?2.4:1);
         ctx.save(); ctx.translate(x,y+bob); ctx.rotate(lean*0.35); ctx.translate(-x,-(y+bob));
         if(e.type==='boss'||e.type==='herald') blob(x,y+13*s,46,19,'#ff5d3a',.18+.06*Math.sin(S.t*5),'lighter'); // resplandor de magma a sus pies
@@ -8591,6 +8662,36 @@
         if(a.kind==='mist') blob(ax,ay,a.size,a.size*0.42,'#eaf4ff',.13*env);
         else blob(ax,ay,a.size,a.size*0.45,'#ff8a3c',.10*env,'lighter');
       }
+      if(!S.inCrypt&&!S.dung){
+        // el Círculo de Setas: nueve setas gigantes en anillo, con su resplandor
+        { const fx=FAIRY_RING.x-cam.x, fy=FAIRY_RING.y-cam.y-tLift(FAIRY_RING.x,FAIRY_RING.y);
+          if(fx>-260&&fy>-260&&fx<vW()+260&&fy<vH()+260){
+            ctx.strokeStyle='rgba(168,224,99,.30)'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(fx,fy,FAIRY_RING.r,0,7); ctx.stroke();
+            blob(fx,fy,150,80,'#a8e063',.08+0.04*Math.sin(S.t*2),'lighter');
+            for(let i=0;i<9;i++){ const a=i/9*Math.PI*2+0.35, mx=fx+Math.cos(a)*FAIRY_RING.r, my=fy+Math.sin(a)*FAIRY_RING.r*0.92;
+              rr2(mx-3,my-8,6,10,2,'#e8dfc8'); ctx.fillStyle='#c94f43'; ctx.beginPath(); ctx.ellipse(mx,my-11,11,6,0,Math.PI,0); ctx.closePath(); ctx.fill();
+              circle(mx-4,my-13,1.6,'#ffe9c9'); circle(mx+3,my-15,2,'#ffe9c9'); }
+          } }
+        // el Árbol Hueco: un tronco enorme con la oquedad donde duerme el tesoro
+        { const tx=TREE_POS.x-cam.x, ty=TREE_POS.y-cam.y-tLift(TREE_POS.x,TREE_POS.y);
+          if(tx>-140&&ty>-140&&tx<vW()+140&&ty<vH()+140){
+            blob(tx,ty+16,120,44,'#0e2410',.35);
+            ctx.fillStyle='#4a3421'; ctx.beginPath(); ctx.arc(tx,ty,48,0,7); ctx.fill();
+            ctx.fillStyle='#5d422a'; ctx.beginPath(); ctx.arc(tx-8,ty-8,38,0,7); ctx.fill();
+            ctx.fillStyle='#120b06'; ctx.beginPath(); ctx.ellipse(tx,ty+14,17,20,0,0,7); ctx.fill();
+            if(!S.treeLoot){ const cx2=TREE_CHEST.x-cam.x, cy2=TREE_CHEST.y-cam.y-tLift(TREE_CHEST.x,TREE_CHEST.y)+Math.sin(S.t*3)*1.5;
+              blob(cx2,cy2,52,28,'#ffd23c',.35+0.1*Math.sin(S.t*5),'lighter'); rr2(cx2-14,cy2-4,28,13,3,'#8a5a1e'); rr2(cx2-14,cy2-11,28,8,3,'#a9742a'); ctx.fillStyle='#ffd23c'; ctx.fillRect(cx2-2,cy2-11,4,20); }
+          } }
+        // la Forja Antigua: ruinas, yunque y una brasa que nunca se apaga
+        { const gx=FORGE_POS.x-cam.x, gy=FORGE_POS.y-cam.y-tLift(FORGE_POS.x,FORGE_POS.y);
+          if(gx>-180&&gy>-180&&gx<vW()+180&&gy<vH()+180){
+            ctx.fillStyle='#3c3644'; circle(gx-52,gy+18,17,'#3c3644'); circle(gx+58,gy+24,13,'#3c3644'); circle(gx+30,gy-30,11,'#3c3644');
+            rr2(gx-30,gy-52,20,52,4,'#4c4656'); rr2(gx-34,gy-58,28,10,3,'#5d576a');
+            rr2(gx-6,gy+2,30,12,3,'#2c2833'); rr2(gx+2,gy-6,14,10,2,'#3a3542');
+            blob(gx+8,gy+2,34,18,'#ff8a3c',.4+0.14*Math.sin(S.t*6),'lighter'); circle(gx+8,gy+1,4,'#ffd23c');
+            if(Math.random()<0.12) S.parts.push({x:FORGE_POS.x+rnd(-6,14),y:FORGE_POS.y-2,vx:rnd(-6,6),vy:rnd(-40,-20),life:0.7,maxLife:0.7,color:'#ff9a3c',size:3.4,grav:-16});
+          } }
+      }
       // trofeos de jefes en la plaza: un pedestal por jefe, encendido al caer
       if(!S.inCrypt&&!S.dung){ for(const tr of TROPHIES){ const tx=tr.x-cam.x, ty=tr.y-cam.y-tLift(tr.x,tr.y); if(tx<-70||ty<-70||tx>vW()+70||ty>vH()+70) continue; const lit=tr.flag(); rr2(tx-15,ty+6,30,9,3,'#4a4038'); rr2(tx-10,ty-12,20,20,4,lit?'#6a5a3a':'#55505e'); if(lit){ const fl2=1+Math.sin(S.t*6+tr.x)*0.15; blob(tx,ty-24,26*fl2,20*fl2,tr.col,.5,'lighter'); circle(tx,ty-24,5.5*fl2,'#fff3b0'); circle(tx,ty-24,3,tr.col); } else { circle(tx,ty-24,5,'#2c2833'); } } }
       // el tesoro de Musa: un cofre dorado que brilla en el mundo
@@ -8644,7 +8745,7 @@
       if(window.G3&&G3.state==='on') g3SyncModels(cam);
       // proyectiles con halo de luz
       for(const pr of S.projs){ const py2=pr.y-cam.y-tLift(pr.x,pr.y); blob(pr.x-cam.x,py2,pr.r+9,pr.r+9,pr.color,.5,'lighter'); circle(pr.x-cam.x,py2,pr.r+1,pr.color); circle(pr.x-cam.x,py2,Math.max(1.6,pr.r-1.6),'#fff'); }
-      for(const pr of S.eprojs){ const py2=pr.y-cam.y-tLift(pr.x,pr.y); blob(pr.x-cam.x,py2,pr.r+10,pr.r+10,'#ff5d3a',.5,'lighter'); circle(pr.x-cam.x,py2,pr.r+1,'#ff5d3a'); circle(pr.x-cam.x,py2,Math.max(1.6,pr.r-1.6),'#ffd23c'); }
+      for(const pr of S.eprojs){ const py2=pr.y-cam.y-tLift(pr.x,pr.y); blob(pr.x-cam.x,py2,pr.r+10,pr.r+10,pr.col||'#ff5d3a',.5,'lighter'); circle(pr.x-cam.x,py2,pr.r+1,pr.col||'#ff5d3a'); circle(pr.x-cam.x,py2,Math.max(1.6,pr.r-1.6),pr.col2||'#ffd23c'); }
       // estelas de ataque por clase + destellos de impacto
       for(const tr of (S.trails||[])){ const a=Math.max(0,tr.life/tr.max), tx=tr.x-cam.x, ty=tr.y-cam.y-tLift(tr.x,tr.y);
         if(tr.kind==='slash'){ ctx.save(); ctx.globalAlpha=a*0.85; ctx.strokeStyle=tr.color; ctx.lineWidth=7*a+2; ctx.lineCap='round'; ctx.beginPath(); ctx.arc(tx,ty,44,tr.ang-1.05,tr.ang+1.05); ctx.stroke(); ctx.strokeStyle='#ffffff'; ctx.lineWidth=2.4; ctx.beginPath(); ctx.arc(tx,ty,44,tr.ang-0.8,tr.ang+0.8); ctx.stroke(); ctx.restore(); }
@@ -9161,7 +9262,7 @@
        escalado en grande con núcleo. El lobo de brasa NO tiene modelo:
        ningún pack de KayKit trae cuadrúpedos (solo personajes con rig y
        props), así que conserva su modelo de código de siempre. */
-    const KK_MOB={spore:'Skeleton_Minion.glb',madre:'Skeleton_Minion.glb',golem:'Skeleton_Warrior.glb',boss:'Skeleton_Warrior.glb',herald:'Skeleton_Warrior.glb'};
+    const KK_MOB={spore:'Skeleton_Minion.glb',spitter:'Skeleton_Minion.glb',frag:'Skeleton_Minion.glb',madre:'Skeleton_Minion.glb',golem:'Skeleton_Warrior.glb',boss:'Skeleton_Warrior.glb',herald:'Skeleton_Warrior.glb'};
     const KK_MOB_BASES=['skl/','https://cdn.jsdelivr.net/gh/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0@main/addons/kaykit_character_pack_skeletons/Characters/gltf/',
       'https://raw.githubusercontent.com/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0/main/addons/kaykit_character_pack_skeletons/Characters/gltf/'];
     function kkNeedMob(type){ const file=KK_MOB[type]; if(file) kkNeedFile(file,KK_MOB_BASES); }
@@ -10128,7 +10229,7 @@
           if(tplM&&tplM.state==='ready'){
             let rm=G3.mobReal.get(e);
             if(!rm){
-              const mobOpts=e.type==='spore'
+              const mobOpts=(e.type==='spore'||e.type==='spitter')
                 ? {kind:null,wcol:'#cfd8e6',wrar:0,attackClip:'1H_Melee_Attack_Chop',body:e.tint||'#7fae4c',cape:'#5d8a3a',emblem:'cap',scaleMul:(e.vscale||1)}
                 : e.type==='madre'
                 ? {kind:null,wcol:'#cfd8e6',wrar:0,attackClip:'1H_Melee_Attack_Chop',body:'#4c7a38',cape:'#33511f',emblem:'cap',scaleMul:2.0}
