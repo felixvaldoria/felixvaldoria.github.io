@@ -84,6 +84,8 @@
 
       .right-col{display:flex;flex-direction:row;gap:6px;align-items:flex-start}
       .quest-chip{pointer-events:none;display:flex;align-items:center;gap:8px;padding:7px 10px;width:100%}
+      #questChip{pointer-events:auto;cursor:pointer}
+      .contract-chip{pointer-events:auto;cursor:pointer;display:flex;align-items:center;gap:6px;padding:5px 10px;width:100%;font:800 .72rem 'Trebuchet MS',sans-serif;color:#ffe9a8;margin-top:5px}
       .quest-chip span{font-family:var(--display);font-size:.8rem;white-space:nowrap}
       .quest-chip .prog{flex:1;height:8px;border-radius:99px;background:rgba(0,0,0,.55);overflow:hidden;border:1px solid rgba(255,255,255,.2)}
       .quest-chip .prog>i{display:block;height:100%;background:linear-gradient(90deg,#ffb52e,#ffe259);width:0%;transition:width .3s}
@@ -679,6 +681,21 @@
       #btnBoutique{background:linear-gradient(160deg,#ffe98a,#ff9d2e 48%,#8b30c9);border-color:#fff3b0;color:#2a1200;box-shadow:0 0 0 2px rgba(255,201,60,.22),0 0 18px rgba(255,157,46,.55),0 6px 16px rgba(0,0,0,.4);animation:boutiquePulse 2.2s ease-in-out infinite}
       #btnBoutique .soon-badge{position:absolute;top:-8px;right:-10px;background:#ff2f78;color:#fff;border:1.5px solid #fff;font-size:.43rem;font-weight:900;letter-spacing:.04em;padding:2px 5px;border-radius:99px;box-shadow:0 3px 8px rgba(0,0,0,.45)}
       @keyframes boutiquePulse{0%,100%{box-shadow:0 0 0 2px rgba(255,201,60,.18),0 0 12px rgba(255,157,46,.35),0 6px 16px rgba(0,0,0,.4)}50%{box-shadow:0 0 0 3px rgba(255,201,60,.35),0 0 24px rgba(255,157,46,.75),0 6px 16px rgba(0,0,0,.4)}}
+      #diarioScreen{padding:10px;background:radial-gradient(90% 70% at 50% 0%,rgba(30,60,120,.45),rgba(5,3,14,.92) 68%)}
+      .diario-panel{max-width:520px;margin:0 auto;background:rgba(16,12,32,.92);border:1.5px solid rgba(255,210,60,.35);border-radius:18px;padding:16px 16px 12px;max-height:100%;overflow-y:auto}
+      .diario-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+      .diario-head h2{margin:0;font-family:var(--display);font-size:1.05rem;color:#ffe9a8;letter-spacing:.03em}
+      .diario-panel h3{margin:14px 0 7px;font-size:.82rem;color:#bfe3ff;letter-spacing:.04em}
+      .diario-gems{margin-top:8px;font:800 .78rem 'Trebuchet MS',sans-serif;color:#7ad0ff}
+      .diario-row{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:11px;padding:8px 10px;margin-bottom:7px}
+      .diario-row.done{border-color:rgba(120,255,150,.45);background:rgba(70,200,110,.08)}
+      .diario-row-top{display:flex;justify-content:space-between;gap:8px;font:700 .78rem 'Trebuchet MS',sans-serif;color:#f2ead2}
+      .diario-row-top b{color:#ffd23c}
+      .diario-bar{height:7px;border-radius:99px;background:rgba(255,255,255,.12);margin:6px 0 4px;overflow:hidden}
+      .diario-bar i{display:block;height:100%;background:linear-gradient(90deg,#54c8ff,#ffd23c);border-radius:99px}
+      .diario-rew{font:600 .68rem 'Trebuchet MS',sans-serif;color:#b8c4de}
+      .diario-log,.diario-empty{font:600 .76rem 'Trebuchet MS',sans-serif;color:#e8ddc0;margin:4px 0}
+      .diario-tip{font:600 .68rem 'Trebuchet MS',sans-serif;color:#8fa0c0;margin-top:10px}
       #boutiqueScreen{padding:10px;background:radial-gradient(90% 70% at 50% 0%,rgba(106,45,190,.5),rgba(5,3,14,.9) 68%)}
       .boutique-panel{position:relative;width:min(1120px,100%);height:100%;margin:0 auto;display:flex;flex-direction:column;overflow:hidden;text-align:left;border:2px solid rgba(255,201,60,.82);border-radius:22px;padding:14px 16px 12px;background:radial-gradient(620px 260px at 8% -4%,rgba(192,125,255,.38),rgba(192,125,255,0) 62%),radial-gradient(720px 300px at 92% -6%,rgba(255,201,60,.28),rgba(255,201,60,0) 60%),linear-gradient(180deg,#2b1749 0%,#150b29 52%,#1d0e35 100%);box-shadow:0 24px 70px rgba(0,0,0,.72),inset 0 0 0 1px rgba(255,255,255,.08),inset 0 -30px 60px rgba(0,0,0,.35)}
       .boutique-sparkles{position:absolute;inset:0;pointer-events:none;overflow:hidden}
@@ -724,6 +741,9 @@
       .b-card.special{border-color:rgba(192,125,255,.78);box-shadow:0 0 0 1px rgba(230,200,255,.16),0 0 20px rgba(139,48,201,.22),0 10px 24px rgba(0,0,0,.34)}
       .b-card:active{transform:scale(.985)}
       .b-card-preview{position:relative;height:154px;display:grid;place-items:center;overflow:hidden;border-radius:14px 14px 0 0;background:radial-gradient(circle at 50% 64%,var(--bglow,rgba(255,201,60,.28)),rgba(255,255,255,.05) 44%,rgba(0,0,0,.22) 78%)}
+      .b-card-preview.live::before{display:none}
+      .boutique-buy-btn{pointer-events:auto;background:linear-gradient(160deg,#54c8ff,#8b30c9);color:#fff;border:1.5px solid #bdeaff;border-radius:99px;font:900 .62rem 'Trebuchet MS',sans-serif;padding:6px 10px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.4)}
+      .boutique-buy-btn:disabled{filter:grayscale(.7);opacity:.65;cursor:default}
       .b-card-preview::before{content:"PRÓXIMAMENTE";position:absolute;z-index:5;top:20px;left:-48px;width:178px;transform:rotate(-23deg);background:linear-gradient(90deg,#ff2f78,#ff8a1e);color:#fff;font-family:var(--display);font-size:.58rem;letter-spacing:.11em;text-align:center;padding:5px 0;box-shadow:0 5px 14px rgba(0,0,0,.4);text-shadow:0 1px 2px rgba(0,0,0,.35)}
       .b-card-preview::after{content:"✦ ✦ ✦";position:absolute;right:9px;top:7px;color:rgba(255,255,255,.55);font-size:.62rem;letter-spacing:.3em}
       .b-card-preview canvas,.b-card-preview img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block}
@@ -827,11 +847,12 @@
             </div>
           </div>
           </div>
-          <div class="hud-panel quest-chip">
+          <div class="hud-panel quest-chip" id="questChip">
             <span id="questTitle">⚔ 0/5</span>
             <div class="prog"><i id="questProg"></i></div>
             <span class="gold" id="uiGold">0</span>
           </div>
+          <div class="hud-panel contract-chip" id="contractChip" role="button" title="Abrir el Diario de Valdoria">📜 <span id="contractTxt">Diario</span></div>
           </div>
           <div class="right-col">
           <div class="hud-panel hud-right">
@@ -847,7 +868,7 @@
             <button class="icon-btn" id="btnMp" type="button" aria-label="Jugadores en el mundo compartido">👥<span class="talent-badge" id="mpBadge">0</span></button>
             <button class="icon-btn" id="btnChat" type="button" aria-label="Abrir el chat: global, grupo y susurros">💬<span class="talent-badge" id="chatBadge">0</span></button>
             <button class="icon-btn" id="btnPets" type="button" aria-label="Abrir mascotas: ver las tuyas y elegir cuál te acompaña">🐾<span class="talent-badge" id="petBadge">0</span></button>
-            <button class="icon-btn" id="btnBoutique" type="button" aria-label="Abrir la Boutique Valdoria: aspectos y cosméticos próximamente">💎<span class="soon-badge">PRONTO</span></button>
+            <button class="icon-btn" id="btnBoutique" type="button" aria-label="Abrir la Boutique Valdoria">💎</button>
             <button class="icon-btn" id="btnSettings" type="button" aria-label="Abrir ajustes: sonido y transparencia de botones">⚙️</button>
             <button class="icon-btn" id="btnRestart" type="button" aria-label="Volver a la selección de clase">⟲</button>
           </div>
@@ -1294,6 +1315,16 @@
            Todo el catálogo es «PRÓXIMAMENTE»: se mira, se abre su ficha
            y se sueña con él, pero no existe compra, moneda de gemas ni
            desbloqueo. El juego se pausa mientras la visitas. -->
+      <div class="overlay hidden" id="diarioScreen" role="dialog" aria-label="Diario de Valdoria: contratos, trofeos y avistamientos">
+        <div class="diario-panel">
+          <div class="diario-head"><h2>📖 Diario de Valdoria</h2><button class="boutique-close" id="btnCloseDiario" type="button" aria-label="Cerrar el Diario">✕</button></div>
+          <div class="diario-gems" id="diarioGems">💎 0</div>
+          <h3>📜 Contratos de hoy</h3><div id="diarioContracts"></div>
+          <h3>🏆 Trofeos de la plaza</h3><div id="diarioTrophies"></div>
+          <h3>🦊 Musa, la zorra de brasa</h3><div id="diarioMusa"></div>
+          <p class="diario-tip">Las gemas 💎 se ganan con contratos y jefes, y se gastan en la Boutique. Toca el chip 📜 junto a la misión para volver aquí.</p>
+        </div>
+      </div>
       <div class="overlay hidden" id="boutiqueScreen" role="dialog" aria-label="Boutique Valdoria: cosméticos próximamente">
         <div class="boutique-panel">
           <div class="boutique-sparkles" aria-hidden="true">
@@ -1303,7 +1334,7 @@
             <div>
               <span class="boutique-kicker">Temporada 1 · Escaparate cosmético</span>
               <h2>✨ BOUTIQUE <em>VALDORIA</em> ✨</h2>
-              <p>Aspectos, acabados de arma, auras y mascotas con accesorio, listos para lucir en el mundo compartido. La colección llega muy pronto: hoy se visita, se compara y se elige favorito.</p>
+              <p>Aspectos, acabados de arma, auras y mascotas con accesorio, listos para lucir en el mundo compartido. Compra con las 💎 que ganas jugando: contratos diarios 📜, jefes y los tesoros de Musa 🦊.</p>
             </div>
             <button class="boutique-close" id="btnCloseBoutique" type="button" aria-label="Cerrar la Boutique Valdoria">✕</button>
           </div>
@@ -2992,6 +3023,7 @@
         spawnT:0, boss:null, bossSpawned:false, shake:0, dlg:null, nearNpc:null, nearStatue:null, nearBoutique:false, portal:null, flashT:0, ambT:2.5, atmoT:0, pet:null, petMode:'mine',
         inCrypt:false, cryptDone:false, herald:null, exitPortal:null, tele:[], nearDoor:null,
         bossMadre:false, bossAlfa:false, dung:null, dungBoss:null,
+        gems:0, owned:[], skin:null, weaponSkin:null, aura:null, contracts:null, musaLog:[], musa:null, musaChest:null, renacer:0, lastPhase:'',
         dayT:0.52, bossIntroT:0, weather:'clear', weatherT:55, rainAmt:0,
         butterflies:[], birds:[], clouds:[{x:300,y:200,s:190,sp:11},{x:1500,y:500,s:260,sp:8},{x:2100,y:120,s:210,sp:10}], puddles:[{x:1180,y:620,r:42},{x:1680,y:1020,r:54},{x:520,y:760,r:36},{x:1980,y:1350,r:46}]
       };
@@ -3286,6 +3318,7 @@
       if(e.hp<=0) killEnemy(e);
     }
     function damageEnemy(e,dmg,knock,ang){
+      if(e.musa){ floatText(e.x,e.y-42,'✨ Musa es intocable','#ffd9a0'); return; }
       const p=S.player;
       let cc=critChance();
       if(hasSeal('ojo')){ cc+=0.10; if(e.hpMax&&e.hp>e.hpMax*0.7) cc+=0.15; } // sello Ojo del halcón
@@ -3315,6 +3348,7 @@
       if(e.hp<=0) killEnemy(e);
     }
     function killEnemy(e){
+      if(e.musa){ e.hp=e.hpMax; return; }
       e.dead=true;
       // caída con un pequeño rebote y desvanecido: el cuerpo no desaparece de golpe
       e.deathAge=0; e.deathY=0; e.deathVy=(e.type==='boss'||e.type==='golem')?-72:-112;
@@ -3323,7 +3357,7 @@
       ring(e.x,e.y,'#ffd23c', e.type==='boss'?130:60);
       if(e.type==='boss'){ sfx.boom(); S.shake=14; }
       if(CO.mode==='host'&&e.mid!=null&&!(e.zone==='cripta'||e.zone==='raiz'||e.zone==='guarida')){ try{ coopQueueDeath(e); }catch(err){} } // el anfitrión anuncia cada muerte compartida (con sus participantes) a todo el mundo
-      if(!e.noReward){ S.kills++; // sin recompensa (muerte compartida en la que no participé): solo el cuerpo y el espectáculo, ni XP ni botín ni misión
+      if(!e.noReward){ S.kills++; contractKill(e); // sin recompensa (muerte compartida en la que no participé): solo el cuerpo y el espectáculo, ni XP ni botín ni misión
       gainXP(e.xp);
       // Botín: monedas que vuelan al jugador + posible poción
       const coins=irnd(2,4);
@@ -3343,14 +3377,15 @@
       }
       // El Coloso de la Fundición: el final de la misión
       if(e.type==='boss' && !S.victory){
-        S.victory=true; if(S.quest.stage===4){ S.quest.stage=5; updateQuestUI(); }
+        S.victory=true; addGems(100); if(S.quest.stage===4){ S.quest.stage=5; updateQuestUI(); }
         toast('🔥 ¡EL COLOSO HA CAÍDO! El sello de la Cripta se rompe: el Heraldo te espera dentro','gold');
       }
       // El Heraldo de la Fundición: la cripta queda superada (bandera
       // guardada) y el portal de salida se abre en su sala
       if(e.type==='herald'){
         const first=!S.cryptDone;
-        S.cryptDone=true; if(S.quest.stage===5){ S.quest.stage=6; updateQuestUI(); }
+        S.cryptDone=true;
+        if(first) addGems(100); if(S.quest.stage===5){ S.quest.stage=6; updateQuestUI(); }
         if(first) setTimeout(showEnd,1400);
         S.exitPortal={x:CRYPT_PORTAL_POS.x, y:CRYPT_PORTAL_POS.y, t:9999};
         sfx.boom(); S.shake=Math.max(S.shake,12);
@@ -3360,6 +3395,7 @@
       if(e.type==='madre'){
         const first=!S.bossMadre;
         S.bossMadre=true; S.dungBoss=null;
+        if(first) addGems(100);
         S.exitPortal={x:DUNGEONS.raiz.portal.x, y:DUNGEONS.raiz.portal.y, t:9999};
         sfx.boom(); S.shake=Math.max(S.shake,12);
         if(S.quest.stage===2){ S.quest.stage=3; updateQuestUI(); }
@@ -3369,6 +3405,7 @@
       if(e.type==='alfa'){
         const first=!S.bossAlfa;
         S.bossAlfa=true; S.dungBoss=null;
+        if(first) addGems(100);
         S.exitPortal={x:DUNGEONS.guarida.portal.x, y:DUNGEONS.guarida.portal.y, t:9999};
         sfx.boom(); S.shake=Math.max(S.shake,12);
         if(S.quest.stage===3){ S.quest.stage=4; updateQuestUI(); }
@@ -3813,6 +3850,72 @@
       S.drops=S.drops.filter(d=>!inDungeonArea(D,d.x,d.y));
       S.dungBoss=null; S.exitPortal=null; S.tele.length=0;
     }
+    /* ================= MUSA, LA ZORRA DE BRASA =================
+       Una criatura única: aparece al amanecer y al atardecer en el mundo
+       abierto, es intocable y, si la sigues sin correr tras ella, te guía
+       a un tesoro escondido. Cada encuentro queda en el Diario. */
+    const TROPHIES=[
+      {x:2090,y:1190,col:'#7fae4c',flag:()=>!!S.bossMadre},
+      {x:2285,y:1195,col:'#ff8a3c',flag:()=>!!S.bossAlfa},
+      {x:2285,y:1400,col:'#ff5d3a',flag:()=>!!S.victory},
+      {x:2090,y:1410,col:'#ffb52e',flag:()=>!!S.cryptDone}
+    ];
+    function musaSpawn(){
+      if(!S||!S.started||S.musa||S.inCrypt||S.dung) return;
+      const p=S.player; if(!p||p.dead||inVillage(p.x,p.y)) return;
+      for(let i=0;i<10;i++){
+        const a=rnd(0,Math.PI*2), dd=rnd(430,560), x=clamp(p.x+Math.cos(a)*dd,60,WORLD.w-60), y=clamp(p.y+Math.sin(a)*dd,60,WORLD.h-60);
+        const z=zoneAt(x,y); if(z==='town'||z==='cripta'||z==='raiz'||z==='guarida') continue;
+        const n0=S.enemies.length;
+        spawnEnemy('wolf',x,y);
+        const e=S.enemies[S.enemies.length-1];
+        if(!e||S.enemies.length===n0||e.type!=='wolf') return;
+        e.musa=true; e.name='Musa · la zorra de brasa'; e.tint='#8a4a26'; e.vscale=0.85; e.r=19;
+        e.hp=e.hpMax=99999; e.atk=0; e.xp=0; e.gold=0; e.spd=126; e.home={x:e.x,y:e.y};
+        S.musa={e:e,phase:'wait',t:0,chest:null,sighted:false};
+        return;
+      }
+    }
+    function musaVanish(e){
+      burst(e.x,e.y,'#ffb52e',20,130,0.55,4); ring(e.x,e.y,'#ffb52e',54);
+      e.dead=true; e.deathAge=99; e.noReward=true;
+      if(S.musa&&S.musa.e===e) S.musa=null;
+    }
+    function updateMusa(e,dt){
+      const M=S.musa, p=S.player; if(!M||M.e!==e) return;
+      M.t+=dt; const d=dist(p,e);
+      if(Math.random()<0.22) S.parts.push({x:e.x+rnd(-10,10),y:e.y-6,vx:rnd(-6,6),vy:rnd(-30,-14),life:0.5,maxLife:0.5,color:'#ffb52e',size:3,grav:-10});
+      if(!M.sighted&&d<330){ M.sighted=true; musaLogAdd('🦊 Viste a Musa en '+zoneName(zoneAt(e.x,e.y))+'.'); if(sfx.loot) sfx.loot(1); floatText(e.x,e.y-46,'🦊✨','#ffd9a0'); }
+      if(M.phase==='wait'){
+        e.moving=false; turnMob(e,angTo(e,p),5,dt);
+        if(d<235){
+          for(let i=0;i<10;i++){ const a=rnd(0,Math.PI*2), dd=rnd(620,920), x=clamp(e.x+Math.cos(a)*dd,80,WORLD.w-80), y=clamp(e.y+Math.sin(a)*dd,80,WORLD.h-80); const z=zoneAt(x,y); if(z==='town'||z==='cripta'||z==='raiz'||z==='guarida') continue; M.chest={x:x,y:y}; break; }
+          if(M.chest){ M.phase='lead'; M.t=0; floatText(e.x,e.y-46,'🦊 ¡Síguela!','#ffd9a0'); }
+        }
+        if(M.t>85) musaVanish(e);
+      } else if(M.phase==='lead'){
+        const c=M.chest; if(!c){ musaVanish(e); return; }
+        const dc=Math.hypot(e.x-c.x,e.y-c.y);
+        if(dc<58){ S.musaChest={x:c.x,y:c.y,t:0}; burst(c.x,c.y,'#ffd23c',24,160,0.6,4); ring(c.x,c.y,'#ffd23c',74); if(sfx.questDone) sfx.questDone(); floatText(c.x,c.y-40,'✨ ¡Un tesoro!','#ffd23c'); musaVanish(e); return; }
+        if(d>310){ e.moving=false; turnMob(e,angTo(e,p),5,dt); }
+        else { const a=Math.atan2(c.y-e.y,c.x-e.x); e._hx=e.x; e._hy=e.y; e.x+=Math.cos(a)*e.spd*dt; e.y+=Math.sin(a)*e.spd*dt; collideCircle(e); turnMob(e,a,6,dt); e.moving=true; e.walkPh+=dt*9; }
+        if(M.t>160) musaVanish(e);
+      }
+    }
+    function openMusaChest(){
+      const mc=S.musaChest; if(!mc) return; S.musaChest=null;
+      const p=S.player, z=zoneName(zoneAt(mc.x,mc.y));
+      const g=irnd(80,160); p.gold+=g; S.goldEarned=(S.goldEarned||0)+g;
+      const gm=irnd(25,60); addGems(gm,true);
+      S.drops.push({kind:'potion',x:mc.x+rnd(-16,16),y:mc.y+rnd(-10,14),vx:0,vy:0,t:0});
+      S.drops.push({kind:'potion',x:mc.x+rnd(-16,16),y:mc.y+rnd(-10,14),vx:0,vy:0,t:0});
+      if(Math.random()<0.4){ try{ const it=rollGearDrop({type:'boss',zone:zoneAt(mc.x,mc.y),lvl:5,x:mc.x,y:mc.y}); if(it) S.drops.push({kind:'gear',item:it,x:mc.x,y:mc.y,vx:0,vy:0,t:0}); }catch(err){} }
+      burst(mc.x,mc.y,'#ffd23c',26,170,0.6,4); ring(mc.x,mc.y,'#ffd23c',80);
+      if(sfx.coin) sfx.coin(); if(sfx.loot) sfx.loot(2);
+      floatText(p.x,p.y-58,'🦊 ¡Tesoro de Musa! +'+g+' oro · +'+gm+' 💎','#ffd23c');
+      musaLogAdd('🦊 Musa te guió a un tesoro en '+z+'.');
+      saveGame(true);
+    }
     function enterDungeon(D){
       const p=S.player; if(p.dead||S.inCrypt||S.dung) return;
       cleanDungeon(D.key);
@@ -4103,11 +4206,11 @@
       try{
         if(!S||!window.THREE||!window.G3||G3.state!=='on'||!G3.kkTpl) return null;
         const p=S.player, eq=p.equipment||{}, armor=eq.armadura, weapon=eq.arma, amu=eq.amuleto, helmIt=eq.casco, capeIt=eq.capa;
-        const sig=S.clsKey+'|'+(armor&&armor.color?armor.color:'')+'|'+(amu&&amu.gem?amu.gem:'')+'|'+(weapon&&weapon.wcol?weapon.wcol:'')+'|'+(weapon?weapon.rarity||0:0)+'|'+(helmIt?helmIt.id:'')+'|'+(capeIt?capeIt.color:'')+'|'+(p.form||'');
+        const sig=S.clsKey+'|'+(armor&&armor.color?armor.color:'')+'|'+(amu&&amu.gem?amu.gem:'')+'|'+(weapon&&weapon.wcol?weapon.wcol:'')+'|'+(weapon?weapon.rarity||0:0)+'|'+(helmIt?helmIt.id:'')+'|'+(capeIt?capeIt.color:'')+'|'+(p.form||'')+'|'+(S.skin||'')+'|'+(S.weaponSkin||'');
         if(profCache.sig===sig) return profCache.url;
         const tpl=G3.kkTpl[KK_FILES[S.clsKey]]; if(!tpl||tpl.state!=='ready') return null;
         const kind=(S.clsKey==='mage'||S.clsKey==='druid')?'staff':(S.clsKey==='hunter'?'bow':'sword');
-        const model=kkChar(S.clsKey,{kind:kind,wcol:(kind==='bow'&&(!weapon||(weapon.rarity||0)===0))?'#9a6a35':(weapon&&weapon.wcol?weapon.wcol:'#cfd8e6'),wrar:weapon?weapon.rarity||0:0,attackClip:KK_ATTACK[S.clsKey],cape:capeIt?capeIt.color:null,helm:helmIt?helmIt.color:null,body:(armor&&armor.color)?armor.color:(S.clsKey==='druid'?'#2e7d32':null)});
+        const skinP=heroSkin(); const model=kkChar(S.clsKey,{kind:kind,wcol:heroWcol((kind==='bow'&&(!weapon||(weapon.rarity||0)===0))?'#9a6a35':(weapon&&weapon.wcol?weapon.wcol:'#cfd8e6')),wrar:weapon?weapon.rarity||0:0,attackClip:KK_ATTACK[S.clsKey],cape:skinP?skinP.cape:(capeIt?capeIt.color:null),helm:skinP?skinP.trim:(helmIt?helmIt.color:null),body:skinP?skinP.body:((armor&&armor.color)?armor.color:(S.clsKey==='druid'?'#2e7d32':null))});
         if(!model) return null;
         if(model.userData&&model.userData.bubble) model.userData.bubble.visible=false;
         if(model.userData){ kkPlay(model.userData,'idle',0); if(model.userData.mixer) model.userData.mixer.update(0.4); }
@@ -4529,10 +4632,32 @@
     ];
     let boutiqueTab='aspectos', boutiqueAnim=0;
     const boutiqueCache={};
+    /* ---------- RENACER: la Boutique vende de verdad (gemas del juego) ---------- */
+    function boutiqueLive(it){ return !!(it&&(it.cat==='aspectos'||it.cat==='armas'||it.cat==='auras')); }
+    function shopOwned(id){ return !!(S&&S.owned&&S.owned.indexOf(id)>=0); }
+    function shopEquipped(it){ if(!S||!it) return false; return (it.cat==='aspectos'&&S.skin===it.id)||(it.cat==='armas'&&S.weaponSkin===it.id)||(it.cat==='auras'&&S.aura===it.id); }
+    function heroSkin(){ if(!S||!S.skin) return null; const it=boutiqueById(S.skin); return (it&&it.cat==='aspectos'&&it.cls===S.clsKey)?it:null; }
+    function heroWcol(def){ if(S&&S.weaponSkin){ const w=boutiqueById(S.weaponSkin); if(w&&w.cat==='armas') return w.color; } return def; }
+    function boutiqueActionBtn(item){
+      const btn=document.createElement('button'); btn.type='button';
+      btn.addEventListener('click',ev=>{ ev.stopPropagation(); });
+      if(!boutiqueLive(item)){ btn.className='boutique-soon-btn'; btn.textContent='PRÓXIMAMENTE'; btn.disabled=true; return btn; }
+      btn.className='boutique-buy-btn';
+      const clsOk=item.cat!=='aspectos'||item.cls===S.clsKey;
+      if(!clsOk){ btn.textContent='SOLO PARA '+({warrior:'GUERRERO',mage:'MAGA',hunter:'CAZADORA',druid:'DRUIDA'}[item.cls]||item.cls); btn.disabled=true; return btn; }
+      if(shopEquipped(item)){ btn.textContent='✔ PUESTO · QUITAR'; btn.addEventListener('click',()=>shopEquip(item,false)); }
+      else if(shopOwned(item.id)){ btn.textContent='EQUIPAR'; btn.addEventListener('click',()=>shopEquip(item,true)); }
+      else if((S.gems||0)>=item.price){ btn.textContent='COMPRAR · 💎 '+item.price; btn.addEventListener('click',()=>shopBuy(item)); }
+      else { btn.textContent='TE FALTAN 💎 '+(item.price-(S.gems||0)); btn.disabled=true; }
+      return btn;
+    }
+    function shopReopen(item){ renderBoutique(); const bd=$('boutiqueDetail'); if(bd&&!bd.classList.contains('hidden')) openBoutiqueDetail(item.id); }
+    function shopBuy(item){ if(!S||shopOwned(item.id)||(S.gems||0)<item.price) return; S.gems-=item.price; if(!S.owned) S.owned=[]; S.owned.push(item.id); if(sfx.loot) sfx.loot(2); shopEquip(item,true,true); floatText(S.player.x,S.player.y-58,'💎 ¡'+item.name+' es tuyo!','#7ad0ff'); saveGame(true); shopReopen(item); }
+    function shopEquip(item,on,silent){ if(!S) return; if(item.cat==='aspectos') S.skin=on?item.id:null; else if(item.cat==='armas') S.weaponSkin=on?item.id:null; else if(item.cat==='auras') S.aura=on?item.id:null; if(!silent&&sfx.click) sfx.click(); saveGame(true); shopReopen(item); }
     function boutiqueById(id){ return BOUTIQUE_ITEMS.find(it=>it.id===id)||null; }
     function boutiqueKind(cls){ return (cls==='mage'||cls==='druid')?'staff':(cls==='hunter'?'bow':'sword'); }
     function boutiqueTierClass(item){ return item.tier==='Legendario'?'legendary':'special'; }
-    function boutiquePriceHTML(item){ return '💎 '+item.price+'<small>PRECIO FUTURO</small>'; }
+    function boutiquePriceHTML(item){ if(!boutiqueLive(item)) return '💎 '+item.price+'<small>PRECIO FUTURO</small>'; return '💎 '+item.price+'<small>'+(shopEquipped(item)?'PUESTO AHORA':(shopOwned(item.id)?'EN TU COLECCIÓN':'A LA VENTA'))+'</small>'; }
     function boutiqueAspect3D(item){
       const key='a3d:'+item.id;
       if(boutiqueCache[key]) return boutiqueCache[key];
@@ -4719,8 +4844,9 @@
       const card=document.createElement('article');
       card.className='b-card '+boutiqueTierClass(item);
       card.setAttribute('role','button'); card.tabIndex=0;
-      card.setAttribute('aria-label','Ver ficha de '+item.name+': próximamente, '+item.price+' gemas');
+      card.setAttribute('aria-label','Ver ficha de '+item.name+(boutiqueLive(item)?': a la venta, '+item.price+' gemas':': próximamente, '+item.price+' gemas'));
       const prev=document.createElement('div'); prev.className='b-card-preview';
+      if(boutiqueLive(item)) prev.classList.add('live');
       prev.style.setProperty('--bglow',(item.color||item.body||'#ffc93c')+'55');
       prev.appendChild(boutiquePreview(item,false)); card.appendChild(prev);
       const body=document.createElement('div'); body.className='b-card-body';
@@ -4731,7 +4857,7 @@
       const p=document.createElement('p'); p.textContent=item.desc; body.appendChild(p);
       const foot=document.createElement('div'); foot.className='b-card-foot';
       const price=document.createElement('span'); price.className='b-card-price'; price.textContent='💎 '+item.price; foot.appendChild(price);
-      const btn=document.createElement('button'); btn.type='button'; btn.className='boutique-soon-btn'; btn.textContent='PRÓXIMAMENTE'; btn.disabled=true; foot.appendChild(btn);
+      foot.appendChild(boutiqueActionBtn(item));
       body.appendChild(foot); card.appendChild(body);
       const open=()=>openBoutiqueDetail(item.id);
       card.addEventListener('click',open);
@@ -4744,15 +4870,15 @@
       host.innerHTML='';
       const prev=document.createElement('div'); prev.className='boutique-featured-preview';
       prev.appendChild(boutiquePreview(item,true));
-      const stamp=document.createElement('span'); stamp.className='boutique-stamp'; stamp.textContent='PRÓXIMAMENTE'; prev.appendChild(stamp);
+      if(!boutiqueLive(item)){ const stamp=document.createElement('span'); stamp.className='boutique-stamp'; stamp.textContent='PRÓXIMAMENTE'; prev.appendChild(stamp); }
       host.appendChild(prev);
       const copy=document.createElement('div'); copy.className='boutique-featured-copy';
-      copy.innerHTML='<div class="boutique-season">Temporada 1 · Brillo de la Fundición — Muy pronto</div><h3>'+item.name+'</h3><p>'+item.desc+'</p>';
+      copy.innerHTML='<div class="boutique-season">Temporada 1 · Brillo de la Fundición — Ya a la venta con 💎</div><h3>'+item.name+'</h3><p>'+item.desc+'</p>';
       host.appendChild(copy);
       const side=document.createElement('div'); side.className='boutique-featured-side';
       const tier=document.createElement('span'); tier.className='boutique-tier legendary'; tier.textContent='★ Legendario'; side.appendChild(tier);
       const price=document.createElement('span'); price.className='boutique-price'; price.innerHTML=boutiquePriceHTML(item); side.appendChild(price);
-      const btn=document.createElement('button'); btn.type='button'; btn.className='boutique-soon-btn'; btn.textContent='PRÓXIMAMENTE'; btn.disabled=true; side.appendChild(btn);
+      side.appendChild(boutiqueActionBtn(item));
       host.appendChild(side);
       host.onclick=()=>openBoutiqueDetail(item.id);
     }
@@ -4767,7 +4893,7 @@
         tabs.appendChild(b);
       });
       const list=BOUTIQUE_ITEMS.filter(it=>it.cat===boutiqueTab);
-      $('boutiqueMeta').textContent=list.length+' piezas en escaparate · Toca una tarjeta para ver su ficha grande · Nada está a la venta todavía';
+      $('boutiqueMeta').textContent='Tu saldo: 💎 '+(S.gems||0)+' · '+list.length+' piezas · Toca una tarjeta para ver su ficha · Gana 💎 con contratos 📜 y jefes';
       const grid=$('boutiqueGrid'); grid.innerHTML='';
       list.forEach(it=>grid.appendChild(boutiqueCard(it)));
       boutiqueStartAnim();
@@ -4793,14 +4919,14 @@
       const prev=document.createElement('div'); prev.className='boutique-detail-preview';
       prev.style.setProperty('--bglow',(item.color||item.body||'#ffc93c')+'55');
       prev.appendChild(boutiquePreview(item,true));
-      const stamp=document.createElement('span'); stamp.className='boutique-stamp'; stamp.textContent='PRÓXIMAMENTE'; prev.appendChild(stamp);
+      if(!boutiqueLive(item)){ const stamp=document.createElement('span'); stamp.className='boutique-stamp'; stamp.textContent='PRÓXIMAMENTE'; prev.appendChild(stamp); }
       card.appendChild(prev);
       const h=document.createElement('h3'); h.textContent=item.name; card.appendChild(h);
       const p=document.createElement('p'); p.textContent=item.desc; card.appendChild(p);
       const row=document.createElement('div'); row.className='boutique-detail-row';
       const tier=document.createElement('span'); tier.className='boutique-tier '+boutiqueTierClass(item); tier.textContent=item.tier; row.appendChild(tier);
       const price=document.createElement('span'); price.className='boutique-price'; price.innerHTML=boutiquePriceHTML(item); row.appendChild(price);
-      const btn=document.createElement('button'); btn.type='button'; btn.className='boutique-soon-btn'; btn.textContent='PRÓXIMAMENTE'; btn.disabled=true; row.appendChild(btn);
+      row.appendChild(boutiqueActionBtn(item));
       card.appendChild(row);
       const note=document.createElement('p'); note.style.marginTop='10px'; note.innerHTML='<strong>Solo aspecto:</strong> ningún objeto da ventaja en combate.'; card.appendChild(note);
       const close=document.createElement('button'); close.type='button'; close.className='mini-btn go'; close.textContent='VOLVER A LA BOUTIQUE'; close.style.marginTop='12px';
@@ -5827,11 +5953,12 @@
         pets:{owned:p.petsOwned.slice(), active:p.petActive||null},
         quest:{stage:S.quest.stage,count:S.quest.count,need:S.quest.need},
         victory:!!S.victory, crypt:!!S.cryptDone, madre:!!S.bossMadre, alfa:!!S.bossAlfa, kills:S.kills||0, goldEarned:S.goldEarned||0, bramStock:S.bramStock||0,
+        gems:S.gems||0, owned:(S.owned||[]).slice(), skin:S.skin||null, wskin:S.weaponSkin||null, aura:S.aura||null, contracts:S.contracts||null, musaLog:(S.musaLog||[]).slice(-12), renacer:S.renacer||0,
         elapsed:Math.round(S.elapsed||0), clan:SOC.clan?{n:SOC.clan.name,t:SOC.clan.tag,c:SOC.clan.code}:null };
     }
     function saveGame(force){
       const o=saveBuild(); if(!o) return;
-      const sig=JSON.stringify([o.name,o.cls,o.x,o.y,o.lvl,o.xp,o.gold,o.potions,o.hp,o.mp,o.eq,o.bag,o.pets,o.tree,o.talentPoints,o.quest,o.victory,o.crypt,o.madre,o.alfa,o.kills,o.clan]);
+      const sig=JSON.stringify([o.name,o.cls,o.x,o.y,o.lvl,o.xp,o.gold,o.potions,o.hp,o.mp,o.eq,o.bag,o.pets,o.tree,o.talentPoints,o.quest,o.victory,o.crypt,o.madre,o.alfa,o.kills,o.clan,o.gems,o.skin,o.wskin,o.aura]);
       if(!force&&sig===saveSig) return;
       try{ localStorage.setItem(SAVE_KEY,JSON.stringify(o)); saveSig=sig; }catch(e){}
     }
@@ -5906,6 +6033,7 @@
           else if(sv.quest.stage>=2) sv.quest.stage=4;
         }
         sv.kills=Math.floor(saveNum(o.kills,0,1e7,0)); sv.goldEarned=Math.floor(saveNum(o.goldEarned,0,1e9,0));
+        sv.gems=Math.floor(saveNum(o.gems,0,1e9,0)); sv.owned=Array.isArray(o.owned)?o.owned.filter(x=>typeof x==='string').slice(0,64):[]; sv.skin=(typeof o.skin==='string')?o.skin:null; sv.wskin=(typeof o.wskin==='string')?o.wskin:null; sv.aura=(typeof o.aura==='string')?o.aura:null; sv.contracts=(o.contracts&&typeof o.contracts==='object')?o.contracts:null; sv.musaLog=Array.isArray(o.musaLog)?o.musaLog.filter(x=>typeof x==='string').slice(-12):[]; sv.renacer=o.renacer?1:0;
         sv.bramStock=Math.floor(saveNum(o.bramStock,0,1e6,0)); sv.elapsed=saveNum(o.elapsed,0,1e7,0);
         // MIGRACIÓN DE VUELTA desde la etapa de supervivencia: los objetos
         // de supervivencia (comida, vendas, botiquines, materiales y
@@ -5954,6 +6082,7 @@
       p.petsOwned=(sv.petsOwned||[]).slice(); p.petActive=sv.petActive||null; S.pet=null; petEnsure();
       S.quest.stage=sv.quest.stage; S.quest.count=sv.quest.count; S.quest.need=sv.quest.need;
       S.victory=sv.victory; S.cryptDone=!!sv.cryptDone; S.bossMadre=!!sv.bossMadre; S.bossAlfa=!!sv.bossAlfa; S.kills=sv.kills; S.goldEarned=sv.goldEarned; S.bramStock=sv.bramStock;
+      S.gems=sv.gems||0; S.owned=Array.isArray(sv.owned)?sv.owned.slice():[]; S.skin=sv.skin||null; S.weaponSkin=sv.wskin||null; S.aura=sv.aura||null; S.contracts=sv.contracts||null; S.musaLog=Array.isArray(sv.musaLog)?sv.musaLog.slice():[]; S.renacer=sv.renacer||0;
       S.startTime=performance.now()-sv.elapsed*1000;
       S.migGold=sv.migGold||0; // oro de la conversión al volver del modo supervivencia
       if(sv.migGold){ p.gold+=sv.migGold; S.goldEarned+=sv.migGold; }
@@ -6623,6 +6752,7 @@
       const p=S.player;
       $('uiLvl').textContent=p.lvl;
       $('uiGold').textContent=p.gold;
+      updateContractChip();
       // vida y energía ya no van en el panel: se dibujan sobre la cabeza del personaje
       $('uiXp').style.width=(p.xp/p.xpNext*100)+'%'; $('uiXpTxt').textContent='XP '+p.xp+' / '+p.xpNext;
       $('potCount').textContent=p.potions||0;
@@ -6982,6 +7112,7 @@
       for(const cl of S.clouds){ cl.x+=cl.sp*dt; if(cl.x-cl.s>WORLD.w) cl.x=-cl.s; }
       // mariposas de día en el campo y pájaros que cruzan
       const dl=dayLight();
+      if(S.lastPhase!==dl.label){ S.lastPhase=dl.label; if((dl.label.indexOf('Amanecer')>=0||dl.label.indexOf('Atardecer')>=0)&&Math.random()<0.85) musaSpawn(); }
       if(!S.inCrypt&&!S.dung&&dl.night<0.4&&S.butterflies.length<6&&Math.random()<dt*0.25) S.butterflies.push({x:p.x+rnd(-260,260),y:p.y+rnd(-180,180),a:rnd(0,6.3),t:rnd(0,9),col:['#ff9ecb','#c07dff','#ffd23c'][irnd(0,2)]});
       for(const bf of S.butterflies){ bf.t+=dt; bf.a+=rnd(-1.4,1.4)*dt; bf.x+=Math.cos(bf.a)*26*dt; bf.y+=Math.sin(bf.a)*20*dt-4*dt; }
       S.butterflies=S.butterflies.filter(bf=>Math.hypot(bf.x-p.x,bf.y-p.y)<520);
@@ -7091,6 +7222,7 @@
           e.deathRot=(e.deathRot||0)+(e.deathRotVel||0)*dt*Math.max(0,1-e.deathAge*0.65);
           continue;
         }
+        if(e.musa){ updateMusa(e,dt); continue; }
         if(e.shared){ // ESPEJO del mundo cooperativo (soy invitado): sin IA ni daño local; interpolo hacia el estado que difunde el anfitrión
           const kk=Math.min(1,dt*10);
           const mdx=(e.tx!==undefined?e.tx:e.x)-e.x, mdy=(e.ty!==undefined?e.ty:e.y)-e.y;
@@ -7351,31 +7483,34 @@
         if((d.kind==='gold'&&d.t>0.25&&dd<130)||corgiMagnet){ const a=angTo(d,p); const ms=corgiMagnet?430:330; d.x+=Math.cos(a)*ms*dt; d.y+=Math.sin(a)*ms*dt; }
         if(dd<p.r+13){
           d.got=true;
-          if(d.kind==='gold'){ p.gold+=d.val; S.goldEarned+=d.val; sfx.coin(); floatText(p.x,p.y-30,'+'+d.val+' oro','#ffd23c'); }
+          if(d.kind==='gold'){ p.gold+=d.val; S.goldEarned+=d.val; sfx.coin(); floatText(p.x,p.y-30,'+'+d.val+' oro','#ffd23c'); contractLoot('gold',d.val); }
           else if(d.kind==='gear'){
-            if(p.bag.length<12){ p.bag.push(d.item); sfx.loot(d.item.rarity||0); burst(d.x,d.y,RARCOL[d.item.rarity||0],12,120,0.45,4); toast('🎒 ¡Equipo! '+gearName(d.item)+' — míralo en tu 🎒','gold'); }
+            if(p.bag.length<12){ p.bag.push(d.item); contractLoot('loot',1); sfx.loot(d.item.rarity||0); burst(d.x,d.y,RARCOL[d.item.rarity||0],12,120,0.45,4); toast('🎒 ¡Equipo! '+gearName(d.item)+' — míralo en tu 🎒','gold'); }
             else { const v=Math.max(1,Math.floor((d.item.price||10)/2)); p.gold+=v; S.goldEarned+=v; sfx.coin(); toast('Mochila llena: '+gearName(d.item)+' vendido por '+v+' de oro','gold'); }
           }
-          else if(d.kind==='potion'){ p.potions=Math.min(99,(p.potions||0)+1); sfx.pickup(); floatText(p.x,p.y-30,'🧪 +1 poción','#5effa1'); toast('🧪 Poción recogida: llevas '+p.potions+' (botón ✚)',''); }
+          else if(d.kind==='potion'){ p.potions=Math.min(99,(p.potions||0)+1); contractLoot('loot',1); sfx.pickup(); floatText(p.x,p.y-30,'🧪 +1 poción','#5effa1'); toast('🧪 Poción recogida: llevas '+p.potions+' (botón ✚)',''); }
           saveGame(true); // evento importante: botín recogido
         }
       }
+      if(S.musaChest){ const mc=S.musaChest; mc.t+=dt; if(Math.random()<0.35) S.parts.push({x:mc.x+rnd(-14,14),y:mc.y-6,vx:rnd(-6,6),vy:rnd(-34,-16),life:0.6,maxLife:0.6,color:'#ffd23c',size:3.4,grav:-12}); if(Math.hypot(p.x-mc.x,p.y-mc.y)<54) openMusaChest(); }
       S.drops=S.drops.filter(d=>!d.got&&(d.kind==='gear'||d.t<25)); // el equipo no caduca: espera en el suelo
 
       // --- atmósfera viva: brumas de fuego, humo y niebla ---
       // aura del héroe: brasas que suben, humo cálido y vaho al caminar
       if(!p.dead){
-        if(Math.random()<0.55) S.atmo.push({kind:'ember',x:p.x+rnd(-20,20),y:p.y+rnd(2,14),vx:rnd(-7,7),vy:rnd(-34,-16),life:rnd(.7,1.4),maxLife:1.4,size:rnd(5,11),seed:rnd(0,9)});
-        if(p.moving&&Math.random()<0.35) S.atmo.push({kind:'ember',x:p.x+rnd(-16,16),y:p.y+rnd(4,14),vx:rnd(-10,10),vy:rnd(-26,-12),life:rnd(.5,1),maxLife:1,size:rnd(4,9),seed:rnd(0,9)});
+        const auraIt=S.aura?boutiqueById(S.aura):null;
+        if(auraIt&&auraIt.cat==='auras'){ if(Math.random()<0.6){ const ac=auraIt.colors; S.atmo.push({kind:'ember',x:p.x+rnd(-22,22),y:p.y+rnd(2,14),vx:rnd(-9,9),vy:rnd(-30,-13),life:rnd(.8,1.6),maxLife:1.6,size:rnd(5,11),seed:rnd(0,9),col:ac[irnd(0,ac.length-1)],col2:ac[0]}); } }
+        else if(Math.random()<0.55) S.atmo.push({kind:'ember',x:p.x+rnd(-20,20),y:p.y+rnd(2,14),vx:rnd(-7,7),vy:rnd(-34,-16),life:rnd(.7,1.4),maxLife:1.4,size:rnd(5,11),seed:rnd(0,9)});
+        if(!auraIt&&p.moving&&Math.random()<0.35) S.atmo.push({kind:'ember',x:p.x+rnd(-16,16),y:p.y+rnd(4,14),vx:rnd(-10,10),vy:rnd(-26,-12),life:rnd(.5,1),maxLife:1,size:rnd(4,9),seed:rnd(0,9)});
         if(Math.random()<0.20) S.atmo.push({kind:'smoke',x:p.x+rnd(-14,14),y:p.y+rnd(-2,8),vx:rnd(-9,3),vy:rnd(-20,-11),life:rnd(1.4,2.4),maxLife:2.4,size:rnd(13,22),grow:9,seed:rnd(0,9)});
         if(p.moving&&Math.random()<0.5) S.atmo.push({kind:'mist',x:p.x-Math.cos(p.dir)*16+rnd(-5,5),y:p.y+10,vx:rnd(-6,6),vy:rnd(-9,-3),life:rnd(.8,1.5),maxLife:1.5,size:rnd(16,26),grow:12,seed:rnd(0,9)});
       }
       // fragua de Bram (junto a él, en el pueblo): humo que sube y chispas
-      if(Math.random()<0.5) S.atmo.push({kind:'smoke',x:522+rnd(-5,5),y:314,vx:rnd(-4,7),vy:rnd(-30,-20),life:rnd(2,3.4),maxLife:3.4,size:rnd(12,20),grow:13,seed:rnd(0,9)});
-      if(Math.random()<0.4) S.atmo.push({kind:'ember',x:522+rnd(-10,10),y:326,vx:rnd(-9,9),vy:rnd(-44,-24),life:rnd(.6,1.2),maxLife:1.2,size:rnd(5,10),seed:rnd(0,9)});
+      if(Math.random()<0.5) S.atmo.push({kind:'smoke',x:2466+rnd(-5,5),y:1030,vx:rnd(-4,7),vy:rnd(-30,-20),life:rnd(2,3.4),maxLife:3.4,size:rnd(12,20),grow:13,seed:rnd(0,9)});
+      if(Math.random()<0.4) S.atmo.push({kind:'ember',x:2466+rnd(-10,10),y:1042,vx:rnd(-9,9),vy:rnd(-44,-24),life:rnd(.6,1.2),maxLife:1.2,size:rnd(5,10),seed:rnd(0,9)});
       // arena del Bruto: bruma de fuego que se arrastra y brasas constantes
-      if(Math.random()<0.2) S.atmo.push({kind:'firemist',x:2260+rnd(-190,190),y:900+rnd(-120,140),vx:rnd(6,16),vy:rnd(-4,2),life:rnd(2.6,4.6),maxLife:4.6,size:rnd(50,95),grow:6,seed:rnd(0,9)});
-      if(Math.random()<0.5) S.atmo.push({kind:'ember',x:2260+rnd(-170,170),y:900+rnd(-110,130),vx:rnd(-8,12),vy:rnd(-38,-18),life:rnd(.8,1.6),maxLife:1.6,size:rnd(5,11),seed:rnd(0,9)});
+      if(Math.random()<0.2) S.atmo.push({kind:'firemist',x:3620+rnd(-190,190),y:1380+rnd(-120,140),vx:rnd(6,16),vy:rnd(-4,2),life:rnd(2.6,4.6),maxLife:4.6,size:rnd(50,95),grow:6,seed:rnd(0,9)});
+      if(Math.random()<0.5) S.atmo.push({kind:'ember',x:3620+rnd(-170,170),y:1380+rnd(-110,130),vx:rnd(-8,12),vy:rnd(-38,-18),life:rnd(.8,1.6),maxLife:1.6,size:rnd(5,11),seed:rnd(0,9)});
       // bruma de agua al pie de la cascada
       if(Math.random()<0.3) S.atmo.push({kind:'mist',x:1748+rnd(-16,16),y:480+rnd(-6,10),vx:rnd(-4,4),vy:rnd(-12,-5),life:rnd(1.2,2.2),maxLife:2.2,size:rnd(16,30),grow:8,seed:rnd(0,9)});
       // Bosque de Ceniza: humo gris que se arrastra entre los árboles muertos
@@ -8134,8 +8269,9 @@
       // apariencia según el equipo puesto: figura chibi con casco, hombreras y capa visibles
       const eq=p.equipment||{};
       const armor=eq.armadura, weapon=eq.arma, amu=eq.amuleto, helmIt=eq.casco, capeIt=eq.capa, shIt=eq.hombreras;
-      const bodyC=armor&&armor.color?armor.color:S.cls.color;
-      const trimC=armor&&armor.color2?armor.color2:S.cls.color2;
+      let bodyC=armor&&armor.color?armor.color:S.cls.color;
+      let trimC=armor&&armor.color2?armor.color2:S.cls.color2;
+      const skin2D=heroSkin(); if(skin2D){ bodyC=skin2D.body; trimC=skin2D.trim; }
       const gemC=amu&&amu.gem?amu.gem:S.cls.color2;
       const wcol=weapon&&weapon.wcol?weapon.wcol:'#cfd8e6';
       const wrar=weapon?weapon.rarity||0:0;
@@ -8455,6 +8591,10 @@
         if(a.kind==='mist') blob(ax,ay,a.size,a.size*0.42,'#eaf4ff',.13*env);
         else blob(ax,ay,a.size,a.size*0.45,'#ff8a3c',.10*env,'lighter');
       }
+      // trofeos de jefes en la plaza: un pedestal por jefe, encendido al caer
+      if(!S.inCrypt&&!S.dung){ for(const tr of TROPHIES){ const tx=tr.x-cam.x, ty=tr.y-cam.y-tLift(tr.x,tr.y); if(tx<-70||ty<-70||tx>vW()+70||ty>vH()+70) continue; const lit=tr.flag(); rr2(tx-15,ty+6,30,9,3,'#4a4038'); rr2(tx-10,ty-12,20,20,4,lit?'#6a5a3a':'#55505e'); if(lit){ const fl2=1+Math.sin(S.t*6+tr.x)*0.15; blob(tx,ty-24,26*fl2,20*fl2,tr.col,.5,'lighter'); circle(tx,ty-24,5.5*fl2,'#fff3b0'); circle(tx,ty-24,3,tr.col); } else { circle(tx,ty-24,5,'#2c2833'); } } }
+      // el tesoro de Musa: un cofre dorado que brilla en el mundo
+      if(S.musaChest){ const mc=S.musaChest, mx=mc.x-cam.x, my=mc.y-cam.y-tLift(mc.x,mc.y)+Math.sin(S.t*3)*2; if(mx>-80&&my>-80&&mx<vW()+80&&my<vH()+80){ blob(mx,my,64,34,'#ffd23c',.4+0.12*Math.sin(S.t*5),'lighter'); rr2(mx-17,my-6,34,16,4,'#8a5a1e'); rr2(mx-17,my-14,34,10,4,'#a9742a'); ctx.fillStyle='#ffd23c'; ctx.fillRect(mx-2.5,my-14,5,24); circle(mx,my-3,3,'#fff3b0'); } }
       // botín en el suelo (bajo los personajes)
       for(const d of S.drops){ const x=d.x-cam.x,y=d.y-cam.y-tLift(d.x,d.y)+Math.sin(S.t*5+d.x)*2;
         if(d.kind==='gold'){ circle(x,y,6,'#ffc93c'); circle(x,y,3.6,'#ffe98a'); }
@@ -8559,7 +8699,7 @@
         const ax=a.x-cam.x, ay=a.y-cam.y; if(ax<-60||ay<-60||ax>vW()+60||ay>vH()+60) continue;
         const lf=a.life/a.maxLife, env=Math.min(1,(1-lf)*4)*Math.min(1,lf*1.6);
         if(a.kind==='smoke') blob(ax,ay,a.size,a.size*0.8,'#7a6a63',.20*env);
-        else { const flk=0.7+0.3*Math.sin(S.t*11+a.seed*7); blob(ax,ay,a.size*flk,a.size*flk,'#ff9a3c',.5*env,'lighter'); circle(ax,ay,Math.max(1,a.size*0.16),'#ffe9a8'); }
+        else { const flk=0.7+0.3*Math.sin(S.t*11+a.seed*7); blob(ax,ay,a.size*flk,a.size*flk,a.col||'#ff9a3c',.5*env,'lighter'); circle(ax,ay,Math.max(1,a.size*0.16),a.col2||'#ffe9a8'); }
       }
       if(!S.player.dead){ const pxp=S.player.x-cam.x, pyp=S.player.y-cam.y-tLift(S.player.x,S.player.y), flk=Math.sin(S.t*7.3)*0.5+Math.sin(S.t*13.7)*0.3;
         blob(pxp,pyp+9,52+flk*7,27,'#ff8a3c',.16,'lighter'); // resplandor cálido a los pies, como brasa viva
@@ -9762,7 +9902,7 @@
       const kind=kindOf(S.clsKey);
       const helmIt=eq.casco, capeIt=eq.capa, shIt=eq.hombreras;
       const sig=S.clsKey+'|'+bodyC+'|'+trimC+'|'+gemC+'|'+wcol+'|'+wrar+'|'+(armor&&armor.pad?1:0)
-        +'|'+(helmIt?helmIt.id:'')+'|'+(capeIt?capeIt.color:'')+'|'+(shIt?shIt.color:'');
+        +'|'+(helmIt?helmIt.id:'')+'|'+(capeIt?capeIt.color:'')+'|'+(shIt?shIt.color:'')+'|'+(S.skin||'')+'|'+(S.weaponSkin||'');
       /* DRUIDA EN FORMA DE LOBO (3D): modelo de loba propio; el humanoide de
          abajo se crea como siempre pero se oculta al final mientras dura la forma */
       const druidWolfOn=(S.clsKey==='druid'&&(p.form==='wolf'||p.form==='primal'));
@@ -9790,9 +9930,10 @@
       if(tplP&&tplP.state==='ready'){
         if(!G3.playerReal||G3.playerRealSig!==sig){
           if(G3.playerReal){ G3.scene.remove(G3.playerReal); g3Dispose(G3.playerReal); G3.playerReal=null; }
-          G3.playerReal=kkChar(S.clsKey,{kind:kind,wcol:(kind==='bow'&&wrar===0)?'#9a6a35':wcol,wrar:wrar,
-            attackClip:KK_ATTACK[S.clsKey],cape:capeIt?capeIt.color:null,helm:helmIt?helmIt.color:null,
-            body:(armor&&armor.color)?armor.color:(S.clsKey==='druid'?'#2e7d32':null)});
+          const skinW=heroSkin();
+          G3.playerReal=kkChar(S.clsKey,{kind:kind,wcol:heroWcol((kind==='bow'&&wrar===0)?'#9a6a35':wcol),wrar:wrar,
+            attackClip:KK_ATTACK[S.clsKey],cape:skinW?skinW.cape:(capeIt?capeIt.color:null),helm:skinW?skinW.trim:(helmIt?helmIt.color:null),
+            body:skinW?skinW.body:((armor&&armor.color)?armor.color:(S.clsKey==='druid'?'#2e7d32':null))});
           G3.playerRealSig=sig;
           if(G3.playerReal) G3.scene.add(G3.playerReal);
         }
@@ -10373,9 +10514,71 @@
     // lanzara, se reintenta entrando de cero y, en último extremo, se
     // fuerza la pantalla de juego visible. El jugador nunca se queda
     // atrapado en la pantalla de inicio tras pulsar entrar.
+    /* ================= RENACER: gemas, contratos y Diario ================= */
+    function zoneName(z){ return z==='town'?'Ferralla':z==='field'?'el Campo de Esporas':z==='bosque'?'el Bosque de Ceniza':z==='paramo'?'el Páramo Carmesí':z==='raiz'?'la Raíz Hueca':z==='guarida'?'la Guarida Quemada':z==='cripta'?'la Cripta':'el mundo'; }
+    function musaLogAdd(t){ if(!S) return; if(!S.musaLog) S.musaLog=[]; if(S.musaLog[S.musaLog.length-1]!==t) S.musaLog.push(t); if(S.musaLog.length>12) S.musaLog=S.musaLog.slice(-12); }
+    function addGems(n,silent){ if(!S) return; S.gems=(S.gems||0)+n; if(!silent&&S.player) floatText(S.player.x,S.player.y-52,'+'+n+' 💎','#7ad0ff'); }
+    const CONTRACT_POOL=[
+      {id:'esp', txt:'Caza esporas del Campo', kind:'kill', mob:'spore', goal:8, gold:60, xp:40, gems:30},
+      {id:'cri', txt:'Derrota criaturas de cualquier zona', kind:'kill', mob:'any', goal:12, gold:80, xp:55, gems:35},
+      {id:'bot', txt:'Recoge botines del suelo', kind:'loot', goal:6, gold:50, xp:35, gems:30},
+      {id:'oro', txt:'Consigue oro de los botines', kind:'gold', goal:150, gold:40, xp:30, gems:30},
+      {id:'rai', txt:'Vence guardianes de la Raíz Hueca', kind:'kill', zone:'raiz', goal:4, gold:110, xp:70, gems:45},
+      {id:'lob', txt:'Caza lobos del Bosque', kind:'kill', mob:'wolf', goal:6, gold:90, xp:60, gems:40, need:'madre'},
+      {id:'gua', txt:'Vence criaturas de la Guarida Quemada', kind:'kill', zone:'guarida', goal:4, gold:140, xp:90, gems:55, need:'madre'},
+      {id:'gol', txt:'Derrota gólems del Páramo', kind:'kill', mob:'golem', goal:5, gold:130, xp:85, gems:55, need:'alfa'}
+    ];
+    function contractDef(id){ return CONTRACT_POOL.find(c=>c.id===id)||null; }
+    function contractAvail(c){ if(!c.need) return true; if(c.need==='madre') return !!(S.bossMadre||S.victory||S.cryptDone); if(c.need==='alfa') return !!(S.bossAlfa||S.victory||S.cryptDone); return true; }
+    function contractsEnsure(){ if(!S) return; const day=new Date().toDateString(); if(S.contracts&&S.contracts.day===day&&Array.isArray(S.contracts.list)) return;
+      let h=2166136261; for(const ch of day) h=((h^ch.charCodeAt(0))*16777619)>>>0;
+      const rng=()=>{ h=(h*1103515245+12345)&0x7fffffff; return h/0x7fffffff; };
+      const pool=CONTRACT_POOL.filter(contractAvail), list=[], used=new Set();
+      while(list.length<3&&used.size<pool.length){ const c=pool[(rng()*pool.length)|0]; if(used.has(c.id)) continue; used.add(c.id); list.push({id:c.id,prog:0,done:false}); }
+      S.contracts={day:day,list:list}; }
+    function contractProgress(kind,e,val){ if(!S||!S.contracts) return;
+      for(const c of S.contracts.list){ if(c.done) continue; const d=contractDef(c.id); if(!d||d.kind!==kind) continue;
+        let ok=false;
+        if(kind==='kill') ok=(d.mob==='any')||(d.mob&&e&&e.type===d.mob)||(d.zone&&e&&e.zone===d.zone);
+        else ok=true;
+        if(!ok) continue;
+        c.prog=Math.min(d.goal,c.prog+(val||1));
+        if(c.prog>=d.goal){ c.done=true; const p=S.player; p.gold+=d.gold; gainXP(d.xp); addGems(d.gems,true); floatText(p.x,p.y-64,'📜 ¡Contrato cumplido! +'+d.gems+' 💎','#7ad0ff'); if(sfx.questDone) sfx.questDone(); }
+      }
+      updateContractChip(); }
+    function contractKill(e){ if(!e||e.musa||e.noReward) return; contractProgress('kill',e,1); }
+    function contractLoot(kind,val){ contractProgress(kind,null,val); }
+    let contractChipTxt='';
+    function updateContractChip(){ const el=$('contractTxt'); if(!el||!S||!S.contracts) return; const dn=S.contracts.list.filter(c=>c.done).length; const tx='Contratos '+dn+'/3 · Diario'; if(tx!==contractChipTxt){ contractChipTxt=tx; el.textContent=tx; } }
+    function renderDiario(){ if(!S) return; contractsEnsure();
+      $('diarioGems').textContent='💎 '+(S.gems||0)+' gemas · Recompensas de contratos y jefes · Gástalas en la Boutique 💎';
+      const dc=$('diarioContracts'); dc.innerHTML='';
+      if(!S.contracts||!S.contracts.list.length) dc.innerHTML='<p class="diario-empty">Sin contratos hoy.</p>';
+      for(const c of (S.contracts?S.contracts.list:[])){ const d=contractDef(c.id); if(!d) continue;
+        const row=document.createElement('div'); row.className='diario-row'+(c.done?' done':'');
+        row.innerHTML='<div class="diario-row-top"><span>'+(c.done?'✔ ':'')+d.txt+'</span><b>'+Math.min(c.prog,d.goal)+'/'+d.goal+'</b></div><div class="diario-bar"><i style="width:'+Math.round(100*Math.min(c.prog,d.goal)/d.goal)+'%"></i></div><div class="diario-rew">Recompensa: '+d.gold+' oro · '+d.xp+' XP · '+d.gems+' 💎</div>';
+        dc.appendChild(row); }
+      const TR=[['🌿 La Madre Espora',S.bossMadre],['🔥 El Alfa de Ceniza',S.bossAlfa],['⚙️ El Coloso de la Fundición',S.victory],['👑 El Heraldo',S.cryptDone]];
+      $('diarioTrophies').innerHTML=TR.map(t=>'<div class="diario-row'+(t[1]?' done':'')+'"><div class="diario-row-top"><span>'+t[0]+'</span><b>'+(t[1]?'🏆 luce en la plaza':'aún duerme')+'</b></div></div>').join('');
+      $('diarioMusa').innerHTML=(S.musaLog&&S.musaLog.length)?S.musaLog.slice().reverse().map(t=>'<p class="diario-log">'+t+'</p>').join(''):'<p class="diario-empty">Aún no la has visto. Dicen que una zorra de brasa aparece al amanecer y al atardecer, y que guía a quien la sigue hasta un tesoro…</p>';
+    }
+    function openDiario(){ if(!S||!S.started) return; renderDiario(); $('diarioScreen').classList.remove('hidden'); if(sfx.panelOpen) sfx.panelOpen(); }
+    function closeDiario(){ const el=$('diarioScreen'); if(el) el.classList.add('hidden'); if(sfx.panelClose) sfx.panelClose(); }
+    let renacerWired=false;
+    function renacerInit(){ if(!S) return; contractsEnsure(); updateContractChip();
+      if(!renacerWired){ renacerWired=true;
+        const cc=$('contractChip'); if(cc) cc.addEventListener('click',()=>openDiario());
+        const qc=$('questChip'); if(qc) qc.addEventListener('click',()=>openDiario());
+        const bc=$('btnCloseDiario'); if(bc) bc.addEventListener('click',()=>closeDiario());
+        const ds=$('diarioScreen'); if(ds) ds.addEventListener('click',e=>{ if(e.target===ds) closeDiario(); });
+      }
+      if(!S.renacer){ S.renacer=1; S.gems=(S.gems||0)+300;
+        setTimeout(()=>{ try{ if(S&&S.player&&S.started) floatText(S.player.x,S.player.y-58,'🎁 ¡Renacer! +300 💎 de regalo','#7ad0ff'); }catch(e){} },1500);
+        saveGame(true); }
+    }
     function enterWorld(clsKey,sv){
-      try{ startGame(clsKey,sv); return; }catch(e){}
-      try{ startGame(clsKey,null); return; }catch(e){}
+      try{ startGame(clsKey,sv); renacerInit(); return; }catch(e){}
+      try{ startGame(clsKey,null); renacerInit(); return; }catch(e){}
       if(S&&S.started){ $('startScreen').classList.add('hidden'); $('endScreen').classList.add('hidden'); $('hud').classList.add('on'); $('controls').classList.add('on'); }
     }
     $('btnStart').addEventListener('click',()=>{ tryLockLandscape(); if(!selected) return;
