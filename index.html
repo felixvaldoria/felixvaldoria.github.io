@@ -51,7 +51,9 @@
       #kkNote{position:absolute;left:12px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:6;display:none;pointer-events:none;background:rgba(10,8,24,.72);border:1.5px solid var(--line);border-radius:999px;padding:6px 13px;font-size:.72rem;font-weight:800;color:var(--ink);letter-spacing:.02em}
 
       /* ---------- HUD ---------- */
-      #hud{position:absolute;inset:0;pointer-events:none;display:none;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);box-sizing:border-box}
+      #hud{position:absolute;inset:0;pointer-events:none;display:none}
+      /* márgenes seguros SOLO en horizontal real: con el escenario girado (vertical) los insets del teléfono apuntan a otros bordes y desplazarían el HUD */
+      body:not(.rotated) #hud{padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);box-sizing:border-box}
       #hud.on{display:block}
       .hud-top{position:absolute;top:max(10px,env(safe-area-inset-top));left:10px;right:10px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
       .hud-panel{background:var(--panel);border:1.5px solid var(--line);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.45);backdrop-filter:blur(6px)}
@@ -1744,7 +1746,9 @@
     function vH(){ return VH/(KY*ZOOM); }
     function resize(){
       DPR = Math.min(window.devicePixelRatio || 1, 2);
-      const iw = window.innerWidth, ih = window.innerHeight;
+      const vv = window.visualViewport;
+      let iw = window.innerWidth, ih = window.innerHeight;
+      if(vv && vv.width > iw*0.6 && vv.height > ih*0.6){ iw = Math.round(vv.width); ih = Math.round(vv.height); } // lo realmente visible (barras del navegador/app fuera); el 0,6 evita que el teclado al abrir el chat encoja el escenario
       // Vista horizontal SIEMPRE: si el dispositivo está en vertical, el
       // escenario completo se gira 90° para que el lado largo sea el ancho.
       // Así el HUD se reparte entre las esquinas — estado arriba a la
@@ -1768,6 +1772,7 @@
       if(window.g3Resize) g3Resize(); // la capa 3D sigue el mismo tamaño lógico (no-op si aún no cargó)
     }
     window.addEventListener('resize', resize); resize();
+    if(window.visualViewport) window.visualViewport.addEventListener('resize', resize);
     // Refuerzo donde el navegador lo permite: bloquear la orientación del
     // sistema en horizontal al entrar a jugar (si falla, el giro CSS manda).
     function tryLockLandscape(){
@@ -4024,7 +4029,9 @@
         const raw=localStorage.getItem(CTL_KEY); if(!raw) return null;
         const o=JSON.parse(raw); if(!o||o.v!==1||!o.items||typeof o.items!=='object') return null;
         const out={};
+        const CTL_DOCK=['bag','tal','mp','chat','pet','gem','set','rst']; // los botones del dock viven en su lista bajo el minimapa: el diseño guardado ya no los desperdiga
         for(const d of ctlResolve()){
+          if(CTL_DOCK.indexOf(d.k)>=0) continue;
           const e=o.items[d.k]; if(!e||typeof e!=='object') continue;
           out[d.k]={cx:saveNum(e.cx,0,1,0.5), cy:saveNum(e.cy,0,1,0.5), s:saveNum(e.s,0.6,1.6,1)};
         }
