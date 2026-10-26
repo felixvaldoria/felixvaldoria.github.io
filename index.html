@@ -9,6 +9,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="VALDORIA" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230d0a1a'/%3E%3Cpath d='M50 6C59 23 76 33 76 57a26 26 0 1 1-52 0C24 33 41 23 50 6Z' fill='%23ff7a29'/%3E%3Cpath d='M50 34c5 10 13 15 13 26a13 13 0 1 1-26 0c0-11 8-16 13-26Z' fill='%23ffc93c'/%3E%3C/svg%3E" />
     <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%230d0a1a'/%3E%3Cpath d='M50 6C59 23 76 33 76 57a26 26 0 1 1-52 0C24 33 41 23 50 6Z' fill='%23ff7a29'/%3E%3Cpath d='M50 34c5 10 13 15 13 26a13 13 0 1 1-26 0c0-11 8-16 13-26Z' fill='%23ffc93c'/%3E%3C/svg%3E" />
     <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22VALDORIA%3A%20Frontera%20en%20Llamas%22%2C%22short_name%22%3A%22VALDORIA%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22fullscreen%22%2C%22orientation%22%3A%22landscape%22%2C%22background_color%22%3A%22%230d0a1a%22%2C%22theme_color%22%3A%22%230d0a1a%22%7D" />
@@ -49,7 +51,7 @@
       #kkNote{position:absolute;left:12px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:6;display:none;pointer-events:none;background:rgba(10,8,24,.72);border:1.5px solid var(--line);border-radius:999px;padding:6px 13px;font-size:.72rem;font-weight:800;color:var(--ink);letter-spacing:.02em}
 
       /* ---------- HUD ---------- */
-      #hud{position:absolute;inset:0;pointer-events:none;display:none}
+      #hud{position:absolute;inset:0;pointer-events:none;display:none;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);box-sizing:border-box}
       #hud.on{display:block}
       .hud-top{position:absolute;top:max(10px,env(safe-area-inset-top));left:10px;right:10px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
       .hud-panel{background:var(--panel);border:1.5px solid var(--line);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.45);backdrop-filter:blur(6px)}
@@ -94,10 +96,10 @@
       #navText b{color:var(--gold)}
       .map-legend{display:flex;flex-wrap:wrap;gap:4px;width:176px}
       .map-legend span{background:rgba(10,8,24,.72);border:1px solid rgba(255,255,255,.22);border-radius:99px;padding:3px 7px;font-size:.58rem;font-weight:800;color:#ffeecd}
-      .top-btns{display:flex;gap:6px;pointer-events:auto;justify-content:flex-end}
+      .top-btns{display:grid;grid-template-columns:repeat(4,34px);gap:5px;pointer-events:auto;justify-content:end;margin-top:6px}
       .icon-btn{
-        position:relative;width:38px;height:38px;border-radius:11px;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);
-        font-size:1.02rem;display:grid;place-items:center;box-shadow:0 6px 16px rgba(0,0,0,.4);opacity:var(--btnop)
+        position:relative;width:34px;height:34px;border-radius:10px;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);
+        font-size:.95rem;display:grid;place-items:center;box-shadow:0 6px 16px rgba(0,0,0,.4);opacity:var(--btnop)
       }
       .icon-btn:active{transform:translateY(2px)}
 
@@ -108,7 +110,40 @@
       #xpDock .bar span{font-size:.58rem;letter-spacing:.16em}
 
       /* ---------- ajustes (engranaje) ---------- */
-      .set-wrap{max-width:520px;margin:16px auto 4px;text-align:left;display:grid;gap:12px}
+      .set-wrap{max-width:760px;margin:10px auto 4px;text-align:left;display:grid;gap:10px}
+      @media(min-width:600px){ .set-wrap{grid-template-columns:1fr 1fr} .set-card.wide{grid-column:1/-1} }
+      .set-card{padding:11px 13px}
+      .set-card p{font-size:.74rem;margin-bottom:8px}
+      .credits-box{grid-column:1/-1}
+      .credits-box>summary{cursor:pointer;font-family:var(--display);font-size:.92rem;letter-spacing:.04em;list-style:none;padding:2px 0}
+      .credits-box .set-card{margin-top:10px;background:rgba(255,255,255,.04);border-width:1.5px}
+      .pc-avatar{width:40px;height:40px;flex:0 0 40px;border-radius:50%;display:grid;place-items:center;font-size:1.25rem;background:radial-gradient(circle at 35% 30%,#ffe9a8,#f5a623 70%);border:2px solid rgba(255,255,255,.75);box-shadow:0 3px 10px rgba(0,0,0,.45)}
+      .player-card{cursor:pointer}
+      .player-card:active{transform:translateY(1px)}
+      /* ---------- perfil del jugador ---------- */
+      .prof-sheet{max-width:780px}
+      .prof-body{display:grid;grid-template-columns:225px 1fr;gap:12px;align-items:start;margin-top:6px}
+      @media(max-width:620px){ .prof-body{grid-template-columns:1fr} }
+      .prof-fig{background:radial-gradient(ellipse at 50% 88%,rgba(255,190,60,.20),rgba(10,8,24,.35) 62%);border:2px solid rgba(255,255,255,.22);border-radius:16px;padding:8px;text-align:center}
+      .prof-fig img,.prof-fig canvas{width:100%;max-width:215px;height:auto;display:block;margin:0 auto}
+      .prof-cap{font-family:var(--display);color:var(--gold);font-size:.95rem;margin-top:4px}
+      .prof-cap small{display:block;color:var(--ink-dim);font-family:inherit;font-size:.72rem;font-weight:700}
+      .prof-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+      .prof-stat{background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.18);border-radius:12px;padding:6px 10px;text-align:left}
+      .prof-stat span{display:block;font-size:.66rem;font-weight:900;letter-spacing:.08em;color:var(--ink-dim)}
+      .prof-stat b{font-family:var(--display);font-size:1.12rem;color:#fff}
+      .prof-stat.power{grid-column:1/-1;background:linear-gradient(90deg,rgba(255,170,40,.28),rgba(255,90,160,.20));border-color:rgba(255,200,80,.55)}
+      .prof-stat.power b{color:var(--gold);font-size:1.35rem}
+      .prof-xp{height:10px;border-radius:99px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.25);overflow:hidden;margin-top:8px}
+      .prof-xp>i{display:block;height:100%;background:linear-gradient(90deg,#3fae1f,#8dff57)}
+      .prof-xp-t{font-size:.7rem;font-weight:800;color:var(--ink-dim);margin-top:4px;text-align:left}
+      .prof-gear{margin-top:9px;text-align:left}
+      .prof-gear h4{margin:0 0 6px;font-family:var(--display);font-size:.8rem;letter-spacing:.05em;color:var(--gold)}
+      .prof-gear .pg-row{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.13);border-radius:9px;padding:3px 8px;margin-bottom:4px;font-size:.72rem;font-weight:700}
+      .prof-gear #profGear{display:grid;grid-template-columns:1fr 1fr;gap:0 8px}
+      .prof-gear .pg-dot{width:10px;height:10px;border-radius:50%;flex:0 0 10px}
+      .prof-gear .pg-slot{color:var(--ink-dim);font-size:.66rem;font-weight:900;letter-spacing:.06em;min-width:74px}
+      .prof-rank{margin-top:9px;background:linear-gradient(90deg,rgba(140,90,255,.25),rgba(60,160,255,.18));border:1.5px dashed rgba(190,160,255,.6);border-radius:12px;padding:9px 12px;font-size:.76rem;font-weight:700;line-height:1.45;text-align:left}
       .set-card{background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.03));border:2px solid rgba(255,255,255,.22);border-radius:16px;padding:13px 15px}
       .set-card h3{margin:0 0 4px;font-family:var(--display);font-size:.92rem;letter-spacing:.04em}
       .set-card p{margin:0 0 10px;font-size:.78rem;color:#ffeecd;font-weight:600;line-height:1.4}
@@ -459,7 +494,7 @@
         .pc-class{font-size:.62rem}
         .gold{font-size:.76rem}
         .quest-chip span{font-size:.7rem}
-        .icon-btn{width:34px;height:34px;font-size:.92rem}
+        .icon-btn{width:30px;height:30px;font-size:.85rem}
         #navHint{padding:5px 7px}
         #navText{font-size:.66rem}
         #bossBar{top:6px}
@@ -510,7 +545,7 @@
       body.stage-short .hud-left .player-card{padding:7px 10px 2px}
       body.stage-short .hud-right{width:150px;max-width:calc(var(--sw,100vw)*.26)}
       body.stage-short .right-col{gap:6px}
-      body.stage-short .icon-btn{width:34px;height:34px;font-size:.95rem}
+      body.stage-short .icon-btn{width:30px;height:30px;font-size:.85rem}
       body.stage-short .quest-chip{padding:6px 9px}
       body.stage-short #toasts{top:118px}
       body.stage-short .pc-head{margin-bottom:4px}
@@ -773,8 +808,9 @@
         <div class="hud-top">
           <div class="left-col">
           <div class="hud-panel hud-left">
-          <div class="player-card">
+          <div class="player-card" id="playerCard" role="button" tabindex="0" aria-label="Abrir tu perfil: tu modelo 3D, equipo y estadísticas">
             <div class="pc-head">
+              <div class="pc-avatar" id="pcAvatar">🛡</div>
               <div class="lvl-badge"><span><small>NV</small><span id="uiLvl">1</span></span></div>
               <div>
                 <div class="pc-name" id="uiName">Aventurero</div>
@@ -992,11 +1028,44 @@
         </div>
       </div>
 
+      <!-- PERFIL DEL JUGADOR -->
+      <div class="overlay hidden" id="profileScreen">
+        <div class="sheet prof-sheet">
+          <span class="kicker">Tu héroe</span>
+          <h1 style="font-size:clamp(1.3rem,4.5vw,1.9rem);margin:2px 0 0">👤 <em>PERFIL</em></h1>
+          <div class="prof-body">
+            <div class="prof-fig">
+              <img id="profImg" alt="Tu personaje en 3D con su equipo" style="display:none" />
+              <canvas id="profCv" width="340" height="380" style="display:none" aria-label="Tu personaje con el equipo puesto"></canvas>
+              <div class="prof-cap" id="profCap">Aventurero<small>Guerrero · Nivel 1</small></div>
+            </div>
+            <div>
+              <div class="prof-stats">
+                <div class="prof-stat power"><span>⚡ PODER DE COMBATE</span><b id="profPower">0</b></div>
+                <div class="prof-stat"><span>⚔ ATAQUE</span><b id="profAtk">0</b></div>
+                <div class="prof-stat"><span>🛡 DEFENSA</span><b id="profDef">0</b></div>
+                <div class="prof-stat"><span>❤️ VIDA</span><b id="profHp">0</b></div>
+                <div class="prof-stat"><span>🔷 ENERGÍA</span><b id="profMp">0</b></div>
+                <div class="prof-stat"><span>🪙 ORO</span><b id="profGold">0</b></div>
+                <div class="prof-stat"><span>🗡 BESTIAS CAZADAS</span><b id="profKills">0</b></div>
+              </div>
+              <div class="prof-xp"><i id="profXpFill"></i></div>
+              <div class="prof-xp-t" id="profXpTxt">XP 0 / 70</div>
+              <div class="prof-gear"><h4>🎽 EQUIPO PUESTO</h4><div id="profGear"></div></div>
+              <div class="prof-rank">🏆 <strong>Ranking mundial — MUY PRONTO.</strong> Tu ⚡ Poder ya se calcula y crece con tu nivel y tu equipo: cuando el ranking abra, escalarás desde el primer día.</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;justify-content:center;margin-top:14px">
+            <button class="big-btn" id="btnCloseProfile" type="button">✔ SEGUIR JUGANDO</button>
+          </div>
+        </div>
+      </div>
+
       <!-- SETTINGS -->
       <div class="overlay hidden" id="settingsScreen">
         <div class="sheet">
           <span class="kicker">Preferencias</span>
-          <h1 style="font-size:clamp(1.7rem,6vw,2.7rem)">⚙️ <em>AJUSTES</em></h1>
+          <h1 style="font-size:clamp(1.3rem,4.5vw,1.9rem);margin:2px 0 4px">⚙️ <em>AJUSTES</em></h1>
           <div class="set-wrap">
             <div class="set-card">
               <h3>🔊 SONIDO</h3>
@@ -1028,10 +1097,16 @@
               </div>
             </div>
             <div class="set-card">
+              <h3>🖥 PANTALLA COMPLETA</h3>
+              <p>Juega ocupando <strong>toda la pantalla</strong>, sin la barra del teléfono (hora, batería…) encima. En iPhone: botón <strong>Compartir → «Añadir a pantalla de inicio»</strong> y abre VALDORIA desde ese icono para el mismo efecto.</p>
+              <button class="ghost-btn" id="btnFs" type="button" style="width:100%">⛶ PANTALLA COMPLETA</button>
+            </div>
+            <div class="set-card">
               <h3>🎮 CONTROLES A TU MEDIDA</h3>
               <p>Entra en el editor y arrastra el joystick, los botones de acción y los iconos superiores a donde te queden cómodos; también puedes cambiar el tamaño de cada control. Mientras editas, la partida queda en pausa y los controles no ejecutan su acción. Tu diseño se guarda en este dispositivo.</p>
               <button class="ghost-btn" id="btnEditControls" type="button" style="width:100%">🎮 MOVER CONTROLES</button>
             </div>
+            <details class="set-card credits-box"><summary>📜 CRÉDITOS, LICENCIAS Y VERSIÓN</summary>
             <div class="set-card">
               <h3>🔊 SONIDO Y AMBIENTE</h3>
               <p>Efectos con cuerpo del pack <strong>SFX Kit</strong> de Wyzowl (320 efectos, licencia <strong>CC0 1.0</strong>: uso libre, sin atribución obligatoria), servidos desde la propia página del juego y mezclados por buses con compresor-limitador. Si una muestra no puede cargar, cada evento cae a la síntesis WebAudio de Valdoria: nunca te quedas en silencio por un fallo de red. El ambiente por zonas — viento, agua, noche, lluvia — se genera en directo con el mismo motor.</p>
@@ -1057,6 +1132,7 @@
               <h3>🔄 VERSIÓN Y DESCARGAS</h3>
               <p>Versión del juego: <strong id="gameVerTxt">—</strong>. Valdoria se descarga <strong>una sola vez por versión</strong> y queda guardado en este navegador: en las visitas siguientes entras sin descargar nada. Cuando salga una versión nueva, la pantalla de carga lo dirá («Actualizando VALDORIA a la versión nueva…») y renovará los archivos una única vez. Actualizar <strong>nunca toca tu partida</strong>: nivel, equipo, mascotas, ajustes y tu diseño de controles quedan como estaban.</p>
             </div>
+          </details>
           </div>
           <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px">
             <button class="big-btn" id="btnCloseSettings" type="button">✔ SEGUIR JUGANDO</button>
@@ -3148,7 +3224,7 @@
           toast('¡Nivel '+p.lvl+'! +1 ⭐ para gastar en el icono ⭐','level');
         }
         if(p.lvl===c.s3.unlock||p.lvl===c.s4.unlock) setTimeout(()=>toast('También ganaste +1 ⭐ (icono ⭐ de arriba)','gold'),600);
-        const uc=document.getElementById('uiClass'); if(uc&&S.cls) uc.textContent=S.cls.name+' · Nv '+p.lvl;
+        const uc=document.getElementById('uiClass'); if(uc&&S.cls) uc.textContent=S.cls.name+' · Nv '+p.lvl; const pa=document.getElementById('pcAvatar'); if(pa&&S.cls) pa.textContent=S.cls.icon||'🛡';
         if(p.lvl===c.s4.unlock) sfx.unlockUlt(); else if(p.lvl===c.s3.unlock) sfx.unlockPower(); else sfx.level();
       }
       if(leveled) saveGame(true); // evento importante: guardar al subir de nivel
@@ -3602,7 +3678,7 @@
     }
     /* ---------------- Talentos ---------------- */
     function toggleTalents(){ if(!S) return; if(S.player.talentsOpen) closeTalents(); else openTalents(); }
-    function openTalents(){ if(!S) return; closeBag(true); closeSettings(true); closeMp(true); closePets(true); closeChat(true); closeBoutique(true); S.player.talentsOpen=true; renderTalents(); $('talentScreen').classList.remove('hidden'); ac(); sfx.panelOpen(); }
+    function openTalents(){ if(!S) return; closeProfile(true); closeBag(true); closeSettings(true); closeMp(true); closePets(true); closeChat(true); closeBoutique(true); S.player.talentsOpen=true; renderTalents(); $('talentScreen').classList.remove('hidden'); ac(); sfx.panelOpen(); }
     function closeTalents(silent){ if(!S) return; const was=S.player.talentsOpen; S.player.talentsOpen=false; $('talentScreen').classList.add('hidden'); if(was&&!silent) sfx.panelClose(); }
     let selNode=null;
     function buyNode(id){
@@ -3749,12 +3825,83 @@
       return sc;
     }
     function toggleBag(){ if(!S||S.dlg) return; if(S.player.bagOpen) closeBag(); else openBag(); }
-    function openBag(){ if(!S||S.dlg) return; closeTalents(true); closeSettings(true); closeMp(true); closePets(true); closeChat(true); closeBoutique(true); S.player.bagOpen=true; invSel=null; invSellArm=-1; renderBag(); $('bagScreen').classList.remove('hidden'); ac(); sfx.panelOpen(); }
+    function openBag(){ if(!S||S.dlg) return; closeProfile(true); closeTalents(true); closeSettings(true); closeMp(true); closePets(true); closeChat(true); closeBoutique(true); S.player.bagOpen=true; invSel=null; invSellArm=-1; renderBag(); $('bagScreen').classList.remove('hidden'); ac(); sfx.panelOpen(); }
     function closeBag(silent){ if(!S) return; const was=S.player.bagOpen; S.player.bagOpen=false; invSel=null; invSellArm=-1; $('bagScreen').classList.add('hidden'); if(was&&!silent) sfx.panelClose(); }
     /* ---------------- Ajustes (engranaje): sonido + transparencia ---------------- */
     function toggleSettings(){ if(!S) return; if(S.player.settingsOpen) closeSettings(); else openSettings(); }
-    function openSettings(){ if(!S) return; closeTalents(true); closeBag(true); closeMp(true); closePets(true); closeChat(true); closeBoutique(true); S.player.settingsOpen=true; $('settingsScreen').classList.remove('hidden'); applyVol(); ac(); sfx.panelOpen(); }
+    function openSettings(){ if(!S) return; closeProfile(true); closeTalents(true); closeBag(true); closeMp(true); closePets(true); closeChat(true); closeBoutique(true); S.player.settingsOpen=true; $('settingsScreen').classList.remove('hidden'); applyVol(); ac(); sfx.panelOpen(); }
     function closeSettings(silent){ if(!S) return; const was=S.player.settingsOpen; S.player.settingsOpen=false; $('settingsScreen').classList.add('hidden'); if(was&&!silent) sfx.panelClose(); }
+    /* ---------- PERFIL: tu modelo 3D con el equipo, tus cifras y tu ⚡ Poder (base del futuro ranking) ---------- */
+    const PROF_SLOTS=['casco','hombreras','armadura','arma','capa','amuleto','anillo'];
+    let profRenderer=null, profScene=null, profCam=null, profCache={sig:'',url:null};
+    function playerPower(p){ return Math.round((p.atk||0)*2+(p.def||0)*3+(p.hpMax||0)/8+(p.mpMax||0)/6+(p.lvl||1)*15); }
+    function profileModelURL(){
+      try{
+        if(!S||!window.THREE||!window.G3||G3.state!=='on'||!G3.kkTpl) return null;
+        const p=S.player, eq=p.equipment||{}, armor=eq.armadura, weapon=eq.arma, amu=eq.amuleto, helmIt=eq.casco, capeIt=eq.capa;
+        const sig=S.clsKey+'|'+(armor&&armor.color?armor.color:'')+'|'+(amu&&amu.gem?amu.gem:'')+'|'+(weapon&&weapon.wcol?weapon.wcol:'')+'|'+(weapon?weapon.rarity||0:0)+'|'+(helmIt?helmIt.id:'')+'|'+(capeIt?capeIt.color:'')+'|'+(p.form||'');
+        if(profCache.sig===sig) return profCache.url;
+        const tpl=G3.kkTpl[KK_FILES[S.clsKey]]; if(!tpl||tpl.state!=='ready') return null;
+        const kind=(S.clsKey==='mage'||S.clsKey==='druid')?'staff':(S.clsKey==='hunter'?'bow':'sword');
+        const model=kkChar(S.clsKey,{kind:kind,wcol:(kind==='bow'&&(!weapon||(weapon.rarity||0)===0))?'#9a6a35':(weapon&&weapon.wcol?weapon.wcol:'#cfd8e6'),wrar:weapon?weapon.rarity||0:0,attackClip:KK_ATTACK[S.clsKey],cape:capeIt?capeIt.color:null,helm:helmIt?helmIt.color:null,body:(armor&&armor.color)?armor.color:(S.clsKey==='druid'?'#2e7d32':null)});
+        if(!model) return null;
+        if(model.userData&&model.userData.bubble) model.userData.bubble.visible=false;
+        if(model.userData){ kkPlay(model.userData,'idle',0); if(model.userData.mixer) model.userData.mixer.update(0.4); }
+        if(!profRenderer){
+          profRenderer=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});
+          profRenderer.setSize(300,340);
+          profScene=new THREE.Scene();
+          profScene.add(new THREE.AmbientLight(0xffffff,0.95));
+          const dA=new THREE.DirectionalLight(0xfff2d8,0.95); dA.position.set(2,3,4); profScene.add(dA);
+          const dB=new THREE.DirectionalLight(0x9fd8ff,0.35); dB.position.set(-3,1,-2); profScene.add(dB);
+          profCam=new THREE.PerspectiveCamera(38,300/340,0.1,100);
+        }
+        const wrap=new THREE.Group(); wrap.add(model);
+        const box=new THREE.Box3().setFromObject(wrap);
+        if(box.isEmpty()){ g3Dispose(wrap); profCache={sig:sig,url:null}; return null; }
+        const ctr=box.getCenter(new THREE.Vector3()), sz=box.getSize(new THREE.Vector3());
+        model.position.sub(ctr);
+        const md=Math.max(sz.x,sz.y,sz.z)||1;
+        wrap.scale.setScalar(2.35/md); wrap.rotation.y=-0.55;
+        profScene.add(wrap);
+        profCam.position.set(0,0.45,4.6); profCam.lookAt(0,0,0);
+        profRenderer.render(profScene,profCam);
+        const url=profRenderer.domElement.toDataURL('image/png');
+        profScene.remove(wrap); g3Dispose(wrap);
+        profCache={sig:sig,url:url}; return url;
+      }catch(e){ return null; }
+    }
+    function drawProfile(){
+      if(!S) return; const p=S.player, eq=p.equipment||{};
+      const url=profileModelURL();
+      const img=$('profImg'), cv=$('profCv');
+      if(url){ img.src=url; img.style.display='block'; cv.style.display='none'; }
+      else{ img.style.display='none'; cv.style.display='block';
+        try{ drawEqStage(); const ec=$('eqStage'); const g=cv.getContext('2d'); if(ec&&g){ g.clearRect(0,0,cv.width,cv.height); g.drawImage(ec,0,0); } }catch(e){} }
+      $('profCap').innerHTML=(MP.name||S.cls.name)+'<small>'+S.cls.name+' · Nivel '+p.lvl+(S.clsKey==='druid'&&p.form!=='human'?' · 🐺 Forma de loba':'')+((typeof SOC!=='undefined'&&SOC.clan&&SOC.clan.tag)?' · ['+SOC.clan.tag+'] '+(SOC.clan.name||''):'')+'</small>';
+      $('profPower').textContent=playerPower(p);
+      $('profAtk').textContent=p.atk; $('profDef').textContent=p.def;
+      $('profHp').textContent=p.hpMax; $('profMp').textContent=p.mpMax;
+      $('profGold').textContent=p.gold; $('profKills').textContent=S.kills||0;
+      const pct=Math.max(0,Math.min(100,Math.round(100*(p.xp||0)/Math.max(1,p.xpNext||70))));
+      $('profXpFill').style.width=pct+'%';
+      $('profXpTxt').textContent='Nivel '+p.lvl+' · XP '+(p.xp||0)+' / '+(p.xpNext||70)+' ('+pct+'%)';
+      $('profGear').innerHTML=PROF_SLOTS.map(function(sl){ const it=eq[sl];
+        return '<div class="pg-row"><span class="pg-dot" style="background:'+(it?RARCOL[it.rarity||0]:'#3a3a4a')+'"></span><span class="pg-slot">'+SLOT_LABEL[sl]+'</span><span>'+(it?gearName(it):'— vacío —')+'</span></div>'; }).join('');
+    }
+    function openProfile(){ if(!S) return; closeTalents(true); closeBag(true); closeSettings(true); closeMp(true); closePets(true); closeChat(true); closeBoutique(true); S.player.profileOpen=true; drawProfile(); $('profileScreen').classList.remove('hidden'); ac(); sfx.panelOpen(); }
+    function closeProfile(silent){ if(!S) return; const was=S.player.profileOpen; S.player.profileOpen=false; const el=$('profileScreen'); if(el) el.classList.add('hidden'); if(was&&!silent) sfx.panelClose(); }
+    (function(){ const pc=$('playerCard'); if(pc){ pc.addEventListener('click',()=>{ openProfile(); }); pc.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openProfile(); } }); }
+      const bc=$('btnCloseProfile'); if(bc) bc.addEventListener('click',()=>{ closeProfile(); });
+      const bf=$('btnFs'); if(bf){ const canFs=!!(document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen);
+        if(!canFs){ bf.textContent='📲 AÑADIR A PANTALLA DE INICIO (iPhone)'; }
+        bf.addEventListener('click',()=>{ try{
+          if(document.fullscreenElement){ document.exitFullscreen&&document.exitFullscreen(); bf.textContent='⛶ PANTALLA COMPLETA'; }
+          else if(canFs){ const r=(document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen).call(document.documentElement); if(r&&r.catch) r.catch(()=>{}); bf.textContent='⛶ SALIR DE PANTALLA COMPLETA'; }
+          else { bf.textContent='📲 COMPARTE → «AÑADIR A PANTALLA DE INICIO»'; }
+        }catch(e){} }); }
+      const be=$('btnStart'); if(be) be.addEventListener('click',()=>{ try{ if(!document.fullscreenElement&&document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(()=>{}); }catch(e){} });
+    })();
     function setVol(lv){ ac(); volLevel=lv; applyVol(); if(lv>0) tone(700,0,0.07,'triangle',0.05); }
     /* ---------------- Editor de controles (Ajustes → 🎮 MOVER CONTROLES) ----------------
        El jugador puede arrastrar TODOS los controles a cualquier punto de
@@ -4050,7 +4197,7 @@
       if(!quiet) toast('👥 Tu nombre en el mundo: '+MP.name,'gold');
     }
     function toggleMp(){ if(!S) return; if(S.player.mpOpen) closeMp(); else openMp(); }
-    function openMp(){ if(!S) return; closeTalents(true); closeBag(true); closeSettings(true); closePets(true); closeChat(true); closeBoutique(true); S.player.mpOpen=true; const ni=$('mpName'); if(ni&&document.activeElement!==ni) ni.value=MP.name; mpRenderPanel(); $('mpScreen').classList.remove('hidden'); ac(); sfx.panelOpen(); }
+    function openMp(){ if(!S) return; closeProfile(true); closeTalents(true); closeBag(true); closeSettings(true); closePets(true); closeChat(true); closeBoutique(true); S.player.mpOpen=true; const ni=$('mpName'); if(ni&&document.activeElement!==ni) ni.value=MP.name; mpRenderPanel(); $('mpScreen').classList.remove('hidden'); ac(); sfx.panelOpen(); }
     function closeMp(silent){ if(!S) return; const was=S.player.mpOpen; S.player.mpOpen=false; $('mpScreen').classList.add('hidden'); if(was&&!silent) sfx.panelClose(); }
 
     /* ---------- MASCOTAS: tienda de Milo y panel 🐾 ----------
@@ -4060,7 +4207,7 @@
        en ambos modos. Comprar descuenta oro con el sonido de compra y
        la primera mascota se activa sola; activar suena suave. */
     function togglePets(){ if(!S||S.dlg) return; if(S.player.petOpen) closePets(); else openPets('mine'); }
-    function openPets(mode){ if(!S||S.dlg) return; closeTalents(true); closeBag(true); closeSettings(true); closeMp(true); closeBoutique(true); closeChat(true); S.petMode=(mode==='shop')?'shop':'mine'; S.player.petOpen=true; renderPets(); $('petScreen').classList.remove('hidden'); ac(); sfx.panelOpen(); }
+    function openPets(mode){ if(!S||S.dlg) return; closeProfile(true); closeTalents(true); closeBag(true); closeSettings(true); closeMp(true); closeBoutique(true); closeChat(true); S.petMode=(mode==='shop')?'shop':'mine'; S.player.petOpen=true; renderPets(); $('petScreen').classList.remove('hidden'); ac(); sfx.panelOpen(); }
     function closePets(silent){ if(!S) return; const was=S.player.petOpen; S.player.petOpen=false; const el=$('petScreen'); if(el) el.classList.add('hidden'); if(was&&!silent) sfx.panelClose(); }
 
     /* ---------- BOUTIQUE VALDORIA · escaparate «PRÓXIMAMENTE» ----------
@@ -4384,7 +4531,7 @@
     }
     function closeBoutiqueDetail(){ const host=$('boutiqueDetail'); if(host){ host.classList.add('hidden'); host.innerHTML=''; } if(S&&S.player.boutiqueOpen) boutiqueStartAnim(); }
     function toggleBoutique(){ if(!S||S.dlg) return; if(S.player.boutiqueOpen) closeBoutique(); else openBoutique(); }
-    function openBoutique(){ if(!S||S.dlg) return; closeTalents(true); closeBag(true); closeSettings(true); closeMp(true); closePets(true); closeChat(true); S.player.boutiqueOpen=true; renderBoutique(); $('boutiqueScreen').classList.remove('hidden'); ac(); sfx.panelOpen(); }
+    function openBoutique(){ if(!S||S.dlg) return; closeProfile(true); closeTalents(true); closeBag(true); closeSettings(true); closeMp(true); closePets(true); closeChat(true); S.player.boutiqueOpen=true; renderBoutique(); $('boutiqueScreen').classList.remove('hidden'); ac(); sfx.panelOpen(); }
     function closeBoutique(silent){ if(!S) return; const was=S.player.boutiqueOpen; S.player.boutiqueOpen=false; closeBoutiqueDetail(); const el=$('boutiqueScreen'); if(el) el.classList.add('hidden'); if(boutiqueAnim){ cancelAnimationFrame(boutiqueAnim); boutiqueAnim=0; } if(was&&!silent) sfx.panelClose(); }
     function petSetActive(id){
       if(!S) return; const p=S.player;
@@ -5249,7 +5396,7 @@
     function toggleChat(){ if(!S) return; if(S.player.chatOpen) closeChat(); else openChat(); }
     function openChat(tab,peerId){
       if(!S) return;
-      closeTalents(true); closeBag(true); closeSettings(true); closeMp(true); closePets(true); closeBoutique(true);
+      closeProfile(true); closeTalents(true); closeBag(true); closeSettings(true); closeMp(true); closePets(true); closeBoutique(true);
       S.player.chatOpen=true;
       if(tab) CH.tab=tab;
       if(peerId){ CH.wsel=peerId; CH.tab='w'; }
@@ -6522,7 +6669,7 @@
       if(dl.night>0.35&&p.x>TOWN_EDGE&&Math.random()<0.3&&S.atmo.length<250) S.atmo.push({kind:'firefly',x:p.x+rnd(-240,240),y:p.y+rnd(-160,160),vx:rnd(-7,7),vy:rnd(-5,5),life:rnd(1.6,3),maxLife:3,size:rnd(4,7),seed:rnd(0,9)});
       // humo continuo de chimeneas
       if(Math.random()<0.35){ const h=houses[irnd(0,houses.length-1)]; S.atmo.push({kind:'smoke',x:h.x+h.w-34,y:h.y+h.h-Math.round((h.h+16)/KY)-4,vx:rnd(2,8),vy:rnd(-26,-16),life:rnd(1.8,3),maxLife:3,size:rnd(9,15),grow:10,seed:rnd(0,9)}); }
-      if(p.talentsOpen||p.bagOpen||p.settingsOpen||p.mpOpen||p.chatOpen||p.petOpen||p.boutiqueOpen||p.ctlEdit||p.mapOpen){ refreshHUD(); drawMinimap(); if(p.mapOpen){ const wk=(S.t*5)|0; if(wk!==(S._wmTick||0)){ S._wmTick=wk; drawWorldMap(); } } if(window.__mpTick) __mpTick(dt); return; } // pausa con un panel abierto (talentos, equipo o el mapa del mundo) o editando controles; el mapa grande se redibuja a ~5/s, de sobra para sus pulsos y marcadores
+      if(p.talentsOpen||p.bagOpen||p.settingsOpen||p.mpOpen||p.chatOpen||p.petOpen||p.boutiqueOpen||p.profileOpen||p.ctlEdit||p.mapOpen){ refreshHUD(); drawMinimap(); if(p.mapOpen){ const wk=(S.t*5)|0; if(wk!==(S._wmTick||0)){ S._wmTick=wk; drawWorldMap(); } } if(window.__mpTick) __mpTick(dt); return; } // pausa con un panel abierto (talentos, equipo o el mapa del mundo) o editando controles; el mapa grande se redibuja a ~5/s, de sobra para sus pulsos y marcadores
       // --- movimiento ---
       let mx=0,my=0;
       if(keys['w']||keys['arrowup'])my-=1; if(keys['s']||keys['arrowdown'])my+=1;
