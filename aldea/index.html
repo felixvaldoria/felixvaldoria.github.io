@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Aldea en Obras · juego de construcción</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overflow:hidden;font-family:'Trebuchet MS','Segoe UI',system-ui,sans-serif;background:linear-gradient(180deg,#79c7f2 0%,#aee3ff 45%,#cdeffd 100%)}
+  #game{position:fixed;inset:0}
+  canvas{display:block}
+  .hud{position:fixed;top:0;left:0;right:0;display:flex;flex-wrap:wrap;gap:6px;padding:8px 8px 0;z-index:5;pointer-events:none}
+  .pill{display:flex;align-items:center;gap:5px;background:rgba(18,32,24,.84);color:#fff;border:2px solid rgba(255,255,255,.25);border-radius:99px;padding:5px 11px;font-weight:900;font-size:.88rem;box-shadow:0 4px 12px rgba(0,0,0,.25)}
+  .pill b{color:#ffd23c}
+  .pill.pop{animation:pop .3s}
+  @keyframes pop{40%{transform:scale(1.13)}}
+  .spacer{flex:1}
+  #quest{position:fixed;top:52px;left:8px;z-index:5;max-width:74vw;background:rgba(255,253,244,.94);border:2px solid #d8a94e;border-radius:14px;padding:6px 11px;font-size:.78rem;font-weight:700;color:#5c4a12;box-shadow:0 4px 12px rgba(60,40,0,.25);cursor:pointer}
+  #quest b{color:#2e6b1e}
+  #toast{position:fixed;top:100px;left:50%;transform:translateX(-50%);background:rgba(18,32,24,.88);color:#ffe98a;border:2px solid rgba(255,210,60,.5);padding:7px 16px;border-radius:99px;font-weight:900;font-size:.85rem;z-index:8;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;max-width:94vw}
+  #toast.on{opacity:1}
+  .sheet{position:fixed;left:0;right:0;bottom:0;z-index:6;background:linear-gradient(170deg,#fffdf4,#ffedc0);border-top:3px solid #d8a94e;border-radius:20px 20px 0 0;padding:12px 12px calc(12px + env(safe-area-inset-bottom));box-shadow:0 -8px 30px rgba(60,40,0,.3);transform:translateY(110%);transition:transform .25s}
+  .sheet.on{transform:translateY(0)}
+  .sheet h3{color:#4a3200;font-size:1.02rem;display:flex;justify-content:space-between;align-items:center}
+  .sheet h3 .x{border:0;background:#e8d9ae;border-radius:99px;width:28px;height:28px;font-weight:900;cursor:pointer}
+  .sheet p{color:#7a5c14;font-size:.8rem;margin:4px 0 9px;line-height:1.4}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  .btn{flex:1;min-width:104px;border:0;cursor:pointer;border-radius:14px;font:900 .84rem 'Trebuchet MS',sans-serif;padding:11px 8px;color:#fff;background:linear-gradient(160deg,#57d977,#2e9e4f);border:2px solid #d8ffb0;box-shadow:0 4px 12px rgba(20,90,40,.3)}
+  .btn:active{transform:scale(.96)}
+  .btn.blue{background:linear-gradient(160deg,#54c8ff,#3a7bd0);border-color:#bdeaff}
+  .btn.gold{background:linear-gradient(160deg,#ffd23c,#f5a623);color:#4a3200;border-color:#fff0a0}
+  .btn:disabled{filter:grayscale(.75);opacity:.55}
+  .btn small{display:block;font-weight:700;font-size:.68rem;opacity:.9}
+  .buildcard{flex:1;min-width:96px;background:#fff;border:2px solid #e3cf9a;border-radius:14px;padding:9px 8px;text-align:center;cursor:pointer}
+  .buildcard:active{transform:scale(.96)}
+  .buildcard .ic{font-size:1.5rem}
+  .buildcard .nm{font-weight:900;font-size:.78rem;color:#4a3200}
+  .buildcard .ds{font-size:.64rem;color:#7a5c14;line-height:1.3;min-height:2.5em}
+  .buildcard .cost{font-weight:900;font-size:.74rem;color:#b8860b}
+  .buildcard.poor{opacity:.5}
+  .overlay{position:fixed;inset:0;background:rgba(10,24,16,.55);display:flex;align-items:center;justify-content:center;z-index:9;padding:14px}
+  .overlay.hidden{display:none}
+  .panel{background:linear-gradient(170deg,#fffdf4,#ffe9b8);border:4px solid #d8a94e;border-radius:24px;padding:22px 24px;text-align:center;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+  .panel h1{font-size:1.55rem;color:#2e6b1e}
+  .panel h2{font-size:1.3rem;color:#2e6b1e}
+  .panel p{color:#5c4a12;margin:8px 0 13px;font-size:.92rem;line-height:1.45}
+  .panel .btn{flex:none;min-width:170px}
+  #load{position:fixed;inset:0;background:linear-gradient(180deg,#79c7f2,#cdeffd);z-index:20;display:flex;align-items:center;justify-content:center;color:#14532d;font-weight:900;font-size:1.05rem}
+  @media (max-width:560px){ #quest{top:96px} #toast{top:142px} }
+</style>
+</head>
+<body>
+<div id="game"></div>
+<div class="hud">
+  <div class="pill" id="pillW">🪵 <b id="uiWood">0</b></div>
+  <div class="pill" id="pillS">🪨 <b id="uiStone">0</b></div>
+  <div class="pill" id="pillG">🪙 <b id="uiGold">0</b></div>
+  <div class="pill">🏰 Nv <b id="uiTown">1</b></div>
+  <div class="spacer"></div>
+  <div class="pill" id="pillAll" style="cursor:pointer;pointer-events:auto">🧺 Recoger todo</div>
+</div>
+<div id="quest">🎯 <span id="questTxt">…</span></div>
+<div id="toast"></div>
+
+<div class="sheet" id="sheet">
+  <h3><span id="sheetTitle">Parcela</span><button class="x" id="sheetX" type="button">✕</button></h3>
+  <p id="sheetDesc"></p>
+  <div class="row" id="sheetRow"></div>
+</div>
+
+<div class="overlay" id="introOverlay">
+  <div class="panel">
+    <h1>🏗️ Aldea en Obras</h1>
+    <p id="introTxt">Levanta tu aldea desde una parcelita: construye el aserradero, la cantera y el mercado, recoge lo que producen y haz crecer tu pueblo. Tu aldea trabaja <b>aunque no estés</b>.</p>
+    <button class="btn" id="btnStart" type="button">▶ A CONSTRUIR</button>
+    <p style="font-size:.7rem;color:#8a6d1f;margin-top:11px">Modelos 3D del pack gratuito (CC0) «Tower Defense Kit» de Kenney · kenney.nl</p>
+  </div>
+</div>
+<div class="overlay hidden" id="backOverlay">
+  <div class="panel">
+    <h2>🌅 ¡Bienvenido de vuelta!</h2>
+    <p id="backTxt"></p>
+    <button class="btn gold" id="btnBack" type="button">🧺 Recogerlo todo</button>
+  </div>
+</div>
+<div id="load">🌱 Preparando tu parcela…</div>
+
+<script src="lib/three.min.js"></script>
+<script src="lib/GLTFLoader.js"></script>
+<script>
+'use strict';
+/* ================= ALDEA EN OBRAS · v1 ================= */
+const $=id=>document.getElementById(id);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const SAVE_KEY='aldea-en-obras-v1';
+if(window.Telegram&&Telegram.WebApp){ try{ Telegram.WebApp.ready(); Telegram.WebApp.expand(); }catch(e){} }
+const TG_USER=(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.initDataUnsafe&&Telegram.WebApp.initDataUnsafe.user)||null;
+if(TG_USER&&TG_USER.first_name) $('introTxt').innerHTML='¡Hola, <b>'+TG_USER.first_name+'</b>! Levanta tu aldea desde una parcelita: construye el aserradero, la cantera y el mercado, recoge lo que producen y haz crecer tu pueblo. Tu aldea trabaja <b>aunque no estés</b>.';
+
+let AC=null; function beep(f,d,type,g){ try{ if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)(); const o=AC.createOscillator(), gn=AC.createGain(); o.type=type||'square'; o.frequency.value=f; gn.gain.setValueAtTime(g||0.045,AC.currentTime); gn.gain.exponentialRampToValueAtTime(0.001,AC.currentTime+(d||0.08)); o.connect(gn); gn.connect(AC.destination); o.start(); o.stop(AC.currentTime+(d||0.08)); }catch(e){} }
+const sfx={ tap(){beep(600,0.05,'triangle',0.04)}, coin(){beep(1180,0.07,'sine',0.05)}, build(){[392,523,659].forEach((f,i)=>setTimeout(()=>beep(f,0.1,'triangle',0.05),i*70))}, hammer(){beep(240,0.05,'square',0.05)}, err(){beep(160,0.12,'sawtooth',0.05)}, quest(){[784,988,1175].forEach((f,i)=>setTimeout(()=>beep(f,0.1,'sine',0.05),i*80))} };
+
+/* ================= definición del juego ================= */
+const COLS=4, ROWS=3, PITCH=1.62;
+const px2w=gx=>(gx-(COLS-1)/2)*PITCH, pz2w=gz=>(gz-(ROWS-1)/2)*PITCH;
+const PROD={ wood:{ic:'🪵',name:'madera'}, stone:{ic:'🪨',name:'piedra'}, gold:{ic:'🪙',name:'oro'} };
+const BUILDINGS={
+  hall:  { name:'Ayuntamiento', ic:'🏰', desc:'El corazón de la aldea. Al mejorarlo sube el nivel del pueblo, desbloquea parcelas y amplía los almacenes.',
+           maxLvl:5 },
+  sawmill:{ name:'Aserradero', ic:'🪵', desc:'Produce madera sin parar. Tócalo para recoger lo acumulado.',
+           makes:'wood', perMin:12, cost:{gold:25}, needsTown:1 },
+  quarry:{ name:'Cantera', ic:'🪨', desc:'Produce piedra sin parar. Tócala para recoger lo acumulado.',
+           makes:'stone', perMin:9, cost:{wood:15,gold:35}, needsTown:1 },
+  market:{ name:'Mercado', ic:'🪙', desc:'Vende la producción del pueblo y produce oro sin parar.',
+           makes:'gold', perMin:6, cost:{wood:50,stone:25}, needsTown:2 }
+};
+const QUESTS=[
+  { txt:'Construye un Aserradero', test:s=>s.plots.some(p=>p.b&&p.b.type==='sawmill'), rew:{gold:20} },
+  { txt:'Ten 60 de madera en el almacén', test:s=>s.res.wood>=60, rew:{stone:15} },
+  { txt:'Construye una Cantera', test:s=>s.plots.some(p=>p.b&&p.b.type==='quarry'), rew:{gold:30} },
+  { txt:'Mejora cualquier edificio al nivel 2', test:s=>s.plots.some(p=>p.b&&p.b.lvl>=2), rew:{gold:25} },
+  { txt:'Sube el Ayuntamiento al nivel 2', test:s=>townLvl()>=2, rew:{wood:40} },
+  { txt:'Construye un Mercado', test:s=>s.plots.some(p=>p.b&&p.b.type==='market'), rew:{gold:60} }
+];
+function prodRate(b){ const d=BUILDINGS[b.type]; return d.perMin*Math.pow(1.8,b.lvl-1)/60; } // por segundo
+function storeCap(town){ return 200+150*(town-1); }
+function bCap(b){ return prodRate(b)*60*30; } // 30 minutos de producción por edificio
+function upCost(b){
+  const n=b.lvl+1;
+  if(b.type==='hall') return { wood:40*n*n, stone:25*n*n, gold:30*n*n };
+  if(b.type==='sawmill') return { gold:20*n*n, wood:10*n };
+  if(b.type==='quarry') return { gold:18*n*n, stone:8*n };
+  if(b.type==='market') return { wood:22*n*n, stone:14*n*n };
+  return {};
+}
+function fmtCost(c){ return Object.keys(c).map(k=>PROD[k].ic+' '+c[k]).join(' · ')||'Gratis'; }
+function canPay(c){ return Object.keys(c).every(k=>S.res[k]>=c[k]); }
+function pay(c){ Object.keys(c).forEach(k=>S.res[k]-=c[k]); }
+
+/* ================= estado ================= */
+let S=null;
+function newState(){
+  const plots=[]; for(let i=0;i<COLS*ROWS;i++) plots.push({b:null});
+  plots[5].b={type:'hall',lvl:1,stored:0}; // parcela central: el Ayuntamiento
+  return { res:{wood:40,stone:10,gold:60}, plots, quest:0, t:Date.now(), started:false };
+}
+function townLvl(){ const h=S.plots.find(p=>p.b&&p.b.type==='hall'); return h?h.b.lvl:1; }
+function plotUnlocked(i){ const t=townLvl(); const locked={1:[0,3,8,11],2:[0,11],3:[]}[Math.min(t,3)]||[]; return locked.indexOf(i)<0; }
+function save(){ if(!S) return; S.t=Date.now(); try{ localStorage.setItem(SAVE_KEY,JSON.stringify(S)); }catch(e){} }
+function load(){
+  try{ const o=JSON.parse(localStorage.getItem(SAVE_KEY)); if(o&&o.res&&Array.isArray(o.plots)&&o.plots.length===COLS*ROWS) { S=o; return true; } }catch(e){}
+  S=newState(); return false;
+}
+
+/* ================= escena ================= */
+const scene=new THREE.Scene();
+scene.fog=new THREE.Fog(0x9fd8ff,30,58);
+const camera=new THREE.PerspectiveCamera(46,innerWidth/innerHeight,0.1,120);
+function placeCamera(){ const a=innerWidth/innerHeight; const d=a<1?11.2:8.3; camera.position.set(0,d*0.85,d*0.95); camera.lookAt(0,-0.2,0.2); }
+placeCamera();
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth,innerHeight);
+renderer.outputEncoding=THREE.sRGBEncoding;
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+$('game').appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xcfe8ff,0x4e9440,0.8));
+const sun=new THREE.DirectionalLight(0xfff1d6,1.0);
+sun.position.set(7,13,5); sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.left=-8; sun.shadow.camera.right=8; sun.shadow.camera.top=8; sun.shadow.camera.bottom=-8; sun.shadow.camera.far=32;
+scene.add(sun);
+{ const g=new THREE.Mesh(new THREE.CircleGeometry(15,40),new THREE.MeshStandardMaterial({color:0x63b84b,roughness:1}));
+  g.rotation.x=-Math.PI/2; g.position.y=-0.07; g.receiveShadow=true; scene.add(g); }
+
+const loader=new THREE.GLTFLoader(); const cache={};
+function loadModel(name){ if(!cache[name]) cache[name]=new Promise((res,rej)=>loader.load('assets/models/'+name+'.glb',g=>res(g.scene),undefined,rej)); return cache[name]; }
+async function instance(name){ const src=await loadModel(name); const o=src.clone(true); o.traverse(m=>{ if(m.isMesh){ m.castShadow=true; m.receiveShadow=false; } }); return o; }
+function boxOf(o){ const b=new THREE.Box3().setFromObject(o); return {size:b.getSize(new THREE.Vector3()),min:b.min,max:b.max}; }
+
+const plotGroups={};
+const plotGround={}; const wasLocked=new Set();
+let hoverMarker=null;
+function stackInto(grp, parts){ // parts: [modelo, escalaRel] apilados en Y
+  return (async()=>{ let y=0;
+    for(const [name] of parts){ const m=await instance(name); const bb=boxOf(m); m.position.y=y-bb.min.y; grp.add(m); y+=bb.size.y; }
+    return y; })();
+}
+async function buildingVisual(type,lvl){
+  const grp=new THREE.Group();
+  if(type==='hall'){
+    await stackInto(grp,[['tower-round-bottom-a']]);
+    if(lvl>=2) await stackInto2(grp);
+    if(lvl>=3){ const m=await instance('tower-round-top-a'); const bb=boxOf(grp); m.position.y=bb.size.y-bb.min.y-0.02; grp.add(m); }
+    { const rf=await instance('tower-round-roof-a'); const bb=boxOf(grp); rf.position.y=bb.size.y-0.02; grp.add(rf); }
+    if(lvl>=4){ const c=await instance('detail-crystal'); const bb=boxOf(grp); c.position.y=bb.size.y+0.05; grp.add(c); }
+  } else if(type==='sawmill'){
+    const m=await instance(lvl>=2?'wood-structure-high':'wood-structure'); grp.add(m);
+    { const top=boxOf(grp); const part=await instance('wood-structure-part'); part.position.y=top.size.y-0.03; grp.add(part); }
+    if(lvl>=3){ const t=await instance('detail-tree'); t.position.set(0.42,0,0.3); t.scale.setScalar(0.8); grp.add(t); }
+  } else if(type==='quarry'){
+    const r=await instance('detail-rocks-large'); grp.add(r);
+    { const t=await instance('tower-square-bottom-a'); t.scale.setScalar(lvl>=2?0.66:0.5); t.position.set(0.3,0,-0.25); grp.add(t); }
+  } else if(type==='market'){
+    await stackInto(grp,[['tower-square-bottom-a']]);
+    const rf=await instance('tower-square-roof-a'); const bb=boxOf(grp); rf.position.y=bb.size.y-0.02; grp.add(rf);
+    if(lvl>=3){ const c=await instance('detail-crystal'); c.position.set(0.45,0.35,0.35); grp.add(c); }
+  }
+  const bb=boxOf(grp); const f=(PITCH*0.92)/Math.max(bb.size.x,bb.size.z,0.001); grp.scale.setScalar(Math.min(f,1.6));
+  grp.userData.built=true;
+  return grp;
+  async function stackInto2(g){ const m=await instance('tower-round-middle-a'); const b2=boxOf(g); m.position.y=b2.size.y-b2.min.y-0.02; g.add(m); }
+}
+async function refreshPlot(i){
+  const gx=i%COLS, gz=Math.floor(i/COLS), key=i;
+  if(plotGroups[key]){ scene.remove(plotGroups[key]); delete plotGroups[key]; }
+  const p=S.plots[i]; if(!p.b) return;
+  const grp=await buildingVisual(p.b.type,p.b.lvl);
+  grp.position.set(px2w(gx),0.02,pz2w(gz));
+  scene.add(grp); plotGroups[key]=grp;
+  p.b._grp=grp;
+}
+async function refreshAllPlots(){ for(let i=0;i<COLS*ROWS;i++) await refreshPlot(i); }
+const burstGeo=new THREE.SphereGeometry(1,6,5);
+const parts=[];
+function burst(x,y,z,color,n){
+  for(let i=0;i<(n||10);i++){ const m=new THREE.Mesh(burstGeo,new THREE.MeshBasicMaterial({color,transparent:true}));
+    m.position.set(x,y,z); m.userData={vx:(Math.random()-0.5)*2.2,vy:Math.random()*2+0.8,vz:(Math.random()-0.5)*2.2,life:0.55,t:0};
+    m.scale.setScalar(0.045+Math.random()*0.045); scene.add(m); parts.push(m); }
+}
+async function constructionFx(i,done){
+  const gx=i%COLS, gz=Math.floor(i/COLS);
+  const m=await instance('tower-round-build-c'); m.position.set(px2w(gx),0.02,pz2w(gz));
+  const bb=boxOf(m); m.scale.setScalar((PITCH*0.9)/Math.max(bb.size.x,bb.size.z));
+  scene.add(m); sfx.hammer(); setTimeout(()=>sfx.hammer(),260); setTimeout(()=>sfx.hammer(),520);
+  setTimeout(()=>{ scene.remove(m); done&&done(); },850);
+}
+
+/* ================= tablero ================= */
+async function buildBoard(){
+  for(let gz=0;gz<ROWS;gz++) for(let gx=0;gx<COLS;gx++){
+    const i=gz*COLS+gx;
+    const locked=!plotUnlocked(i); if(locked) wasLocked.add(i);
+    const gg=new THREE.Group();
+    const t=await instance(locked?'tile-dirt':'tile');
+    t.scale.setScalar(PITCH); t.traverse(m=>{ if(m.isMesh) m.receiveShadow=true; });
+    gg.add(t);
+    if(locked){ const r=await instance('detail-rocks'); r.position.y=0.05; gg.add(r); }
+    gg.position.set(px2w(gx),0,pz2w(gz));
+    scene.add(gg); plotGround[i]=gg;
+  }
+  const deco=[[-5.6,-3.4],[-4.9,3.1],[5.5,-3.2],[4.8,3.4],[0.2,-3.9],[-2.8,3.8],[6.1,0.6],[-6.2,-0.4]];
+  for(const [x,z] of deco){ const d=await instance(Math.random()<0.72?'detail-tree-large':'detail-rocks-large'); d.position.set(x,0,z); d.rotation.y=Math.random()*6.28; scene.add(d); }
+  hoverMarker=await instance('selection-a'); hoverMarker.visible=false; scene.add(hoverMarker);
+}
+
+/* ================= interfaz ================= */
+function toast(msg,ms){ const t=$('toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('on'),ms||1900); }
+function refreshHUD(popRes){
+  $('uiWood').textContent=Math.floor(S.res.wood); $('uiStone').textContent=Math.floor(S.res.stone); $('uiGold').textContent=Math.floor(S.res.gold);
+  $('uiTown').textContent=townLvl();
+  if(popRes){ const el=$('pill'+({wood:'W',stone:'S',gold:'G'}[popRes])); if(el){ el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); } }
+  const q=QUESTS[S.quest];
+  $('questTxt').innerHTML=q?('<b>Misión:</b> '+q.txt+' · 🎁 '+fmtCost(q.rew)):'<b>🏆 ¡Aldea en marcha!</b> Sigue construyendo a tu ritmo.';
+}
+let selPlot=-1;
+function closeSheet(){ $('sheet').classList.remove('on'); selPlot=-1; if(hoverMarker) hoverMarker.visible=false; }
+function openSheet(i){
+  selPlot=i; const p=S.plots[i], gx=i%COLS, gz=Math.floor(i/COLS);
+  if(hoverMarker){ hoverMarker.visible=true; hoverMarker.position.set(px2w(gx),0.05,pz2w(gz)); hoverMarker.scale.setScalar(PITCH); }
+  const row=$('sheetRow'); row.innerHTML='';
+  if(!plotUnlocked(i)){
+    $('sheetTitle').textContent='🔒 Parcela bloqueada';
+    $('sheetDesc').textContent='Esta parcela se desbloquea al subir el Ayuntamiento de nivel. Nivel actual del pueblo: '+townLvl()+'.';
+  } else if(!p.b){
+    $('sheetTitle').textContent='🌱 Parcela libre';
+    $('sheetDesc').textContent='¿Qué quieres construir aquí? Cada edificio produce sin parar y guarda hasta 30 minutos de producción.';
+    Object.keys(BUILDINGS).forEach(k=>{ if(k==='hall') return; const d=BUILDINGS[k];
+      const lockedTown=townLvl()<d.needsTown;
+      const card=document.createElement('div'); card.className='buildcard'+((canPay(d.cost)&&!lockedTown)?'':' poor');
+      card.innerHTML='<div class="ic">'+d.ic+'</div><div class="nm">'+d.name+'</div><div class="ds">'+d.desc+'</div><div class="cost">'+(lockedTown?('🏰 Pueblo Nv '+d.needsTown):fmtCost(d.cost))+'</div>';
+      card.addEventListener('click',()=>{ if(lockedTown){ toast('🏰 Necesitas el Ayuntamiento al nivel '+d.needsTown); sfx.err(); return; }
+        if(!canPay(d.cost)){ toast('Te faltan recursos para el '+d.name); sfx.err(); return; }
+        pay(d.cost); p.b={type:k,lvl:1,stored:0}; sfx.build(); constructionFx(i,()=>refreshPlot(i)); closeSheet(); afterChange(); });
+      row.appendChild(card); });
+  } else {
+    const b=p.b, d=BUILDINGS[b.type];
+    $('sheetTitle').textContent=d.ic+' '+d.name+' · Nv '+b.lvl;
+    if(b.type==='hall'){
+      $('sheetDesc').textContent='Almacenes: hasta '+storeCap(townLvl())+' de cada recurso. Mejorar el Ayuntamiento desbloquea parcelas y edificios.';
+    } else {
+      $('sheetDesc').textContent='Produce '+PROD[d.makes].ic+' '+Math.round(prodRate(b)*60)+' '+PROD[d.makes].name+'/min · Guardado: '+PROD[d.makes].ic+' '+Math.floor(b.stored)+' / '+Math.floor(bCap(b))+(b.stored>=bCap(b)-0.01?' · ⚠️ ¡Lleno! Recoge para que siga produciendo.':'');
+    }
+    if(b.type!=='hall'&&b.stored>=1){
+      const btn=document.createElement('button'); btn.className='btn gold'; btn.type='button';
+      btn.innerHTML='🧺 Recoger '+PROD[d.makes].ic+' '+Math.floor(b.stored);
+      btn.addEventListener('click',()=>{ collect(i,true); openSheet(i); });
+      row.appendChild(btn);
+    }
+    if(b.lvl<(d.maxLvl||5)){
+      const c=upCost(b), afford=canPay(c);
+      const btn=document.createElement('button'); btn.className='btn'; btn.type='button'; btn.disabled=!afford;
+      btn.innerHTML='⬆️ Mejorar a Nv '+(b.lvl+1)+'<small>'+fmtCost(c)+(afford?'':' · te falta')+'</small>';
+      btn.addEventListener('click',()=>{ if(!canPay(c)) return; pay(c); b.lvl++;
+        if(b.type==='hall'){ sfx.quest(); toast('🏰 ¡El pueblo sube al nivel '+townLvl()+'!'); rebuildBoardTiles(); }
+        sfx.build(); constructionFx(i,()=>refreshPlot(i)); closeSheet(); afterChange(); });
+      row.appendChild(btn);
+    } else {
+      const s=document.createElement('p'); s.textContent='⭐ Nivel máximo alcanzado.'; row.appendChild(s);
+    }
+  }
+  $('sheet').classList.add('on');
+}
+async function rebuildBoardTiles(){ // al subir el pueblo, las parcelas nuevas dejan de estar bloqueadas
+  for(const i of [...wasLocked]){
+    if(!plotUnlocked(i)) continue;
+    wasLocked.delete(i);
+    if(plotGround[i]) scene.remove(plotGround[i]);
+    const gx=i%COLS, gz=Math.floor(i/COLS);
+    const gg=new THREE.Group();
+    const t=await instance('tile'); t.scale.setScalar(PITCH); t.traverse(m=>{ if(m.isMesh) m.receiveShadow=true; });
+    gg.add(t); gg.position.set(px2w(gx),0,pz2w(gz)); scene.add(gg); plotGround[i]=gg;
+  }
+  await refreshAllPlots();
+}
+function collect(i,sound){
+  const p=S.plots[i]; if(!p.b||p.b.type==='hall') return 0;
+  const d=BUILDINGS[p.b.type], amt=Math.floor(p.b.stored); if(amt<=0) return 0;
+  const room=storeCap(townLvl())-S.res[d.makes]; const give=Math.max(0,Math.min(amt,room));
+  p.b.stored-=give; S.res[d.makes]+=give;
+  if(give>0){ if(sound) sfx.coin(); refreshHUD(d.makes);
+    const gx=i%COLS, gz=Math.floor(i/COLS); burst(px2w(gx),1.1,pz2w(gz),d.makes==='gold'?0xffd23c:(d.makes==='wood'?0xd8a94e:0xcfd8dc),12); }
+  return give;
+}
+function collectAll(){ let any=false; for(let i=0;i<COLS*ROWS;i++) if(collect(i,false)>0) any=true; if(any){ sfx.coin(); toast('🧺 Todo recogido'); } afterChange(); }
+function checkQuest(){
+  const q=QUESTS[S.quest]; if(!q) return;
+  if(q.test(S)){ Object.keys(q.rew).forEach(k=>S.res[k]+=q.rew[k]); S.quest++;
+    sfx.quest(); toast('🎯 ¡Misión cumplida! Recompensa: '+fmtCost(q.rew),2600); checkQuest(); }
+}
+function afterChange(){ checkQuest(); refreshHUD(); save(); }
+
+/* ================= producción y regreso ================= */
+function accrue(dtSec){
+  for(const p of S.plots){ if(p.b&&p.b.type!=='hall'){ p.b.stored=Math.min(bCap(p.b),p.b.stored+prodRate(p.b)*dtSec); } }
+}
+function offlineGains(elapsedSec){
+  const cap=8*3600, sec=Math.min(elapsedSec,cap), totals={wood:0,stone:0,gold:0};
+  for(const p of S.plots){ if(p.b&&p.b.type!=='hall'){ const d=BUILDINGS[p.b.type]; totals[d.makes]+=Math.floor(Math.min(bCap(p.b)-p.b.stored,prodRate(p.b)*sec)); } }
+  return {sec,totals};
+}
+
+/* ================= entrada ================= */
+const ray=new THREE.Raycaster(), mouseV=new THREE.Vector2(), groundPlane=new THREE.Plane(new THREE.Vector3(0,1,0),0);
+let downAt=null;
+function evtPlot(ev){
+  const r=renderer.domElement.getBoundingClientRect();
+  const cx=ev.clientX, cy=ev.clientY;
+  mouseV.set(((cx-r.left)/r.width)*2-1,-((cy-r.top)/r.height)*2+1);
+  ray.setFromCamera(mouseV,camera);
+  const pt=new THREE.Vector3(); if(!ray.ray.intersectPlane(groundPlane,pt)) return -1;
+  const gx=Math.round(pt.x/PITCH+(COLS-1)/2), gz=Math.round(pt.z/PITCH+(ROWS-1)/2);
+  if(gx<0||gz<0||gx>=COLS||gz>=ROWS) return -1;
+  return gz*COLS+gx;
+}
+renderer.domElement.addEventListener('pointerdown',ev=>{ downAt={x:ev.clientX,y:ev.clientY}; });
+renderer.domElement.addEventListener('pointerup',ev=>{
+  if(!S||!S.started||!downAt) return;
+  if(Math.hypot(ev.clientX-downAt.x,ev.clientY-downAt.y)>9) return;
+  const i=evtPlot(ev); if(i<0){ closeSheet(); return; }
+  sfx.tap();
+  const p=S.plots[i];
+  if(p.b&&p.b.type!=='hall'&&p.b.stored>=1&&selPlot!==i){ collect(i,true); afterChange(); openSheet(i); return; }
+  openSheet(i);
+});
+$('sheetX').addEventListener('click',closeSheet);
+$('pillAll').addEventListener('click',collectAll);
+$('quest').addEventListener('click',()=>{ const q=QUESTS[S.quest]; toast(q?('🎯 '+q.txt):'🏆 Aldea en marcha: construye a tu ritmo',2200); });
+addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); placeCamera(); });
+document.addEventListener('visibilitychange',()=>{ if(document.hidden) save(); });
+
+/* ================= bucle principal ================= */
+let last=performance.now(), acc=0, saveT=0;
+function loop(now){
+  requestAnimationFrame(loop);
+  const dt=Math.min(0.05,(now-last)/1000); last=now;
+  if(S&&S.started){
+    acc+=dt; saveT+=dt;
+    if(acc>=0.25){ accrue(acc); acc=0; if(selPlot>=0){ const p=S.plots[selPlot]; if(p.b&&p.b.type!=='hall'){ /* la ficha se refresca al tocar */ } } }
+    if(saveT>=5){ saveT=0; save(); }
+  }
+  for(const m of parts){ m.userData.t+=dt; const u=m.userData;
+    m.position.x+=u.vx*dt; m.position.y+=u.vy*dt; m.position.z+=u.vz*dt; u.vy-=3*dt;
+    m.material.opacity=1-u.t/u.life; if(u.t>=u.life){ m.userData.gone=true; scene.remove(m); } }
+  for(let i=parts.length-1;i>=0;i--) if(parts[i].userData.gone) parts.splice(i,1);
+  renderer.render(scene,camera);
+}
+(async function init(){
+  const had=load();
+  try{ await buildBoard(); await refreshAllPlots(); }catch(e){ console.log('board',e); }
+  ['tower-round-bottom-a','wood-structure','detail-rocks-large','tower-square-bottom-a'].forEach(n=>loadModel(n).catch(()=>{}));
+  $('load').style.display='none';
+  refreshHUD();
+  // ganancias mientras no estabas
+  if(had&&S.started){
+    const elapsed=(Date.now()-(S.t||Date.now()))/1000;
+    if(elapsed>120){ const g=offlineGains(elapsed); accrue(Math.min(elapsed,8*3600)); // aplicar lo producido fuera a cada edificio
+      const tot=g.totals.wood+g.totals.stone+g.totals.gold;
+      if(tot>0){ const h=Math.floor(g.sec/3600), m=Math.round((g.sec%3600)/60);
+        $('backTxt').innerHTML='Mientras no estabas ('+(h>0?h+' h ':'')+m+' min), tu aldea ha producido:<br><br>🪵 '+g.totals.wood+' madera · 🪨 '+g.totals.stone+' piedra · 🪙 '+g.totals.gold+' oro<br><br><span style="font-size:.78rem">Está guardado en cada edificio: recógelo todo de una vez.</span>';
+        $('backOverlay').classList.remove('hidden');
+        $('btnBack').addEventListener('click',()=>{ $('backOverlay').classList.add('hidden'); collectAll(); },{once:true});
+      }
+    }
+  }
+  $('btnStart').addEventListener('click',()=>{ $('introOverlay').classList.add('hidden'); S.started=true; sfx.build(); save(); });
+  if(!had||S.started) $('introOverlay').classList.remove('hidden');
+  if(had&&S.started) $('introOverlay').classList.add('hidden');
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
