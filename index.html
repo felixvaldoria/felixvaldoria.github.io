@@ -1034,7 +1034,7 @@
             </div>
             <div class="set-card">
               <h3>🔊 SONIDO Y AMBIENTE</h3>
-              <p>Efectos con cuerpo del pack <strong>SFX Kit</strong> de Wyzowl (320 efectos, licencia <strong>CC0 1.0</strong>: uso libre, sin atribución obligatoria), servidos por jsDelivr desde su repositorio público y mezclados por buses con compresor-limitador. Si una muestra no puede cargar, cada evento cae a la síntesis WebAudio de Valdoria: nunca te quedas en silencio por un fallo de red. El ambiente por zonas — viento, agua, noche, lluvia — se genera en directo con el mismo motor.</p>
+              <p>Efectos con cuerpo del pack <strong>SFX Kit</strong> de Wyzowl (320 efectos, licencia <strong>CC0 1.0</strong>: uso libre, sin atribución obligatoria), servidos desde la propia página del juego y mezclados por buses con compresor-limitador. Si una muestra no puede cargar, cada evento cae a la síntesis WebAudio de Valdoria: nunca te quedas en silencio por un fallo de red. El ambiente por zonas — viento, agua, noche, lluvia — se genera en directo con el mismo motor.</p>
               <p><strong>Cada poder suena a lo suyo:</strong> las muestras de magia y combate de los poderes son del <strong>Oculus Audio Pack 1</strong> de Oculus/Meta (repositorio público Meta Open Sound), licencia <strong>CC BY 4.0</strong> — crédito: «Oculus Audio Pack 1» © Oculus — combinadas con refuerzos del SFX Kit (CC0) y con una firma de síntesis propia por poder, para que sin conexión ningún poder suene igual a otro. Cada clase, además, lanza sus poderes con su propio gesto de los modelos KayKit y su propio efecto visual.</p>
             </div>
             <div class="set-card">
@@ -1047,7 +1047,7 @@
             </div>
             <div class="set-card">
               <h3>🐾 MASCOTAS 3D</h3>
-              <p>Mascotas 3D: <strong>Gobkit Free Animal Pack Vol. 1</strong> (Corgi, Murciélago y Pato), licencia <strong>CC0 1.0</strong> (uso libre, sin atribución obligatoria): modelos GLB con esqueleto propio y animaciones de reposo y caminar, servidos desde gobkit.com. Milo, su vendedor, es un aldeano más del pack Adventurers de KayKit. Si tu conexión no puede cargarlos, cada mascota se dibuja en 2D con el estilo del juego.</p>
+              <p>Mascotas 3D: <strong>Gobkit Free Animal Pack Vol. 1</strong> (Corgi, Murciélago y Pato), licencia <strong>CC0 1.0</strong> (uso libre, sin atribución obligatoria): modelos GLB con esqueleto propio y animaciones de reposo y caminar, servidos desde la propia página del juego. Milo, su vendedor, es un aldeano más del pack Adventurers de KayKit. Si tu conexión no puede cargarlos, cada mascota se dibuja en 2D con el estilo del juego.</p>
             </div>
             <div class="set-card">
               <h3>⚔️ ARMAS E ÍTEMS</h3>
@@ -1346,7 +1346,7 @@
          VALDORIA a la versión nueva…» una vez, descarga el manifiesto
          una vez a la caché nueva y sigue jugando con su partida,
          ajustes y controles intactos (esas claves no se tocan). */
-      var GAME_VERSION='1.2.0';
+      var GAME_VERSION='1.3.0';
       window.GAME_VERSION=GAME_VERSION;
       var CACHE_NAME='valdoria-assets-v'+GAME_VERSION;
       var VER_KEY='valdoria-version'; // fuera de la partida: solo la versión instalada
@@ -1395,14 +1395,16 @@
       if(!screenEl||!cvs||!cx) return; // sin pantalla no hay presentación: el juego sigue como siempre
 
       /* ---------- manifiesto: [URL principal, URL alternativa], peso ≈ KB, fase ---------- */
-      var ADV='https://cdn.jsdelivr.net/gh/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0@main/addons/kaykit_character_pack_adventures/Characters/gltf/';
+      var ADV='adv/';
       var ADV2='https://raw.githubusercontent.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/main/addons/kaykit_character_pack_adventures/Characters/gltf/';
-      var SKL='https://cdn.jsdelivr.net/gh/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0@main/addons/kaykit_character_pack_skeletons/Characters/gltf/';
+      var SKL='skl/';
       var SKL2='https://raw.githubusercontent.com/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0/main/addons/kaykit_character_pack_skeletons/Characters/gltf/';
-      var MED='https://cdn.jsdelivr.net/gh/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0@main/addons/kaykit_medieval_hexagon_pack/Assets/gltf/';
+      var MED='med/';
       var MED2='https://raw.githubusercontent.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/main/addons/kaykit_medieval_hexagon_pack/Assets/gltf/';
-      var SFXB='https://cdn.jsdelivr.net/gh/wyzowl/sfx-kit@92780e7ab0cdfb557497a988089c47f46e8c7412/sounds/';
-      var METAB='https://cdn.jsdelivr.net/gh/facebookincubator/Meta-open-sound@251c0be57d5d1b3242b91f53e0cde62ab1cb42d9/corpora/oculus-audio-pack/ogg/';
+      var SFXB='sfx/';
+      var METAB='meta/';
+      var SFXB2='https://cdn.jsdelivr.net/gh/wyzowl/sfx-kit@92780e7ab0cdfb557497a988089c47f46e8c7412/sounds/';
+      var METAB2='https://cdn.jsdelivr.net/gh/facebookincubator/Meta-open-sound@251c0be57d5d1b3242b91f53e0cde62ab1cb42d9/corpora/oculus-audio-pack/ogg/';
       var queue=[], pending=0, doneW=0, totalW=0, running=0, finished=false;
       var critPending=0, critW=0, critDoneW=0; // lo crítico manda en la barra y en la entrada
       var leftByPhase={lib:0,char:0,mob:0,pet:0,props:0,sfx:0};
@@ -1429,14 +1431,10 @@
         }
       }
       // librerías (las dos rutas de cada una: la que toque usar, ya caliente)
-      task(['https://unpkg.com/three@0.149.0/build/three.min.js'],620,'lib');
-      task(['https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js'],620,'lib');
-      task(['https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js'],110,'lib');
-      task(['https://unpkg.com/three@0.147.0/examples/js/loaders/GLTFLoader.js'],110,'lib');
-      task(['https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/utils/SkeletonUtils.js'],14,'lib');
-      task(['https://unpkg.com/three@0.147.0/examples/js/utils/SkeletonUtils.js'],14,'lib');
-      task(['https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js'],330,'lib');
-      task(['https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js'],330,'lib');
+      task(['lib/three.min.js','https://unpkg.com/three@0.149.0/build/three.min.js'],620,'lib');
+      task(['lib/GLTFLoader.js','https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js'],110,'lib');
+      task(['lib/SkeletonUtils.js','https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/utils/SkeletonUtils.js'],14,'lib');
+      task(['lib/mqtt.min.js','https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js'],330,'lib');
       // personajes y NPC (un archivo por modelo: Mage sirve a Maga, Druida y Lyra)
       // DENTRO de estos mismos GLB viaja el ARSENAL KayKit de las ranuras de
       // mano (espadas 1H/2H, vara, varita, ballestas, hachas): las armas
@@ -1449,20 +1447,20 @@
       // mascotas: Gobkit Free Animal Pack Vol.1 (CC0 1.0), un GLB por mascota,
       // servidos desde gobkit.com con CORS abierto (verificado). El juego los
       // pide con la misma URL (PET_BASE + nombre en el bloque de mascotas).
-      task(['https://gobkit.com/freebies/animal/Corgi.glb'],107,'pet');
-      task(['https://gobkit.com/freebies/animal/Bat.glb'],97,'pet');
-      task(['https://gobkit.com/freebies/animal/Duck.glb'],104,'pet');
+      task(['pets/Corgi.glb','https://gobkit.com/freebies/animal/Corgi.glb'],107,'pet');
+      task(['pets/Bat.glb','https://gobkit.com/freebies/animal/Bat.glb'],97,'pet');
+      task(['pets/Duck.glb','https://gobkit.com/freebies/animal/Duck.glb'],104,'pet');
       // escenario Medieval: cada .gltf arrastra después sus .bin y texturas
       ['buildings/red/building_home_A_red.gltf','buildings/green/building_blacksmith_green.gltf','buildings/blue/building_tavern_blue.gltf','buildings/yellow/building_home_A_yellow.gltf','buildings/blue/building_home_B_blue.gltf','buildings/red/building_home_B_red.gltf','buildings/blue/building_well_blue.gltf','buildings/blue/building_market_blue.gltf','buildings/green/building_windmill_green.gltf','decoration/nature/tree_single_A.gltf','decoration/nature/tree_single_B.gltf','decoration/nature/trees_A_medium.gltf','decoration/nature/trees_B_medium.gltf','decoration/nature/rock_single_A.gltf','decoration/nature/rock_single_C.gltf'].forEach(function(f){ task([MED+f,MED2+f],90,'props','gltf'); });
       // sonidos del grupo inicial (PACK_A): solo los bytes; decodificar, tras el primer toque
-      ['interface/click-button-firm.wav','interface/click-latch-firm.wav','interface/click-toggle-on-firm.wav','interface/click-clip-firm.wav','tones/tone-ding-mid.wav','swishes-and-zips/swish-hard.wav','swishes-and-zips/swish-medium.wav','impacts/impact-medium-hard.wav','impacts/impact-heavy-hard.wav','money/money-coin-drop.wav','everyday-props/props-splash.wav','foley/foley-glass-touch.wav','foley/foley-fabric-touch.wav','foley/foley-wood-touch.wav','notifications/notification-success-clear.wav','notifications/notification-success-sparkle.wav','shimmers/shimmer-short-sparkle.wav'].forEach(function(f){ task([SFXB+f],60,'sfx'); });
+      ['interface/click-button-firm.wav','interface/click-latch-firm.wav','interface/click-toggle-on-firm.wav','interface/click-clip-firm.wav','tones/tone-ding-mid.wav','swishes-and-zips/swish-hard.wav','swishes-and-zips/swish-medium.wav','impacts/impact-medium-hard.wav','impacts/impact-heavy-hard.wav','money/money-coin-drop.wav','everyday-props/props-splash.wav','foley/foley-glass-touch.wav','foley/foley-fabric-touch.wav','foley/foley-wood-touch.wav','notifications/notification-success-clear.wav','notifications/notification-success-sparkle.wav','shimmers/shimmer-short-sparkle.wav'].forEach(function(f){ task([SFXB+f,SFXB2+f],60,'sfx'); });
       // sonidos POR PODER (el pack nuevo de esta obra): muestras de magia y
       // combate del Oculus Audio Pack 1 de Oculus/Meta (repositorio público
       // Meta Open Sound, licencia CC BY 4.0 con su crédito en Ajustes) y los
       // refuerzos graves/brillantes del SFX Kit CC0 de Wyzowl. Cada archivo
       // se verificó con petición real (HTTP 200 vía jsDelivr) antes de entrar.
-      ['MAGSpel_MagicSpell_OS_01.ogg','MAGSpel_MagicSpell_OS_02.ogg','WEAPSwrd_Sword_OS_01.ogg','SWSH_Swoosh_OS_01.ogg','SWSH_Swoosh_OS_03.ogg','SWSH_Swoosh_OS_05.ogg','WHSH_WhooshMedium_OS_01.ogg','WHSH_WhooshSmall_OS_01.ogg','WHSH_WhooshSmall_OS_02.ogg','FGHTImpt_PunchHarder_OS_01.ogg','FGHTImpt_PunchHardest_OS_01.ogg','CREAHmn_OgreEffort_OS_01.ogg','LASRGun_LaserShootUI_OS_01.ogg','VOXWhsp_WhispersCreepy_OS_01.ogg','VEGELeaf_MovementThroughBushes_OS_01.ogg','VEGELeaf_MovementThroughBushes_OS_03.ogg','WOODFric_CreaksCreepy_OS_01.ogg','METLFric_ScratchCreepy_OS_01.ogg'].forEach(function(f){ task([METAB+f],45,'sfx'); });
-      ['booms-and-bass/boom-hit-strong.wav','booms-and-bass/bass-sub-drop-medium.wav','shimmers/shimmer-long-sparkle.wav','reverse-whooshes/reverse-whoosh-medium-strong.wav','appear-and-vanish/appear-poof.wav','shape-changes/transform-morph.wav','shape-changes/transform-stretch.wav'].forEach(function(f){ task([SFXB+f],200,'sfx'); });
+      ['MAGSpel_MagicSpell_OS_01.ogg','MAGSpel_MagicSpell_OS_02.ogg','WEAPSwrd_Sword_OS_01.ogg','SWSH_Swoosh_OS_01.ogg','SWSH_Swoosh_OS_03.ogg','SWSH_Swoosh_OS_05.ogg','WHSH_WhooshMedium_OS_01.ogg','WHSH_WhooshSmall_OS_01.ogg','WHSH_WhooshSmall_OS_02.ogg','FGHTImpt_PunchHarder_OS_01.ogg','FGHTImpt_PunchHardest_OS_01.ogg','CREAHmn_OgreEffort_OS_01.ogg','LASRGun_LaserShootUI_OS_01.ogg','VOXWhsp_WhispersCreepy_OS_01.ogg','VEGELeaf_MovementThroughBushes_OS_01.ogg','VEGELeaf_MovementThroughBushes_OS_03.ogg','WOODFric_CreaksCreepy_OS_01.ogg','METLFric_ScratchCreepy_OS_01.ogg'].forEach(function(f){ task([METAB+f,METAB2+f],45,'sfx'); });
+      ['booms-and-bass/boom-hit-strong.wav','booms-and-bass/bass-sub-drop-medium.wav','shimmers/shimmer-long-sparkle.wav','reverse-whooshes/reverse-whoosh-medium-strong.wav','appear-and-vanish/appear-poof.wav','shape-changes/transform-morph.wav','shape-changes/transform-stretch.wav'].forEach(function(f){ task([SFXB+f,SFXB2+f],200,'sfx'); });
 
       /* ---------- descarga con red de seguridad ---------- */
       function timedFetch(url){
@@ -1644,7 +1642,7 @@
       pump();
     })();
     </script>
-    <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
+    <script src="lib/mqtt.min.js"></script>
     <script>
     "use strict";
     /* ================================================================
@@ -1799,7 +1797,7 @@
        respaldo total: si una muestra falla, no hay red o aún está cargando,
        playSample devuelve false y el evento suena con la síntesis de
        siempre. Nunca silencio por error, nunca bloqueo de la entrada. */
-    const PACK_BASE='https://cdn.jsdelivr.net/gh/wyzowl/sfx-kit@92780e7ab0cdfb557497a988089c47f46e8c7412/sounds/';
+    const PACK_BASE='sfx/';
     /* SEGUNDO PACK · Oculus Audio Pack 1 (Oculus/Meta), vía el repositorio
        público facebookincubator/Meta-open-sound fijado a commit: la carpeta
        corpora/oculus-audio-pack es CC BY 4.0 (uso comercial libre CON
@@ -1808,7 +1806,7 @@
        Es el pack de los PODERES: magia, espadas, silbidos, arañazos, hojas
        y madera — lo que el SFX Kit no cubría. Las claves con m:1 suenan
        desde esta base; el resto, desde la de Wyzowl. */
-    const META_BASE='https://cdn.jsdelivr.net/gh/facebookincubator/Meta-open-sound@251c0be57d5d1b3242b91f53e0cde62ab1cb42d9/corpora/oculus-audio-pack/ogg/';
+    const META_BASE='meta/';
     const SAMPLES={
       click:{u:'interface/click-button-firm.wav',g:0.50,bus:'ui'},
       latch:{u:'interface/click-latch-firm.wav',g:0.50,bus:'ui'},
@@ -4028,7 +4026,7 @@
        sigue en solitario sin romperse. Enemigos, misión y botín
        siguen siendo de cada jugador (alcance v1). */
     const MP_BROKERS=['wss://mqtt.eclipseprojects.io:443/mqtt','wss://broker.emqx.io:8084/mqtt','wss://test.mosquitto.org:8081/mqtt','wss://broker.hivemq.com:8884/mqtt'];
-    const MP_LIB_URLS=['https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js','https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js'];
+    const MP_LIB_URLS=['lib/mqtt.min.js','https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js','https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js'];
     const MP_COLORS=['#37c8ff','#ff5d8f','#8dff57','#c07dff','#ffe259'];
     const MP_WORLD='valdoria-mundo/v1/p/'; // canal mundial único: todos en el mismo tema
     const MP_WTOPIC='valdoria-mundo/v1/w/'; // estado de bestias del anfitrión (mundo cooperativo)
@@ -8178,7 +8176,7 @@
       colDay:null, colNight:null, cam:null, trees:[], fade:0,
       playerModel:null, playerSig:'', npcModels:new Map(), peerModels:new Map(), mobModels:new Map(),
       kkLibs:0, kkTpl:{}, playerReal:null, playerRealSig:'', npcReal:new Map(), peerReal:new Map(), mobReal:new Map(), _pt:0 };
-    const G3_LIB_URLS=['https://unpkg.com/three@0.149.0/build/three.min.js','https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js'];
+    const G3_LIB_URLS=['lib/three.min.js','https://unpkg.com/three@0.149.0/build/three.min.js','https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js'];
     const G3_SIN=Math.sin(Math.PI/3), G3_COS=Math.cos(Math.PI/3); // estiramiento del suelo 3D: el mundo Y se mapea a Z con /sen60° (fijo, es la «forma» del mundo)
     const G3_DIST=1500; // la elevación de la cámara 3D sale de CAM_SIN/CAM_COS: el ángulo ajustable del jugador, el mismo de la proyección 2D (la distancia crece para que el plano cercano no recorte el suelo en pantallas altas)
     function g3LoadLib(){
@@ -8370,10 +8368,10 @@
        Cazadora: se descarga una vez y se clona por esqueleto) y
        Bram=Barbarian (la única descarga extra, solo por él). */
     const KK_FILES={warrior:'Knight.glb',mage:'Mage.glb',hunter:'Rogue_Hooded.glb',druid:'Mage.glb',lyra:'Mage.glb',sana:'Rogue_Hooded.glb',bram:'Barbarian.glb',milo:'Rogue_Hooded.glb'};
-    const KK_BASES=['https://cdn.jsdelivr.net/gh/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0@main/addons/kaykit_character_pack_adventures/Characters/gltf/',
+    const KK_BASES=['adv/','https://cdn.jsdelivr.net/gh/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0@main/addons/kaykit_character_pack_adventures/Characters/gltf/',
       'https://raw.githubusercontent.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/main/addons/kaykit_character_pack_adventures/Characters/gltf/'];
-    const KK_LOADER_URLS=['https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js','https://unpkg.com/three@0.147.0/examples/js/loaders/GLTFLoader.js'];
-    const KK_SKEL_URLS=['https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/utils/SkeletonUtils.js','https://unpkg.com/three@0.147.0/examples/js/utils/SkeletonUtils.js'];
+    const KK_LOADER_URLS=['lib/GLTFLoader.js','https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js','https://unpkg.com/three@0.147.0/examples/js/loaders/GLTFLoader.js'];
+    const KK_SKEL_URLS=['lib/SkeletonUtils.js','https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/utils/SkeletonUtils.js','https://unpkg.com/three@0.147.0/examples/js/utils/SkeletonUtils.js'];
     const KK_ATTACK={warrior:'1H_Melee_Attack_Slice_Horizontal',mage:'Spellcast_Shoot',hunter:'1H_Ranged_Shoot',druid:'Spellcast_Shoot'};
     function g3LoadScript(urls,okFn,failFn){
       let i=0;
@@ -8413,7 +8411,7 @@
        ningún pack de KayKit trae cuadrúpedos (solo personajes con rig y
        props), así que conserva su modelo de código de siempre. */
     const KK_MOB={spore:'Skeleton_Minion.glb',golem:'Skeleton_Warrior.glb',boss:'Skeleton_Warrior.glb',herald:'Skeleton_Warrior.glb'};
-    const KK_MOB_BASES=['https://cdn.jsdelivr.net/gh/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0@main/addons/kaykit_character_pack_skeletons/Characters/gltf/',
+    const KK_MOB_BASES=['skl/','https://cdn.jsdelivr.net/gh/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0@main/addons/kaykit_character_pack_skeletons/Characters/gltf/',
       'https://raw.githubusercontent.com/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0/main/addons/kaykit_character_pack_skeletons/Characters/gltf/'];
     function kkNeedMob(type){ const file=KK_MOB[type]; if(file) kkNeedFile(file,KK_MOB_BASES); }
     function kkNeedFile(file,bases){
@@ -8544,7 +8542,7 @@
        archivo fallan, esa pieza no nace y su dibujo 2D de siempre se
        queda — el mundo se ve exactamente como antes de esta obra.
        ================================================================ */
-    const KP_BASES=['https://cdn.jsdelivr.net/gh/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0@main/addons/kaykit_medieval_hexagon_pack/Assets/gltf/',
+    const KP_BASES=['med/','https://cdn.jsdelivr.net/gh/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0@main/addons/kaykit_medieval_hexagon_pack/Assets/gltf/',
       'https://raw.githubusercontent.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/main/addons/kaykit_medieval_hexagon_pack/Assets/gltf/'];
     const KP_FILES={
       posada:'buildings/red/building_home_A_red.gltf',
@@ -8856,7 +8854,7 @@
        que la convención del pack. Si algo falla, la mascota se dibuja
        en 2D (drawPetFigure): nunca una caja. */
     const PET_FILES={duck:'Duck.glb',corgi:'Corgi.glb',bat:'Bat.glb'};
-    const PET_BASE='https://gobkit.com/freebies/animal/';
+    const PET_BASE='pets/';
     const PET_H={duck:34,corgi:30,bat:30}; // altura en unidades de mundo de cada mascota
     G3.petTpl={}; G3.petLocal=null; G3.petLocalId=''; G3.petSample=null; G3.peerPets=new Map();
     function petBuildClips(gltf){
