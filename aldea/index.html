@@ -15,6 +15,9 @@
   .pill b{color:#ffd23c}
   .pill.pop{animation:pop .3s}
   @keyframes pop{40%{transform:scale(1.13)}}
+  .pill.ready{border-color:#ffd23c;box-shadow:0 0 0 2px rgba(255,210,60,.55),0 4px 12px rgba(0,0,0,.25)}
+  .drow{display:flex;justify-content:space-between;gap:8px;text-align:left;background:#fff;border:2px solid #e3cf9a;border-radius:10px;padding:6px 10px;margin:4px 0;font-size:.82rem;font-weight:700;color:#5c4a12}
+  .drow.today{background:#fff0a0;border-color:#d8a94e;color:#4a3200}
   .spacer{flex:1}
   #quest{position:fixed;top:52px;left:8px;z-index:5;max-width:74vw;background:rgba(255,253,244,.94);border:2px solid #d8a94e;border-radius:14px;padding:6px 11px;font-size:.78rem;font-weight:700;color:#5c4a12;box-shadow:0 4px 12px rgba(60,40,0,.25);cursor:pointer}
   #quest b{color:#2e6b1e}
@@ -56,9 +59,13 @@
   <div class="pill" id="pillW">🪵 <b id="uiWood">0</b></div>
   <div class="pill" id="pillS">🪨 <b id="uiStone">0</b></div>
   <div class="pill" id="pillG">🪙 <b id="uiGold">0</b></div>
+  <div class="pill" id="pillWheat">🌾 <b id="uiWheat">0</b></div>
+  <div class="pill" id="pillBread">🍞 <b id="uiBread">0</b></div>
+  <div class="pill" id="pillDaily" style="cursor:pointer;pointer-events:auto">🎁 <b id="uiDaily">Cofre</b></div>
   <div class="pill">🏰 Nv <b id="uiTown">1</b></div>
   <div class="spacer"></div>
   <div class="pill" id="pillAll" style="cursor:pointer;pointer-events:auto">🧺 Recoger todo</div>
+  <div class="pill" id="pillShare" style="cursor:pointer;pointer-events:auto">📤 Compartir</div>
 </div>
 <div id="quest">🎯 <span id="questTxt">…</span></div>
 <div id="toast"></div>
@@ -74,7 +81,7 @@
     <h1>🏗️ Aldea en Obras</h1>
     <p id="introTxt">Levanta tu aldea desde una parcelita: construye el aserradero, la cantera y el mercado, recoge lo que producen y haz crecer tu pueblo. Tu aldea trabaja <b>aunque no estés</b>.</p>
     <button class="btn" id="btnStart" type="button">▶ A CONSTRUIR</button>
-    <p style="font-size:.7rem;color:#8a6d1f;margin-top:11px">Modelos 3D del pack gratuito (CC0) «Tower Defense Kit» de Kenney · kenney.nl</p>
+    <p style="font-size:.7rem;color:#8a6d1f;margin-top:11px">Modelos 3D de packs gratuitos (CC0) de Kenney: Tower Defense Kit, Fantasy Town Kit y Nature Kit · kenney.nl · Vecinos: KayKit Character Pack: Adventurers (Kay Lousberg, CC0)</p>
   </div>
 </div>
 <div class="overlay hidden" id="backOverlay">
@@ -84,13 +91,45 @@
     <button class="btn gold" id="btnBack" type="button">🧺 Recogerlo todo</button>
   </div>
 </div>
+<div class="overlay hidden" id="dailyOverlay">
+  <div class="panel">
+    <h2>🎁 Cofre diario</h2>
+    <p id="dailyTxt"></p>
+    <div id="dailyList"></div>
+    <button class="btn gold" id="btnDailyClaim" type="button">🎁 Recoger el cofre</button>
+    <button class="btn blue" id="btnDailyClose" type="button">Cerrar</button>
+  </div>
+</div>
 <div id="load">🌱 Preparando tu parcela…</div>
 
 <script src="lib/three.min.js"></script>
 <script src="lib/GLTFLoader.js"></script>
 <script>
 'use strict';
-/* ================= ALDEA EN OBRAS · v1 ================= */
+/* ================= ALDEA EN OBRAS · v2.1 (compartir: botón 📤 con el enlace del bot y el nivel del pueblo) ================= */
+/* ================= compartir mi aldea (2.1) ================= */
+/* Botón 📤 en el HUD: abre el compartir de Telegram (t.me/share/url) con
+   el enlace del bot @AldeaEnObrasBot y un texto con el nivel actual del
+   pueblo. Fuera de Telegram usa el compartir del sistema o copia el
+   enlace al portapapeles. No guarda nada: el texto se genera en vivo
+   desde townLvl(), así que una partida v1.5 carga tal cual, sin
+   migración. lastShare es sonda de verificación (no afecta al juego). */
+const SHARE_BOT_URL='https://t.me/AldeaEnObrasBot';
+let lastShare=null;
+function shareVillage(){
+  const lvl=townLvl();
+  const text='🏗️ ¡Mira mi aldea en Aldea en Obras! Mi pueblo ya va por el nivel '+lvl+' 🏰 ¿Te atreves a superarme?';
+  const shareUrl='https://t.me/share/url?url='+encodeURIComponent(SHARE_BOT_URL)+'&text='+encodeURIComponent(text);
+  let method='link';
+  try{
+    if(window.Telegram&&Telegram.WebApp&&typeof Telegram.WebApp.openTelegramLink==='function'){ Telegram.WebApp.openTelegramLink(shareUrl); method='telegram'; toast('📤 Abriendo el compartir de Telegram…',2200); }
+    else if(navigator.share){ navigator.share({title:'Aldea en Obras',text:text,url:SHARE_BOT_URL}).catch(()=>{}); method='webshare'; toast('📤 Comparte tu aldea desde el menú del sistema',2200); }
+    else if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(text+' '+SHARE_BOT_URL).catch(()=>{}); method='clipboard'; toast('🔗 Enlace de tu aldea copiado: pégalo en Telegram',2600); }
+    else { window.open(shareUrl,'_blank'); method='link'; toast('📤 Abriendo el compartir de Telegram…',2200); }
+  }catch(e){ method='link'; }
+  lastShare={url:SHARE_BOT_URL,text:text,shareUrl:shareUrl,method:method};
+  return lastShare;
+}
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const SAVE_KEY='aldea-en-obras-v1';
@@ -101,19 +140,59 @@ if(TG_USER&&TG_USER.first_name) $('introTxt').innerHTML='¡Hola, <b>'+TG_USER.fi
 let AC=null; function beep(f,d,type,g){ try{ if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)(); const o=AC.createOscillator(), gn=AC.createGain(); o.type=type||'square'; o.frequency.value=f; gn.gain.setValueAtTime(g||0.045,AC.currentTime); gn.gain.exponentialRampToValueAtTime(0.001,AC.currentTime+(d||0.08)); o.connect(gn); gn.connect(AC.destination); o.start(); o.stop(AC.currentTime+(d||0.08)); }catch(e){} }
 const sfx={ tap(){beep(600,0.05,'triangle',0.04)}, coin(){beep(1180,0.07,'sine',0.05)}, build(){[392,523,659].forEach((f,i)=>setTimeout(()=>beep(f,0.1,'triangle',0.05),i*70))}, hammer(){beep(240,0.05,'square',0.05)}, err(){beep(160,0.12,'sawtooth',0.05)}, quest(){[784,988,1175].forEach((f,i)=>setTimeout(()=>beep(f,0.1,'sine',0.05),i*80))} };
 
+/* ================= pulido (1.5) ================= */
+/* Sonido propio por edificio al recoger, animación de crecimiento al
+   terminar una obra y partículas sobre los edificios llenos. Nada de
+   esto se guarda: se deriva de S.plots, así que una partida v1.4 carga
+   tal cual, sin migración. lastCollectSound/fullBursts son sondas de
+   verificación (no afectan al juego). */
+let lastCollectSound=null;
+function playCollectSound(type){
+  lastCollectSound=type;
+  if(type==='wood'){ beep(210,0.06,'square',0.05); setTimeout(()=>beep(160,0.06,'square',0.05),70); }
+  else if(type==='stone'){ beep(110,0.09,'sawtooth',0.05); setTimeout(()=>beep(85,0.08,'sawtooth',0.04),60); }
+  else if(type==='wheat'){ beep(880,0.07,'sine',0.04); setTimeout(()=>beep(1175,0.08,'sine',0.04),70); }
+  else if(type==='bread'){ beep(520,0.08,'triangle',0.05); setTimeout(()=>beep(660,0.09,'triangle',0.05),80); }
+  else sfx.coin();
+}
+const grows=[];
+function growPlot(i){ const g=plotGroups[i]; if(!g) return; const base=g.scale.x; g.scale.setScalar(base*0.15); grows.push({g,base,t:0}); }
+function updateGrows(dt){ for(let i=grows.length-1;i>=0;i--){ const a=grows[i]; a.t+=dt; const k=Math.min(1,a.t/0.7);
+  const c1=1.70158, c3=c1+1, ease=1+c3*Math.pow(k-1,3)+c1*Math.pow(k-1,2);
+  a.g.scale.setScalar(a.base*(0.15+0.85*ease)); if(k>=1){ a.g.scale.setScalar(a.base); grows.splice(i,1); } } }
+let fullBursts=0, fullFxT=0;
+function spawnFullParticles(){
+  for(let i=0;i<S.plots.length;i++){ const p=S.plots[i]; if(!p.b) continue; const d=BUILDINGS[p.b.type];
+    if(!d.makes&&d.kind!=='converter') continue; if(bCap(p.b)<=0||p.b.stored<bCap(p.b)-0.01) continue;
+    const gx=i%COLS, gz=Math.floor(i/COLS);
+    burst(px2w(gx),1.25,pz2w(gz),d.makes==='gold'?0xffd23c:(d.makes==='wood'?0xd8a94e:(d.makes==='wheat'?0xf2d06b:(d.makes==='bread'?0xd88f4a:0xcfd8dc))),4);
+    fullBursts++; }
+}
+
 /* ================= definición del juego ================= */
-const COLS=4, ROWS=3, PITCH=1.62;
+const COLS=5, ROWS=4, PITCH=1.62;
 const px2w=gx=>(gx-(COLS-1)/2)*PITCH, pz2w=gz=>(gz-(ROWS-1)/2)*PITCH;
-const PROD={ wood:{ic:'🪵',name:'madera'}, stone:{ic:'🪨',name:'piedra'}, gold:{ic:'🪙',name:'oro'} };
+const PROD={ wood:{ic:'🪵',name:'madera'}, stone:{ic:'🪨',name:'piedra'}, gold:{ic:'🪙',name:'oro'},
+  wheat:{ic:'🌾',name:'trigo'}, bread:{ic:'🍞',name:'pan'} };
 const BUILDINGS={
   hall:  { name:'Ayuntamiento', ic:'🏰', desc:'El corazón de la aldea. Al mejorarlo sube el nivel del pueblo, desbloquea parcelas y amplía los almacenes.',
-           maxLvl:5 },
+           maxLvl:10 },
   sawmill:{ name:'Aserradero', ic:'🪵', desc:'Produce madera sin parar. Tócalo para recoger lo acumulado.',
            makes:'wood', perMin:12, cost:{gold:25}, needsTown:1 },
   quarry:{ name:'Cantera', ic:'🪨', desc:'Produce piedra sin parar. Tócala para recoger lo acumulado.',
            makes:'stone', perMin:9, cost:{wood:15,gold:35}, needsTown:1 },
   market:{ name:'Mercado', ic:'🪙', desc:'Vende la producción del pueblo y produce oro sin parar.',
-           makes:'gold', perMin:6, cost:{wood:50,stone:25}, needsTown:2 }
+           makes:'gold', perMin:6, cost:{wood:50,stone:25}, needsTown:2 },
+  farm:{ name:'Granja', ic:'🌾', desc:'Cultiva trigo sin parar. El trigo alimenta al molino: recógelo y guárdalo en el almacén.',
+           makes:'wheat', perMin:10, cost:{gold:40}, needsTown:1 },
+  mill:{ name:'Molino', ic:'🎡', desc:'Muele el trigo de tu almacén y guarda harina. Tus panaderías hornean con esa harina, solas.',
+           makes:'flour', kind:'converter', perMin:8, cost:{wood:30,gold:50}, needsTown:2 },
+  bakery:{ name:'Panadería', ic:'🍞', desc:'Hornea pan con la harina de tus molinos. El Mercado paga el pan a 5 🪙, cinco veces más que el trigo.',
+           makes:'bread', kind:'converter', perMin:6, cost:{wood:50,stone:25,gold:50}, needsTown:2 },
+  warehouse:{ name:'Almacén', ic:'📦', desc:'Guarda de sobra: cada nivel añade +250 al tope de cada recurso del almacén.',
+           cost:{wood:60,stone:40,gold:40}, needsTown:3 },
+  workshop:{ name:'Taller', ic:'🔨', desc:'Los artesanos abaratan las mejoras: cada nivel descuenta un 5% del coste de mejorar cualquier edificio (máx. 50%).',
+           cost:{wood:40,gold:60}, needsTown:3 }
 };
 const QUESTS=[
   { txt:'Construye un Aserradero', test:s=>s.plots.some(p=>p.b&&p.b.type==='sawmill'), rew:{gold:20} },
@@ -121,18 +200,77 @@ const QUESTS=[
   { txt:'Construye una Cantera', test:s=>s.plots.some(p=>p.b&&p.b.type==='quarry'), rew:{gold:30} },
   { txt:'Mejora cualquier edificio al nivel 2', test:s=>s.plots.some(p=>p.b&&p.b.lvl>=2), rew:{gold:25} },
   { txt:'Sube el Ayuntamiento al nivel 2', test:s=>townLvl()>=2, rew:{wood:40} },
-  { txt:'Construye un Mercado', test:s=>s.plots.some(p=>p.b&&p.b.type==='market'), rew:{gold:60} }
+  { txt:'Construye un Mercado', test:s=>s.plots.some(p=>p.b&&p.b.type==='market'), rew:{gold:60} },
+  { txt:'Construye una Granja', test:s=>s.plots.some(p=>p.b&&p.b.type==='farm'), rew:{gold:40} },
+  { txt:'Recoge 20 de trigo en el almacén', test:s=>s.res.wheat>=20, rew:{gold:30} },
+  { txt:'Construye un Molino', test:s=>s.plots.some(p=>p.b&&p.b.type==='mill'), rew:{wheat:20} },
+  { txt:'Construye una Panadería', test:s=>s.plots.some(p=>p.b&&p.b.type==='bakery'), rew:{gold:80} },
+  { txt:'Vende pan en el Mercado', test:s=>!!s.soldBread, rew:{gold:100} },
+  { txt:'Construye un Almacén', test:s=>s.plots.some(p=>p.b&&p.b.type==='warehouse'), rew:{wood:40} },
+  { txt:'Construye un Taller', test:s=>s.plots.some(p=>p.b&&p.b.type==='workshop'), rew:{stone:40} },
+  { txt:'Sube el pueblo al nivel 6', test:s=>townLvl()>=6, rew:{gold:150} }
 ];
-function prodRate(b){ const d=BUILDINGS[b.type]; return d.perMin*Math.pow(1.8,b.lvl-1)/60; } // por segundo
-function storeCap(town){ return 200+150*(town-1); }
+function prodRate(b){ const d=BUILDINGS[b.type]; if(!d.perMin) return 0; return d.perMin*Math.pow(1.8,b.lvl-1)/60; } // por segundo
+/* 1.4: el Almacén sube los topes (+250 por nivel y almacén) y el Taller
+   descuenta las mejoras (5% por nivel, máx. 50%). Ambos se suman por
+   edificio construido, así que más de uno sigue valiendo la pena. */
+function warehouseBonus(){ if(!S) return 0; let t=0; for(const p of S.plots) if(p.b&&p.b.type==='warehouse') t+=p.b.lvl*250; return t; }
+function workshopDiscount(){ if(!S) return 0; let t=0; for(const p of S.plots) if(p.b&&p.b.type==='workshop') t+=p.b.lvl; return Math.min(0.5,t*0.05); }
+function storeCap(town){ return 200+150*(town-1)+warehouseBonus(); }
 function bCap(b){ return prodRate(b)*60*30; } // 30 minutos de producción por edificio
 function upCost(b){
-  const n=b.lvl+1;
-  if(b.type==='hall') return { wood:40*n*n, stone:25*n*n, gold:30*n*n };
-  if(b.type==='sawmill') return { gold:20*n*n, wood:10*n };
-  if(b.type==='quarry') return { gold:18*n*n, stone:8*n };
-  if(b.type==='market') return { wood:22*n*n, stone:14*n*n };
-  return {};
+  const n=b.lvl+1; let c={};
+  if(b.type==='hall') c={ wood:40*n*n, stone:25*n*n, gold:30*n*n };
+  else if(b.type==='sawmill') c={ gold:20*n*n, wood:10*n };
+  else if(b.type==='quarry') c={ gold:18*n*n, stone:8*n };
+  else if(b.type==='market') c={ wood:22*n*n, stone:14*n*n };
+  else if(b.type==='farm') c={ gold:15*n*n, wood:8*n };
+  else if(b.type==='mill') c={ wood:18*n*n, gold:12*n };
+  else if(b.type==='bakery') c={ wood:20*n*n, stone:12*n };
+  else if(b.type==='warehouse') c={ wood:25*n*n, stone:18*n };
+  else if(b.type==='workshop') c={ wood:18*n*n, gold:15*n };
+  const disc=workshopDiscount(); if(disc>0) Object.keys(c).forEach(k=>{ c[k]=Math.max(1,Math.floor(c[k]*(1-disc))); });
+  return c;
+}
+function totalFlour(){ let t=0; for(const p of S.plots) if(p.b&&p.b.type==='mill') t+=p.b.stored; return t; }
+/* ================= recompensa diaria (1.2) ================= */
+/* Un cofre al día, con racha: si reclamas días seguidos la racha sube y el
+   premio crece; el día 7 es el mejor y el ciclo vuelve a empezar. Sin
+   servidor: la fecha es la del dispositivo y la racha se guarda en S.daily. */
+const DAILY_REWARDS=[
+  {gold:30}, {wood:25,stone:25}, {gold:60}, {wheat:40},
+  {gold:100}, {wood:60,stone:40}, {gold:150,bread:25}
+];
+function dayKey(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function dailyInfo(){
+  const d=S.daily||{lastClaim:null,streak:0};
+  const today=dayKey(new Date());
+  if(d.lastClaim===today){ const day=((Math.max(d.streak,1)-1)%7)+1; return {available:false,streak:d.streak,day,reward:DAILY_REWARDS[day-1]}; }
+  const y=new Date(); y.setDate(y.getDate()-1);
+  const next=d.lastClaim===dayKey(y)?d.streak+1:1;
+  const day=((next-1)%7)+1;
+  return {available:true,streak:next,day,reward:DAILY_REWARDS[day-1]};
+}
+function claimDaily(){
+  const info=dailyInfo(); if(!info.available) return false;
+  Object.keys(info.reward).forEach(k=>S.res[k]=(S.res[k]||0)+info.reward[k]);
+  S.daily={lastClaim:dayKey(new Date()),streak:info.streak};
+  sfx.quest(); toast('🎁 ¡Cofre del día '+info.day+'! +'+fmtCost(info.reward),2600);
+  afterChange(); return true;
+}
+function openDaily(){
+  const info=dailyInfo();
+  $('dailyTxt').innerHTML=info.available
+    ?('🔥 Racha: <b>'+info.streak+' día'+(info.streak===1?'':'s')+'</b> seguidos · Hoy te toca el <b>día '+info.day+'</b>: '+fmtCost(info.reward))
+    :('✅ Ya recogiste tu cofre de hoy (racha: <b>'+info.streak+' día'+(info.streak===1?'':'s')+'</b>). Vuelve mañana para seguir la racha.');
+  $('dailyList').innerHTML=DAILY_REWARDS.map((r,i)=>{
+    const day=i+1;
+    const mark=(!info.available&&day===info.day)?' ✓ recogido':(info.available&&day===info.day)?' ← hoy':'';
+    return '<div class="drow'+(day===info.day?' today':'')+'"><span>Día '+day+'</span><span>'+fmtCost(r)+mark+'</span></div>';
+  }).join('');
+  const btn=$('btnDailyClaim'); btn.disabled=!info.available;
+  btn.textContent=info.available?('🎁 Recoger el cofre del día '+info.day):'✅ Cofre recogido hoy';
+  $('dailyOverlay').classList.remove('hidden');
 }
 function fmtCost(c){ return Object.keys(c).map(k=>PROD[k].ic+' '+c[k]).join(' · ')||'Gratis'; }
 function canPay(c){ return Object.keys(c).every(k=>S.res[k]>=c[k]); }
@@ -142,14 +280,36 @@ function pay(c){ Object.keys(c).forEach(k=>S.res[k]-=c[k]); }
 let S=null;
 function newState(){
   const plots=[]; for(let i=0;i<COLS*ROWS;i++) plots.push({b:null});
-  plots[5].b={type:'hall',lvl:1,stored:0}; // parcela central: el Ayuntamiento
-  return { res:{wood:40,stone:10,gold:60}, plots, quest:0, t:Date.now(), started:false };
+  plots[12].b={type:'hall',lvl:1,stored:0}; // parcela central: el Ayuntamiento
+  return { res:{wood:40,stone:10,gold:60,wheat:0,bread:0}, plots, quest:0, daily:{lastClaim:null,streak:0}, t:Date.now(), started:false };
 }
 function townLvl(){ const h=S.plots.find(p=>p.b&&p.b.type==='hall'); return h?h.b.lvl:1; }
-function plotUnlocked(i){ const t=townLvl(); const locked={1:[0,3,8,11],2:[0,11],3:[]}[Math.min(t,3)]||[]; return locked.indexOf(i)<0; }
+function hallIndex(){ const i=S.plots.findIndex(p=>p.b&&p.b.type==='hall'); return i>=0?i:12; }
+/* 1.4: el mapa crece de 12 a 20 parcelas y se desbloquea poco a poco con
+   el nivel del pueblo (del Nv 1 al Nv 8 quedan todas abiertas; los
+   niveles 9 y 10 siguen subiendo los topes del almacén). */
+const UNLOCK_LOCKED={1:[0,1,4,5,9,10,14,15,16,19],2:[0,4,5,10,14,15,19],3:[0,4,10,15,19],4:[0,4,15,19],5:[0,15,19],6:[0,19],7:[19],8:[]};
+function plotUnlocked(i){ const t=Math.min(townLvl(),8); return UNLOCK_LOCKED[t].indexOf(i)<0; }
 function save(){ if(!S) return; S.t=Date.now(); try{ localStorage.setItem(SAVE_KEY,JSON.stringify(S)); }catch(e){} }
 function load(){
-  try{ const o=JSON.parse(localStorage.getItem(SAVE_KEY)); if(o&&o.res&&Array.isArray(o.plots)&&o.plots.length===COLS*ROWS) { S=o; return true; } }catch(e){}
+  try{ const o=JSON.parse(localStorage.getItem(SAVE_KEY)); if(o&&o.res&&Array.isArray(o.plots)&&(o.plots.length===COLS*ROWS||o.plots.length===12)) { S=o;
+    // migración v1.3 → v1.4: el mapa pasa de 4×3 a 5×4. Cada edificio
+    // conserva su casilla (columna, fila) de la cuadrícula antigua, así
+    // que la aldea queda igual de colocada y solo se añaden parcelas.
+    if(S.plots.length===12){ const old=S.plots, np=[];
+      for(let i=0;i<COLS*ROWS;i++) np.push({b:null});
+      for(let i=0;i<12;i++){ const gx=i%4, gz=Math.floor(i/4); np[gz*COLS+gx]=old[i]; }
+      S.plots=np; }
+    // migración v1 → v1.1: la cadena añade trigo y pan sin tocar lo demás
+    if(typeof S.res.wheat!=='number') S.res.wheat=0;
+    if(typeof S.res.bread!=='number') S.res.bread=0;
+    // migración v1.1 → v1.2: el cofre diario llega vacío, sin romper la racha (no había)
+    if(!S.daily||typeof S.daily.streak!=='number') S.daily={lastClaim:null,streak:0};
+    if(typeof S.daily.lastClaim==='undefined') S.daily.lastClaim=null;
+    // migración v1.2 → v1.3: ninguna — los vecinos y el ciclo de luz se
+    // derivan de los edificios y no guardan nada en la partida
+    S.plots.forEach(p=>{ if(p.b&&typeof p.b.stored!=='number') p.b.stored=0; });
+    return true; } }catch(e){}
   S=newState(); return false;
 }
 
@@ -157,7 +317,7 @@ function load(){
 const scene=new THREE.Scene();
 scene.fog=new THREE.Fog(0x9fd8ff,30,58);
 const camera=new THREE.PerspectiveCamera(46,innerWidth/innerHeight,0.1,120);
-function placeCamera(){ const a=innerWidth/innerHeight; const d=a<1?11.2:8.3; camera.position.set(0,d*0.85,d*0.95); camera.lookAt(0,-0.2,0.2); }
+function placeCamera(){ const a=innerWidth/innerHeight; const d=a<1?14:10.2; camera.position.set(0,d*0.85,d*0.95); camera.lookAt(0,-0.2,0.2); }
 placeCamera();
 const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
@@ -165,7 +325,8 @@ renderer.setSize(innerWidth,innerHeight);
 renderer.outputEncoding=THREE.sRGBEncoding;
 renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 $('game').appendChild(renderer.domElement);
-scene.add(new THREE.HemisphereLight(0xcfe8ff,0x4e9440,0.8));
+const hemi=new THREE.HemisphereLight(0xcfe8ff,0x4e9440,0.8);
+scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xfff1d6,1.0);
 sun.position.set(7,13,5); sun.castShadow=true;
 sun.shadow.mapSize.set(2048,2048);
@@ -206,6 +367,26 @@ async function buildingVisual(type,lvl){
     await stackInto(grp,[['tower-square-bottom-a']]);
     const rf=await instance('tower-square-roof-a'); const bb=boxOf(grp); rf.position.y=bb.size.y-0.02; grp.add(rf);
     if(lvl>=3){ const c=await instance('detail-crystal'); c.position.set(0.45,0.35,0.35); grp.add(c); }
+  } else if(type==='farm'){
+    const m=await instance('wood-structure'); grp.add(m);
+    for(const [x,z] of [[-0.48,0.42],[0.48,0.42]]){ const c=await instance('crop-corn'); c.position.set(x,0,z); c.scale.setScalar(0.65); grp.add(c); }
+  } else if(type==='mill'){
+    const m=await instance('windmill'); grp.add(m);
+  } else if(type==='bakery'){
+    await stackInto(grp,[['tower-square-bottom-a']]);
+    const rf=await instance('tower-square-roof-a'); const bb=boxOf(grp); rf.position.y=bb.size.y-0.02; grp.add(rf);
+    const ch=await instance('chimney'); ch.position.set(0.48,0,-0.38); ch.scale.setScalar(0.85); grp.add(ch);
+  } else if(type==='warehouse'){
+    // 1.4: almacén reutilizando modelos Kenney (CC0) ya presentes: base y
+    // tejado cuadrados con rocas de acopio a los lados, distinto del Mercado
+    await stackInto(grp,[['tower-square-bottom-a']]);
+    const rf=await instance('tower-square-roof-a'); const bb=boxOf(grp); rf.position.y=bb.size.y-0.02; grp.add(rf);
+    for(const [x,z] of [[-0.5,0.42],[0.5,0.42]]){ const r=await instance('detail-rocks'); r.position.set(x,0,z); r.scale.setScalar(0.6); grp.add(r); }
+  } else if(type==='workshop'){
+    // 1.4: taller reutilizando modelos Kenney (CC0) ya presentes: estructura
+    // de madera alta con chimenea de fragua
+    const m=await instance('wood-structure-high'); grp.add(m);
+    const ch=await instance('chimney'); ch.position.set(0.48,0,-0.38); ch.scale.setScalar(0.85); grp.add(ch);
   }
   const bb=boxOf(grp); const f=(PITCH*0.92)/Math.max(bb.size.x,bb.size.z,0.001); grp.scale.setScalar(Math.min(f,1.6));
   grp.userData.built=true;
@@ -237,6 +418,67 @@ async function constructionFx(i,done){
   setTimeout(()=>{ scene.remove(m); done&&done(); },850);
 }
 
+/* ================= vida en la aldea (1.3) ================= */
+/* Vecinos que pasean entre los edificios construidos (modelo KayKit
+   Character Pack: Adventurers, CC0) y ciclo de luz día→tarde suave.
+   Los vecinos no se guardan: se derivan de S.plots, así que una partida
+   v1.2 carga sin migrar nada. Cada vecino carga su propio GLB para tener
+   su esqueleto y su animación independientes (sin SkeletonUtils). */
+const DAY_LEN=120; // un ciclo día→tarde→día dura 120 s de juego
+let dayT=0, dayK=0; // dayK: 0 = mediodía, 1 = tarde dorada
+const daySun=new THREE.Color(0xfff1d6), aftSun=new THREE.Color(0xffb36b);
+const dayFog=new THREE.Color(0x9fd8ff), aftFog=new THREE.Color(0xffc890);
+function updateDaylight(dt){
+  if(!S||!S.started) return;
+  dayT+=dt; dayK=0.5-0.5*Math.cos((dayT%DAY_LEN)/DAY_LEN*Math.PI*2);
+  sun.intensity=1.0-0.28*dayK;
+  sun.color.lerpColors(daySun,aftSun,dayK);
+  hemi.intensity=0.8-0.22*dayK;
+  scene.fog.color.lerpColors(dayFog,aftFog,dayK);
+}
+const villagers=[];
+function loadFresh(name){ return new Promise((res,rej)=>loader.load('assets/models/'+name+'.glb',g=>res(g),undefined,rej)); }
+function plotPos(i){ return {x:px2w(i%COLS), z:pz2w(Math.floor(i/COLS))}; }
+async function spawnVillagers(){
+  try{
+    for(let v=0;v<3;v++){
+      const gltf=await loadFresh('villager-knight');
+      const src=gltf.scene; const bb=boxOf(src); // boxOf usa getSize (r128 no tiene Box3.size)
+      const sc=0.85/Math.max(bb.size.y,0.001);
+      const wrap=new THREE.Group(); src.scale.setScalar(sc);
+      src.position.y=-bb.min.y*sc; src.traverse(m=>{ if(m.isMesh) m.castShadow=true; });
+      wrap.add(src);
+      const start=plotPos(hallIndex()); wrap.position.set(start.x+(v-1)*0.55,0.02,start.z+0.45);
+      scene.add(wrap);
+      const mixer=new THREE.AnimationMixer(src);
+      const clip=n=>gltf.animations.find(a=>a.name===n);
+      const walk=clip('Walking_A')?mixer.clipAction(clip('Walking_A')):null;
+      const idle=clip('Idle')?mixer.clipAction(clip('Idle')):null;
+      if(idle) idle.play();
+      villagers.push({wrap,mixer,walk,idle,moving:false,pause:1+v*1.2,target:null,speed:0.5+Math.random()*0.25,cur:5});
+    }
+  }catch(e){ console.log('villagers',e); }
+}
+function updateVillagers(dt){
+  if(!villagers.length) return;
+  for(const v of villagers){
+    v.mixer.update(dt);
+    const built=[]; for(let i=0;i<S.plots.length;i++) if(S.plots[i].b) built.push(i);
+    if(built.length<2){ if(v.moving){ if(v.walk) v.walk.stop(); if(v.idle) v.idle.play(); v.moving=false; } continue; }
+    if(!v.moving){
+      v.pause-=dt;
+      if(v.pause<=0){ let t; do{ t=built[Math.floor(Math.random()*built.length)]; }while(t===v.cur&&built.length>1);
+        v.target=t; v.moving=true; if(v.idle) v.idle.stop(); if(v.walk) v.walk.play(); }
+      continue;
+    }
+    const tp=plotPos(v.target); const dx=tp.x-v.wrap.position.x, dz=tp.z-v.wrap.position.z;
+    const dist=Math.hypot(dx,dz);
+    if(dist<0.12){ v.cur=v.target; v.moving=false; v.pause=2.5+Math.random()*3; if(v.walk) v.walk.stop(); if(v.idle) v.idle.play(); continue; }
+    v.wrap.position.x+=dx/dist*v.speed*dt; v.wrap.position.z+=dz/dist*v.speed*dt;
+    v.wrap.rotation.y=Math.atan2(dx,dz);
+  }
+}
+
 /* ================= tablero ================= */
 async function buildBoard(){
   for(let gz=0;gz<ROWS;gz++) for(let gx=0;gx<COLS;gx++){
@@ -259,8 +501,11 @@ async function buildBoard(){
 function toast(msg,ms){ const t=$('toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('on'),ms||1900); }
 function refreshHUD(popRes){
   $('uiWood').textContent=Math.floor(S.res.wood); $('uiStone').textContent=Math.floor(S.res.stone); $('uiGold').textContent=Math.floor(S.res.gold);
+  $('uiWheat').textContent=Math.floor(S.res.wheat||0); $('uiBread').textContent=Math.floor(S.res.bread||0);
   $('uiTown').textContent=townLvl();
-  if(popRes){ const el=$('pill'+({wood:'W',stone:'S',gold:'G'}[popRes])); if(el){ el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); } }
+  try{ const di=dailyInfo(); $('uiDaily').textContent=di.available?'¡Cofre listo!':'Cofre ✓';
+    $('pillDaily').classList.toggle('ready',di.available); }catch(e){}
+  if(popRes){ const el=$('pill'+({wood:'W',stone:'S',gold:'G',wheat:'Wheat',bread:'Bread'}[popRes])); if(el){ el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); } }
   const q=QUESTS[S.quest];
   $('questTxt').innerHTML=q?('<b>Misión:</b> '+q.txt+' · 🎁 '+fmtCost(q.rew)):'<b>🏆 ¡Aldea en marcha!</b> Sigue construyendo a tu ritmo.';
 }
@@ -282,21 +527,38 @@ function openSheet(i){
       card.innerHTML='<div class="ic">'+d.ic+'</div><div class="nm">'+d.name+'</div><div class="ds">'+d.desc+'</div><div class="cost">'+(lockedTown?('🏰 Pueblo Nv '+d.needsTown):fmtCost(d.cost))+'</div>';
       card.addEventListener('click',()=>{ if(lockedTown){ toast('🏰 Necesitas el Ayuntamiento al nivel '+d.needsTown); sfx.err(); return; }
         if(!canPay(d.cost)){ toast('Te faltan recursos para el '+d.name); sfx.err(); return; }
-        pay(d.cost); p.b={type:k,lvl:1,stored:0}; sfx.build(); constructionFx(i,()=>refreshPlot(i)); closeSheet(); afterChange(); });
+        pay(d.cost); p.b={type:k,lvl:1,stored:0}; sfx.build(); constructionFx(i,async()=>{ await refreshPlot(i); growPlot(i); }); closeSheet(); afterChange(); });
       row.appendChild(card); });
   } else {
     const b=p.b, d=BUILDINGS[b.type];
     $('sheetTitle').textContent=d.ic+' '+d.name+' · Nv '+b.lvl;
     if(b.type==='hall'){
-      $('sheetDesc').textContent='Almacenes: hasta '+storeCap(townLvl())+' de cada recurso. Mejorar el Ayuntamiento desbloquea parcelas y edificios.';
+      $('sheetDesc').textContent='Almacenes: hasta '+storeCap(townLvl())+' de cada recurso'+(warehouseBonus()>0?' (incluye +'+warehouseBonus()+' de tus almacenes)':'')+'. Mejorar el Ayuntamiento desbloquea parcelas y edificios.';
+    } else if(b.type==='warehouse'){
+      $('sheetDesc').textContent='Cada nivel añade +250 al tope del almacén. Bonificación total de tus almacenes: +'+warehouseBonus()+' (tope actual: '+storeCap(townLvl())+').';
+    } else if(b.type==='workshop'){
+      $('sheetDesc').textContent='Cada nivel descuenta un 5% del coste de mejorar. Descuento actual: '+Math.round(workshopDiscount()*100)+'% en todas las mejoras.';
+    } else if(b.type==='mill'){
+      $('sheetDesc').textContent='Muele 🌾 '+Math.round(prodRate(b)*60)+' trigo/min del almacén (tienes 🌾 '+Math.floor(S.res.wheat)+') y guarda harina: '+Math.floor(b.stored)+' / '+Math.floor(bCap(b))+(S.plots.some(q=>q.b&&q.b.type==='bakery')?' · Tus panaderías hornean con esta harina, solas.':' · Construye una Panadería para hornear pan con esta harina.');
     } else {
-      $('sheetDesc').textContent='Produce '+PROD[d.makes].ic+' '+Math.round(prodRate(b)*60)+' '+PROD[d.makes].name+'/min · Guardado: '+PROD[d.makes].ic+' '+Math.floor(b.stored)+' / '+Math.floor(bCap(b))+(b.stored>=bCap(b)-0.01?' · ⚠️ ¡Lleno! Recoge para que siga produciendo.':'');
+      $('sheetDesc').textContent='Produce '+PROD[d.makes].ic+' '+Math.round(prodRate(b)*60)+' '+PROD[d.makes].name+'/min · Guardado: '+PROD[d.makes].ic+' '+Math.floor(b.stored)+' / '+Math.floor(bCap(b))+(b.stored>=bCap(b)-0.01?' · ⚠️ ¡Lleno! Recoge para que siga produciendo.':'')
+        +(b.type==='bakery'?' · Harina en tus molinos: '+Math.floor(totalFlour()):'');
     }
-    if(b.type!=='hall'&&b.stored>=1){
+    if(b.type!=='hall'&&b.type!=='mill'&&d.makes&&b.stored>=1){
       const btn=document.createElement('button'); btn.className='btn gold'; btn.type='button';
       btn.innerHTML='🧺 Recoger '+PROD[d.makes].ic+' '+Math.floor(b.stored);
       btn.addEventListener('click',()=>{ collect(i,true); openSheet(i); });
       row.appendChild(btn);
+    }
+    if(b.type==='market'){
+      const mkSell=(kind,price,label)=>{ const amt=Math.floor(S.res[kind]||0); if(amt<=0) return;
+        const btn=document.createElement('button'); btn.className='btn gold'; btn.type='button';
+        btn.innerHTML=label+' '+PROD[kind].ic+' '+amt+' → 🪙 '+(amt*price);
+        btn.addEventListener('click',()=>{ S.res[kind]-=amt; S.res.gold+=amt*price; if(kind==='bread') S.soldBread=true;
+          sfx.coin(); toast('🪙 ¡Vendido! +'+(amt*price)+' oro'); afterChange(); openSheet(i); });
+        row.appendChild(btn); };
+      mkSell('wheat',1,'💰 Vender trigo · 1 🪙/u');
+      mkSell('bread',5,'💰 Vender pan · 5 🪙/u');
     }
     if(b.lvl<(d.maxLvl||5)){
       const c=upCost(b), afford=canPay(c);
@@ -304,7 +566,7 @@ function openSheet(i){
       btn.innerHTML='⬆️ Mejorar a Nv '+(b.lvl+1)+'<small>'+fmtCost(c)+(afford?'':' · te falta')+'</small>';
       btn.addEventListener('click',()=>{ if(!canPay(c)) return; pay(c); b.lvl++;
         if(b.type==='hall'){ sfx.quest(); toast('🏰 ¡El pueblo sube al nivel '+townLvl()+'!'); rebuildBoardTiles(); }
-        sfx.build(); constructionFx(i,()=>refreshPlot(i)); closeSheet(); afterChange(); });
+        sfx.build(); constructionFx(i,async()=>{ await refreshPlot(i); growPlot(i); }); closeSheet(); afterChange(); });
       row.appendChild(btn);
     } else {
       const s=document.createElement('p'); s.textContent='⭐ Nivel máximo alcanzado.'; row.appendChild(s);
@@ -325,15 +587,16 @@ async function rebuildBoardTiles(){ // al subir el pueblo, las parcelas nuevas d
   await refreshAllPlots();
 }
 function collect(i,sound){
-  const p=S.plots[i]; if(!p.b||p.b.type==='hall') return 0;
-  const d=BUILDINGS[p.b.type], amt=Math.floor(p.b.stored); if(amt<=0) return 0;
+  const p=S.plots[i]; if(!p.b||p.b.type==='hall'||p.b.type==='mill') return 0;
+  const d=BUILDINGS[p.b.type]; if(!d.makes) return 0;
+  const amt=Math.floor(p.b.stored); if(amt<=0) return 0;
   const room=storeCap(townLvl())-S.res[d.makes]; const give=Math.max(0,Math.min(amt,room));
   p.b.stored-=give; S.res[d.makes]+=give;
-  if(give>0){ if(sound) sfx.coin(); refreshHUD(d.makes);
-    const gx=i%COLS, gz=Math.floor(i/COLS); burst(px2w(gx),1.1,pz2w(gz),d.makes==='gold'?0xffd23c:(d.makes==='wood'?0xd8a94e:0xcfd8dc),12); }
+  if(give>0){ if(sound) playCollectSound(d.makes); refreshHUD(d.makes);
+    const gx=i%COLS, gz=Math.floor(i/COLS); burst(px2w(gx),1.1,pz2w(gz),d.makes==='gold'?0xffd23c:(d.makes==='wood'?0xd8a94e:(d.makes==='wheat'?0xf2d06b:(d.makes==='bread'?0xd88f4a:0xcfd8dc))),12); }
   return give;
 }
-function collectAll(){ let any=false; for(let i=0;i<COLS*ROWS;i++) if(collect(i,false)>0) any=true; if(any){ sfx.coin(); toast('🧺 Todo recogido'); } afterChange(); }
+function collectAll(){ let any=false, first=null; for(let i=0;i<COLS*ROWS;i++){ const p=S.plots[i]; if(p&&p.b&&collect(i,false)>0&&!first) first=BUILDINGS[p.b.type].makes; } if(any){ playCollectSound(first||'gold'); toast('🧺 Todo recogido'); } afterChange(); }
 function checkQuest(){
   const q=QUESTS[S.quest]; if(!q) return;
   if(q.test(S)){ Object.keys(q.rew).forEach(k=>S.res[k]+=q.rew[k]); S.quest++;
@@ -342,12 +605,29 @@ function checkQuest(){
 function afterChange(){ checkQuest(); refreshHUD(); save(); }
 
 /* ================= producción y regreso ================= */
+/* Cadena: la Granja produce trigo (se recoge al almacén); el Molino muele
+   trigo del almacén y guarda harina; la Panadería hornea pan con la harina
+   guardada en los molinos. La harina nunca entra al almacén del jugador. */
 function accrue(dtSec){
-  for(const p of S.plots){ if(p.b&&p.b.type!=='hall'){ p.b.stored=Math.min(bCap(p.b),p.b.stored+prodRate(p.b)*dtSec); } }
+  for(const p of S.plots){ if(p.b&&p.b.type!=='hall'&&BUILDINGS[p.b.type].kind!=='converter'&&BUILDINGS[p.b.type].makes){ p.b.stored=Math.min(bCap(p.b),p.b.stored+prodRate(p.b)*dtSec); } }
+  for(const p of S.plots){ if(p.b&&p.b.type==='mill'){ const want=prodRate(p.b)*dtSec, room=bCap(p.b)-p.b.stored;
+    const make=Math.max(0,Math.min(want,room,S.res.wheat||0)); p.b.stored+=make; S.res.wheat-=make; } }
+  for(const p of S.plots){ if(p.b&&p.b.type==='bakery'){ let want=Math.min(prodRate(p.b)*dtSec,bCap(p.b)-p.b.stored); let need=want;
+    for(const q of S.plots){ if(need<=0) break; if(q.b&&q.b.type==='mill'&&q.b.stored>0){ const take=Math.min(need,q.b.stored); q.b.stored-=take; need-=take; } }
+    p.b.stored+=want-need; } }
 }
 function offlineGains(elapsedSec){
-  const cap=8*3600, sec=Math.min(elapsedSec,cap), totals={wood:0,stone:0,gold:0};
-  for(const p of S.plots){ if(p.b&&p.b.type!=='hall'){ const d=BUILDINGS[p.b.type]; totals[d.makes]+=Math.floor(Math.min(bCap(p.b)-p.b.stored,prodRate(p.b)*sec)); } }
+  const cap=8*3600, sec=Math.min(elapsedSec,cap), totals={wood:0,stone:0,gold:0,wheat:0,bread:0};
+  let wheat=S.res.wheat||0; const millFlour=new Map();
+  for(let idx=0;idx<S.plots.length;idx++){ const p=S.plots[idx];
+    if(p.b&&p.b.type!=='hall'&&BUILDINGS[p.b.type].kind!=='converter'&&BUILDINGS[p.b.type].makes){ const d=BUILDINGS[p.b.type];
+      totals[d.makes]+=Math.floor(Math.min(bCap(p.b)-p.b.stored,prodRate(p.b)*sec)); } }
+  for(let idx=0;idx<S.plots.length;idx++){ const p=S.plots[idx];
+    if(p.b&&p.b.type==='mill'){ const make=Math.min(prodRate(p.b)*sec,bCap(p.b)-p.b.stored,wheat);
+      wheat-=Math.max(0,make); millFlour.set(idx,p.b.stored+Math.max(0,make)); } }
+  for(const p of S.plots){ if(p.b&&p.b.type==='bakery'){ let need=Math.min(prodRate(p.b)*sec,bCap(p.b)-p.b.stored), want=need;
+    for(const [idx,fl] of millFlour){ if(need<=0) break; const take=Math.min(need,fl); millFlour.set(idx,fl-take); need-=take; }
+    totals.bread+=Math.floor(want-need); } }
   return {sec,totals};
 }
 
@@ -375,7 +655,11 @@ renderer.domElement.addEventListener('pointerup',ev=>{
   openSheet(i);
 });
 $('sheetX').addEventListener('click',closeSheet);
+$('pillDaily').addEventListener('click',()=>{ sfx.tap(); openDaily(); });
+$('btnDailyClose').addEventListener('click',()=>$('dailyOverlay').classList.add('hidden'));
+$('btnDailyClaim').addEventListener('click',()=>{ if(claimDaily()) openDaily(); });
 $('pillAll').addEventListener('click',collectAll);
+$('pillShare').addEventListener('click',()=>{ sfx.tap(); shareVillage(); });
 $('quest').addEventListener('click',()=>{ const q=QUESTS[S.quest]; toast(q?('🎯 '+q.txt):'🏆 Aldea en marcha: construye a tu ritmo',2200); });
 addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); placeCamera(); });
 document.addEventListener('visibilitychange',()=>{ if(document.hidden) save(); });
@@ -389,7 +673,11 @@ function loop(now){
     acc+=dt; saveT+=dt;
     if(acc>=0.25){ accrue(acc); acc=0; if(selPlot>=0){ const p=S.plots[selPlot]; if(p.b&&p.b.type!=='hall'){ /* la ficha se refresca al tocar */ } } }
     if(saveT>=5){ saveT=0; save(); }
+    fullFxT+=dt; if(fullFxT>=0.7){ fullFxT=0; spawnFullParticles(); }
   }
+  updateDaylight(dt);
+  if(S&&S.started) updateVillagers(dt);
+  if(S&&S.started) updateGrows(dt);
   for(const m of parts){ m.userData.t+=dt; const u=m.userData;
     m.position.x+=u.vx*dt; m.position.y+=u.vy*dt; m.position.z+=u.vz*dt; u.vy-=3*dt;
     m.material.opacity=1-u.t/u.life; if(u.t>=u.life){ m.userData.gone=true; scene.remove(m); } }
@@ -398,7 +686,7 @@ function loop(now){
 }
 (async function init(){
   const had=load();
-  try{ await buildBoard(); await refreshAllPlots(); }catch(e){ console.log('board',e); }
+  try{ await buildBoard(); await refreshAllPlots(); spawnVillagers(); }catch(e){ console.log('board',e); }
   ['tower-round-bottom-a','wood-structure','detail-rocks-large','tower-square-bottom-a'].forEach(n=>loadModel(n).catch(()=>{}));
   $('load').style.display='none';
   refreshHUD();
@@ -406,9 +694,10 @@ function loop(now){
   if(had&&S.started){
     const elapsed=(Date.now()-(S.t||Date.now()))/1000;
     if(elapsed>120){ const g=offlineGains(elapsed); accrue(Math.min(elapsed,8*3600)); // aplicar lo producido fuera a cada edificio
-      const tot=g.totals.wood+g.totals.stone+g.totals.gold;
+      const tot=g.totals.wood+g.totals.stone+g.totals.gold+g.totals.wheat+g.totals.bread;
       if(tot>0){ const h=Math.floor(g.sec/3600), m=Math.round((g.sec%3600)/60);
-        $('backTxt').innerHTML='Mientras no estabas ('+(h>0?h+' h ':'')+m+' min), tu aldea ha producido:<br><br>🪵 '+g.totals.wood+' madera · 🪨 '+g.totals.stone+' piedra · 🪙 '+g.totals.gold+' oro<br><br><span style="font-size:.78rem">Está guardado en cada edificio: recógelo todo de una vez.</span>';
+        const partsTxt=[]; if(g.totals.wood) partsTxt.push('🪵 '+g.totals.wood+' madera'); if(g.totals.stone) partsTxt.push('🪨 '+g.totals.stone+' piedra'); if(g.totals.gold) partsTxt.push('🪙 '+g.totals.gold+' oro'); if(g.totals.wheat) partsTxt.push('🌾 '+g.totals.wheat+' trigo'); if(g.totals.bread) partsTxt.push('🍞 '+g.totals.bread+' pan');
+        $('backTxt').innerHTML='Mientras no estabas ('+(h>0?h+' h ':'')+m+' min), tu aldea ha producido:<br><br>'+partsTxt.join(' · ')+'<br><br><span style="font-size:.78rem">Está guardado en cada edificio: recógelo todo de una vez.</span>';
         $('backOverlay').classList.remove('hidden');
         $('btnBack').addEventListener('click',()=>{ $('backOverlay').classList.add('hidden'); collectAll(); },{once:true});
       }
@@ -417,6 +706,8 @@ function loop(now){
   $('btnStart').addEventListener('click',()=>{ $('introOverlay').classList.add('hidden'); S.started=true; sfx.build(); save(); });
   if(!had||S.started) $('introOverlay').classList.remove('hidden');
   if(had&&S.started) $('introOverlay').classList.add('hidden');
+  // aviso al entrar: si el cofre diario está listo, se anuncia al entrar
+  if(had&&S.started){ try{ if(dailyInfo().available) setTimeout(()=>toast('🎁 ¡Tu cofre diario está listo! Toca 🎁 arriba para recogerlo.',2800),1400); }catch(e){} }
   requestAnimationFrame(loop);
 })();
 </script>
