@@ -42,6 +42,10 @@
   .buildcard .ds{font-size:.64rem;color:#7a5c14;line-height:1.3;min-height:2.5em}
   .buildcard .cost{font-weight:900;font-size:.74rem;color:#b8860b}
   .buildcard.poor{opacity:.5}
+  #buildLabels{position:fixed;inset:0;pointer-events:none;z-index:4;overflow:hidden}
+  .blab{position:absolute;transform:translate(-50%,-135%);background:rgba(18,32,24,.88);color:#ffe98a;border:2px solid rgba(255,210,60,.65);border-radius:99px;padding:3px 9px;font-weight:900;font-size:.78rem;white-space:nowrap;display:none}
+  .bar{height:12px;background:#e8d9ae;border-radius:99px;overflow:hidden;flex:1;min-width:170px;align-self:center}
+  .bar>i{display:block;height:100%;background:linear-gradient(90deg,#f5a623,#ffd23c);width:0%}
   .overlay{position:fixed;inset:0;background:rgba(10,24,16,.55);display:flex;align-items:center;justify-content:center;z-index:9;padding:14px}
   .overlay.hidden{display:none}
   .panel{background:linear-gradient(170deg,#fffdf4,#ffe9b8);border:4px solid #d8a94e;border-radius:24px;padding:22px 24px;text-align:center;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,.45)}
@@ -49,6 +53,9 @@
   .panel h2{font-size:1.3rem;color:#2e6b1e}
   .panel p{color:#5c4a12;margin:8px 0 13px;font-size:.92rem;line-height:1.45}
   .panel .btn{flex:none;min-width:170px}
+  #inviteOverlay .panel{max-height:calc(100vh - 28px);overflow-y:auto}
+  #inviteOverlay input{width:100%;padding:10px;border:2px solid #e3cf9a;border-radius:12px;font:900 1rem 'Trebuchet MS',sans-serif;text-align:center;letter-spacing:2px;text-transform:uppercase;margin:4px 0 8px;color:#4a3200;background:#fff}
+  #inviteOverlay label{display:block;text-align:left;font-size:.78rem;font-weight:900;color:#7a5c14;margin-top:10px}
   #load{position:fixed;inset:0;background:linear-gradient(180deg,#79c7f2,#cdeffd);z-index:20;display:flex;align-items:center;justify-content:center;color:#14532d;font-weight:900;font-size:1.05rem}
   @media (max-width:560px){ #quest{top:96px} #toast{top:142px} }
 </style>
@@ -66,9 +73,11 @@
   <div class="spacer"></div>
   <div class="pill" id="pillAll" style="cursor:pointer;pointer-events:auto">🧺 Recoger todo</div>
   <div class="pill" id="pillShare" style="cursor:pointer;pointer-events:auto">📤 Compartir</div>
+  <div class="pill" id="pillInvite" style="cursor:pointer;pointer-events:auto">👥 Invitar</div>
 </div>
 <div id="quest">🎯 <span id="questTxt">…</span></div>
 <div id="toast"></div>
+<div id="buildLabels"></div>
 
 <div class="sheet" id="sheet">
   <h3><span id="sheetTitle">Parcela</span><button class="x" id="sheetX" type="button">✕</button></h3>
@@ -81,7 +90,7 @@
     <h1>🏗️ Aldea en Obras</h1>
     <p id="introTxt">Levanta tu aldea desde una parcelita: construye el aserradero, la cantera y el mercado, recoge lo que producen y haz crecer tu pueblo. Tu aldea trabaja <b>aunque no estés</b>.</p>
     <button class="btn" id="btnStart" type="button">▶ A CONSTRUIR</button>
-    <p style="font-size:.7rem;color:#8a6d1f;margin-top:11px">Modelos 3D de packs gratuitos (CC0) de Kenney: Tower Defense Kit, Fantasy Town Kit y Nature Kit · kenney.nl · Vecinos: KayKit Character Pack: Adventurers (Kay Lousberg, CC0)</p>
+    <p style="font-size:.7rem;color:#8a6d1f;margin-top:11px">Modelos 3D de packs gratuitos (CC0) de Kenney: Tower Defense Kit, Fantasy Town Kit y Kenney Nature Kit (CC0) · kenney.nl · Vecinos: KayKit Character Pack: Adventurers (Kay Lousberg, CC0)</p>
   </div>
 </div>
 <div class="overlay hidden" id="backOverlay">
@@ -89,6 +98,31 @@
     <h2>🌅 ¡Bienvenido de vuelta!</h2>
     <p id="backTxt"></p>
     <button class="btn gold" id="btnBack" type="button">🧺 Recogerlo todo</button>
+  </div>
+</div>
+<div class="overlay hidden" id="inviteOverlay">
+  <div class="panel">
+    <h2>👥 Invitar amigos</h2>
+    <p>Comparte tu código: cuando un amigo lo canjea, él gana un premio y tú recibes un <b>código de vuelta</b> para cobrar tu premio de anfitrión. Sin servidor: los códigos se cruzan entre vosotros.</p>
+    <p>Tu código: <b id="inviteMyCode" style="font-size:1.25rem;letter-spacing:3px;color:#2e6b1e">······</b></p>
+    <div class="row">
+      <button class="btn blue" id="btnInviteCopy" type="button">📋 Copiar código</button>
+      <button class="btn gold" id="btnInviteShare" type="button">📤 Compartir mi enlace</button>
+    </div>
+    <div id="inviteReturnBox" style="display:none;margin-top:10px;background:#fff;border:2px solid #d8a94e;border-radius:12px;padding:8px 10px">
+      <div style="font-size:.78rem;font-weight:900;color:#7a5c14">🔁 Tu código de vuelta para tu amigo (pásaselo y que lo canjee):</div>
+      <div id="inviteReturnCode" style="font-weight:900;letter-spacing:2px;color:#2e6b1e;font-size:.95rem;word-break:break-all"></div>
+      <button class="btn blue" id="btnInviteCopyReturn" type="button" style="margin-top:6px">📋 Copiar código de vuelta</button>
+    </div>
+    <label for="inviteFriendInput">🎁 Código de un amigo</label>
+    <input id="inviteFriendInput" type="text" maxlength="14" placeholder="ABC123" autocomplete="off">
+    <button class="btn gold" id="btnInviteFriend" type="button" style="width:100%">🎁 Canjear código de amigo · +100 🪙 +40 🪵 +40 🪨</button>
+    <label for="inviteReturnInput">🏆 Código de vuelta de un amigo</label>
+    <input id="inviteReturnInput" type="text" maxlength="20" placeholder="RABC123…" autocomplete="off">
+    <button class="btn" id="btnInviteReturn" type="button" style="width:100%">🏆 Cobrar premio de anfitrión · +150 🪙 +50 🪵 +50 🪨</button>
+    <p id="inviteMsg" style="font-weight:900"></p>
+    <p id="inviteStats" style="font-size:.78rem"></p>
+    <button class="btn blue" id="btnInviteClose" type="button">Cerrar</button>
   </div>
 </div>
 <div class="overlay hidden" id="dailyOverlay">
@@ -106,7 +140,7 @@
 <script src="lib/GLTFLoader.js"></script>
 <script>
 'use strict';
-/* ================= ALDEA EN OBRAS · v2.1 (compartir: botón 📤 con el enlace del bot y el nivel del pueblo) ================= */
+/* ================= ALDEA EN OBRAS · v2.2 (obras con tiempo real y contador + terreno ampliado — pedido de Felix) ================= */
 /* ================= compartir mi aldea (2.1) ================= */
 /* Botón 📤 en el HUD: abre el compartir de Telegram (t.me/share/url) con
    el enlace del bot @AldeaEnObrasBot y un texto con el nivel actual del
@@ -130,6 +164,83 @@ function shareVillage(){
   lastShare={url:SHARE_BOT_URL,text:text,shareUrl:shareUrl,method:method};
   return lastShare;
 }
+/* ================= invitaciones con premio (2.2) ================= */
+/* Sin servidor: cada partida tiene un código personal de 6 letras (se
+   genera al migrar partidas viejas y queda guardado en S.inviteCode).
+   - Un amigo canjea tu código → él gana +100 🪙 +40 🪵 +40 🪨 y recibe
+     un CÓDIGO DE VUELTA: 'R' + tu código + su código + un dígito de
+     control (checksum de ambos códigos). Él te lo pasa y tú lo canjeas.
+   - Al canjear un código de vuelta, el juego comprueba que los 6
+     primeros caracteres sean TU código, que el dígito de control cuadre
+     y que ese amigo no te haya dado ya su premio → +150 🪙 +50 🪵 +50 🪨.
+   - El enlace personal es t.me/AldeaEnObrasBot?start=ref_CÓDIGO: al
+     entrar por él, Telegram entrega el código en el start_param y el
+     premio de invitado se cobra solo (applyStartParam en init).
+   lastInviteResult/lastInviteShare son sondas de verificación. */
+const INV_ALPH='ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // sin I, L, O, 0 ni 1 para no confundir
+const INVITE_GIFT={gold:100,wood:40,stone:40};
+const HOST_REWARD={gold:150,wood:50,stone:50};
+let lastInviteResult=null, lastInviteShare=null, lastInviteCopy=null;
+function genInviteCode(){ let c=''; for(let i=0;i<6;i++) c+=INV_ALPH[Math.floor(Math.random()*INV_ALPH.length)]; return c; }
+function validInviteCode(c){ return typeof c==='string'&&/^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{6}$/.test(c); }
+function inviteCheck(host,friend){ let s=0; const str=host+friend; for(let i=0;i<str.length;i++) s+=str.charCodeAt(i)*(i+1); return INV_ALPH[s%INV_ALPH.length]; }
+function makeReturnCode(host,friend){ return 'R'+host+friend+inviteCheck(host,friend); }
+function cleanCode(raw){ return (raw||'').toUpperCase().replace(/[^A-Z0-9]/g,''); }
+function redeemFriendCode(raw){
+  const code=cleanCode(raw);
+  if(!validInviteCode(code)) return lastInviteResult={ok:false,reason:'formato'};
+  if(code===S.inviteCode) return lastInviteResult={ok:false,reason:'propio'};
+  if(S.invites.used.indexOf(code)>=0) return lastInviteResult={ok:false,reason:'usado'};
+  S.invites.used.push(code);
+  Object.keys(INVITE_GIFT).forEach(k=>S.res[k]+=INVITE_GIFT[k]);
+  const ret=makeReturnCode(code,S.inviteCode);
+  S.invites.pendingReturn=ret;
+  sfx.quest(); afterChange();
+  return lastInviteResult={ok:true,gift:INVITE_GIFT,returnCode:ret};
+}
+function redeemReturnCode(raw){
+  const code=cleanCode(raw);
+  if(code.length!==14||code[0]!=='R') return lastInviteResult={ok:false,reason:'formato'};
+  const host=code.slice(1,7), friend=code.slice(7,13), chk=code[13];
+  if(host!==S.inviteCode) return lastInviteResult={ok:false,reason:'no-es-tuyo'};
+  if(chk!==inviteCheck(host,friend)) return lastInviteResult={ok:false,reason:'firma'};
+  if(S.invites.rewarded.indexOf(friend)>=0) return lastInviteResult={ok:false,reason:'usado'};
+  S.invites.rewarded.push(friend);
+  Object.keys(HOST_REWARD).forEach(k=>S.res[k]+=HOST_REWARD[k]);
+  sfx.quest(); afterChange();
+  return lastInviteResult={ok:true,reward:HOST_REWARD,friend:friend};
+}
+function applyStartParam(sp){
+  const m=/^ref_([A-Z0-9]{6})$/i.exec((sp||'').trim());
+  if(!m) return lastInviteResult={ok:false,reason:'sin-codigo'};
+  return redeemFriendCode(m[1]);
+}
+function shareInvite(){
+  const code=S.inviteCode;
+  const link=SHARE_BOT_URL+'?start=ref_'+code;
+  const text='🏗️ ¡Ven a mi aldea en Aldea en Obras! Entra con mi código '+code+' y los dos ganamos premios 🎁';
+  const shareUrl='https://t.me/share/url?url='+encodeURIComponent(link)+'&text='+encodeURIComponent(text);
+  let method='link';
+  try{
+    if(window.Telegram&&Telegram.WebApp&&typeof Telegram.WebApp.openTelegramLink==='function'){ Telegram.WebApp.openTelegramLink(shareUrl); method='telegram'; toast('📤 Abriendo el compartir de Telegram…',2200); }
+    else if(navigator.share){ navigator.share({title:'Aldea en Obras',text:text,url:link}).catch(()=>{}); method='webshare'; toast('📤 Comparte tu enlace desde el menú del sistema',2200); }
+    else if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(text+' '+link).catch(()=>{}); method='clipboard'; toast('🔗 Enlace de invitación copiado: pégalo en Telegram',2600); }
+    else { window.open(shareUrl,'_blank'); method='link'; toast('📤 Abriendo el compartir de Telegram…',2200); }
+  }catch(e){ method='link'; }
+  lastInviteShare={link:link,code:code,text:text,shareUrl:shareUrl,method:method};
+  return lastInviteShare;
+}
+function openInvite(){
+  $('inviteMyCode').textContent=S.inviteCode;
+  $('inviteFriendInput').value=''; $('inviteReturnInput').value='';
+  $('inviteMsg').textContent='';
+  $('inviteStats').textContent='Códigos de amigos canjeados: '+S.invites.used.length+' · Premios de anfitrión cobrados: '+S.invites.rewarded.length;
+  const box=$('inviteReturnBox');
+  if(S.invites.pendingReturn){ box.style.display='block'; $('inviteReturnCode').textContent=S.invites.pendingReturn; }
+  else box.style.display='none';
+  $('inviteOverlay').classList.remove('hidden');
+}
+function inviteMsg(txt,ok){ const el=$('inviteMsg'); el.textContent=txt; el.style.color=ok?'#2e6b1e':'#a33'; }
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const SAVE_KEY='aldea-en-obras-v1';
@@ -162,7 +273,7 @@ function updateGrows(dt){ for(let i=grows.length-1;i>=0;i--){ const a=grows[i]; 
   a.g.scale.setScalar(a.base*(0.15+0.85*ease)); if(k>=1){ a.g.scale.setScalar(a.base); grows.splice(i,1); } } }
 let fullBursts=0, fullFxT=0;
 function spawnFullParticles(){
-  for(let i=0;i<S.plots.length;i++){ const p=S.plots[i]; if(!p.b) continue; const d=BUILDINGS[p.b.type];
+  for(let i=0;i<S.plots.length;i++){ const p=S.plots[i]; if(!p.b||isBuilding(p.b)) continue; const d=BUILDINGS[p.b.type];
     if(!d.makes&&d.kind!=='converter') continue; if(bCap(p.b)<=0||p.b.stored<bCap(p.b)-0.01) continue;
     const gx=i%COLS, gz=Math.floor(i/COLS);
     burst(px2w(gx),1.25,pz2w(gz),d.makes==='gold'?0xffd23c:(d.makes==='wood'?0xd8a94e:(d.makes==='wheat'?0xf2d06b:(d.makes==='bread'?0xd88f4a:0xcfd8dc))),4);
@@ -195,27 +306,27 @@ const BUILDINGS={
            cost:{wood:40,gold:60}, needsTown:3 }
 };
 const QUESTS=[
-  { txt:'Construye un Aserradero', test:s=>s.plots.some(p=>p.b&&p.b.type==='sawmill'), rew:{gold:20} },
+  { txt:'Construye un Aserradero', test:s=>s.plots.some(p=>p.b&&!isBuilding(p.b)&&p.b.type==='sawmill'), rew:{gold:20} },
   { txt:'Ten 60 de madera en el almacén', test:s=>s.res.wood>=60, rew:{stone:15} },
-  { txt:'Construye una Cantera', test:s=>s.plots.some(p=>p.b&&p.b.type==='quarry'), rew:{gold:30} },
-  { txt:'Mejora cualquier edificio al nivel 2', test:s=>s.plots.some(p=>p.b&&p.b.lvl>=2), rew:{gold:25} },
+  { txt:'Construye una Cantera', test:s=>s.plots.some(p=>p.b&&!isBuilding(p.b)&&p.b.type==='quarry'), rew:{gold:30} },
+  { txt:'Mejora cualquier edificio al nivel 2', test:s=>s.plots.some(p=>p.b&&!isBuilding(p.b)&&p.b.lvl>=2), rew:{gold:25} },
   { txt:'Sube el Ayuntamiento al nivel 2', test:s=>townLvl()>=2, rew:{wood:40} },
-  { txt:'Construye un Mercado', test:s=>s.plots.some(p=>p.b&&p.b.type==='market'), rew:{gold:60} },
-  { txt:'Construye una Granja', test:s=>s.plots.some(p=>p.b&&p.b.type==='farm'), rew:{gold:40} },
+  { txt:'Construye un Mercado', test:s=>s.plots.some(p=>p.b&&!isBuilding(p.b)&&p.b.type==='market'), rew:{gold:60} },
+  { txt:'Construye una Granja', test:s=>s.plots.some(p=>p.b&&!isBuilding(p.b)&&p.b.type==='farm'), rew:{gold:40} },
   { txt:'Recoge 20 de trigo en el almacén', test:s=>s.res.wheat>=20, rew:{gold:30} },
-  { txt:'Construye un Molino', test:s=>s.plots.some(p=>p.b&&p.b.type==='mill'), rew:{wheat:20} },
-  { txt:'Construye una Panadería', test:s=>s.plots.some(p=>p.b&&p.b.type==='bakery'), rew:{gold:80} },
+  { txt:'Construye un Molino', test:s=>s.plots.some(p=>p.b&&!isBuilding(p.b)&&p.b.type==='mill'), rew:{wheat:20} },
+  { txt:'Construye una Panadería', test:s=>s.plots.some(p=>p.b&&!isBuilding(p.b)&&p.b.type==='bakery'), rew:{gold:80} },
   { txt:'Vende pan en el Mercado', test:s=>!!s.soldBread, rew:{gold:100} },
-  { txt:'Construye un Almacén', test:s=>s.plots.some(p=>p.b&&p.b.type==='warehouse'), rew:{wood:40} },
-  { txt:'Construye un Taller', test:s=>s.plots.some(p=>p.b&&p.b.type==='workshop'), rew:{stone:40} },
+  { txt:'Construye un Almacén', test:s=>s.plots.some(p=>p.b&&!isBuilding(p.b)&&p.b.type==='warehouse'), rew:{wood:40} },
+  { txt:'Construye un Taller', test:s=>s.plots.some(p=>p.b&&!isBuilding(p.b)&&p.b.type==='workshop'), rew:{stone:40} },
   { txt:'Sube el pueblo al nivel 6', test:s=>townLvl()>=6, rew:{gold:150} }
 ];
 function prodRate(b){ const d=BUILDINGS[b.type]; if(!d.perMin) return 0; return d.perMin*Math.pow(1.8,b.lvl-1)/60; } // por segundo
 /* 1.4: el Almacén sube los topes (+250 por nivel y almacén) y el Taller
    descuenta las mejoras (5% por nivel, máx. 50%). Ambos se suman por
    edificio construido, así que más de uno sigue valiendo la pena. */
-function warehouseBonus(){ if(!S) return 0; let t=0; for(const p of S.plots) if(p.b&&p.b.type==='warehouse') t+=p.b.lvl*250; return t; }
-function workshopDiscount(){ if(!S) return 0; let t=0; for(const p of S.plots) if(p.b&&p.b.type==='workshop') t+=p.b.lvl; return Math.min(0.5,t*0.05); }
+function warehouseBonus(){ if(!S) return 0; let t=0; for(const p of S.plots) if(p.b&&p.b.type==='warehouse'&&!isBuilding(p.b)) t+=p.b.lvl*250; return t; }
+function workshopDiscount(){ if(!S) return 0; let t=0; for(const p of S.plots) if(p.b&&p.b.type==='workshop'&&!isBuilding(p.b)) t+=p.b.lvl; return Math.min(0.5,t*0.05); }
 function storeCap(town){ return 200+150*(town-1)+warehouseBonus(); }
 function bCap(b){ return prodRate(b)*60*30; } // 30 minutos de producción por edificio
 function upCost(b){
@@ -232,7 +343,68 @@ function upCost(b){
   const disc=workshopDiscount(); if(disc>0) Object.keys(c).forEach(k=>{ c[k]=Math.max(1,Math.floor(c[k]*(1-disc))); });
   return c;
 }
-function totalFlour(){ let t=0; for(const p of S.plots) if(p.b&&p.b.type==='mill') t+=p.b.stored; return t; }
+function totalFlour(){ let t=0; for(const p of S.plots) if(p.b&&p.b.type==='mill'&&!isBuilding(p.b)) t+=p.b.stored; return t; }
+/* ================= obras con tiempo real (pedido de Felix, 2026-10-27) ================= */
+/* Tiempos COPIADOS de otros juegos del género (informe
+   research_notes/tiempos-construccion-juegos-aldea-20261027-1344):
+   construir — Aserradero 10 s (Hay Day, Bakery), Cantera 40 s (Hay Day /
+   Township, Feed Mill), Granja 10 min (Township, School), Mercado 1 h
+   (Township, Dairy), Molino 2 h (Township, Sugar), Panadería 6 h
+   (Township, Textile / Hay Day, Sugar Mill), Almacén 8 h (Hay Day,
+   Popcorn Pot), Taller 12 h (Township, Snack). Mejorar — escalera actual
+   del Cañón de Clash of Clans por nivel alcanzado (Nv2 30 s … Nv10 4 h).
+   La obra se guarda como marca absoluta (b.until, ms) + duración
+   (b.durMs); al mejorar, el nivel nuevo espera en b.pendingLvl y solo se
+   aplica al terminar. Sin b.until válido = edificio terminado, así las
+   partidas anteriores cargan intactas sin migración especial. */
+const BUILD_TIMES={ sawmill:10, quarry:40, farm:600, market:3600, mill:7200, bakery:21600, warehouse:28800, workshop:43200 };
+const UPGRADE_TIMES={ 2:30, 3:120, 4:1200, 5:1800, 6:3600, 7:7200, 8:10800, 9:12600, 10:14400 };
+function fmtDur(sec){ sec=Math.round(sec); if(sec<60) return sec+' s'; if(sec<3600){ const m=Math.floor(sec/60), r=sec%60; return r?m+' min '+r+' s':m+' min'; } const h=Math.floor(sec/3600); let m=Math.round((sec%3600)/60); if(m===60) return (h+1)+' h'; return m?h+' h '+String(m).padStart(2,'0')+' min':h+' h'; }
+function fmtClock(ms){ let s=Math.max(0,Math.ceil(ms/1000)); const d=Math.floor(s/86400); s%=86400; const h=Math.floor(s/3600), m=Math.floor((s%3600)/60), ss=s%60, p2=n=>String(n).padStart(2,'0'); if(d>0) return d+'d '+p2(h)+':'+p2(m)+':'+p2(ss); if(h>0) return h+':'+p2(m)+':'+p2(ss); return p2(m)+':'+p2(ss); }
+function isBuilding(b){ return !!(b&&typeof b.until==='number'&&b.until>Date.now()); }
+let lastFinished=null, finishing=false;
+async function finishWorks(){
+  if(!S||finishing) return; finishing=true;
+  try{
+    let changed=false;
+    for(let i=0;i<S.plots.length;i++){ const p=S.plots[i], b=p&&p.b; if(!b||typeof b.until!=='number'||b.until>Date.now()) continue;
+      const wasUp=!!b.pendingLvl;
+      if(b.pendingLvl){ b.lvl=b.pendingLvl; delete b.pendingLvl; }
+      delete b.until; delete b.durMs; changed=true;
+      lastFinished={i,type:b.type,lvl:b.lvl,upgrade:wasUp};
+      // primero la lógica (misiones y guardado), luego lo visual: que una
+      // carga lenta del modelo no retrase la entrega de la obra
+      afterChange();
+      if(b.type==='hall'){ toast('🏰 ¡El Ayuntamiento terminó! El pueblo sube al nivel '+townLvl(),2600); sfx.quest(); }
+      else { toast('✅ '+(BUILDINGS[b.type]?BUILDINGS[b.type].name:b.type)+' terminado'+(wasUp?' · Nv '+b.lvl:''),2400); sfx.build(); }
+      await refreshPlot(i); growPlot(i);
+      if(b.type==='hall') rebuildBoardTiles();
+      if(selPlot===i) openSheet(i);
+    }
+  } finally { finishing=false; }
+}
+function tickBuilds(){ if(!S) return; for(const p of S.plots){ if(p.b&&typeof p.b.until==='number'&&p.b.until<=Date.now()){ finishWorks(); return; } } }
+/* Etiquetas flotantes ⏳ sobre cada parcela en obras: se proyecta la
+   posición 3D a pantalla en cada fotograma del bucle. */
+const buildLabels={}; let sheetCountEl=null, sheetBarEl=null;
+const _bv=new THREE.Vector3();
+function buildLabel(i){ if(buildLabels[i]) return buildLabels[i];
+  const el=document.createElement('div'); el.className='blab'; $('buildLabels').appendChild(el); buildLabels[i]=el; return el; }
+function updateBuildLabels(){
+  if(!S) return;
+  for(let i=0;i<S.plots.length;i++){ const b=S.plots[i].b; const lab=buildLabels[i];
+    if(!b||!isBuilding(b)){ if(lab) lab.style.display='none'; if(selPlot===i){ sheetCountEl=null; sheetBarEl=null; } continue; }
+    const el=lab||buildLabel(i);
+    _bv.set(px2w(i%COLS),1.8,pz2w(Math.floor(i/COLS))); _bv.project(camera);
+    if(_bv.z>1){ el.style.display='none'; continue; }
+    el.style.display='block';
+    el.style.left=((_bv.x*0.5+0.5)*innerWidth)+'px'; el.style.top=((-_bv.y*0.5+0.5)*innerHeight)+'px';
+    const txt='⏳ '+fmtClock(b.until-Date.now()); if(el.textContent!==txt) el.textContent=txt;
+    if(selPlot===i&&sheetCountEl){ sheetCountEl.textContent=fmtClock(b.until-Date.now());
+      const st=b.until-(b.durMs||0), k=clamp((Date.now()-st)/Math.max(1,(b.durMs||1)),0,1);
+      if(sheetBarEl) sheetBarEl.style.width=(k*100).toFixed(1)+'%'; }
+  }
+}
 /* ================= recompensa diaria (1.2) ================= */
 /* Un cofre al día, con racha: si reclamas días seguidos la racha sube y el
    premio crece; el día 7 es el mejor y el ciclo vuelve a empezar. Sin
@@ -281,7 +453,7 @@ let S=null;
 function newState(){
   const plots=[]; for(let i=0;i<COLS*ROWS;i++) plots.push({b:null});
   plots[12].b={type:'hall',lvl:1,stored:0}; // parcela central: el Ayuntamiento
-  return { res:{wood:40,stone:10,gold:60,wheat:0,bread:0}, plots, quest:0, daily:{lastClaim:null,streak:0}, t:Date.now(), started:false };
+  return { res:{wood:40,stone:10,gold:60,wheat:0,bread:0}, plots, quest:0, daily:{lastClaim:null,streak:0}, inviteCode:genInviteCode(), invites:{used:[],rewarded:[],pendingReturn:null}, t:Date.now(), started:false };
 }
 function townLvl(){ const h=S.plots.find(p=>p.b&&p.b.type==='hall'); return h?h.b.lvl:1; }
 function hallIndex(){ const i=S.plots.findIndex(p=>p.b&&p.b.type==='hall'); return i>=0?i:12; }
@@ -305,10 +477,18 @@ function load(){
     if(typeof S.res.bread!=='number') S.res.bread=0;
     // migración v1.1 → v1.2: el cofre diario llega vacío, sin romper la racha (no había)
     if(!S.daily||typeof S.daily.streak!=='number') S.daily={lastClaim:null,streak:0};
+    // migración v2.2 → v2.3: las invitaciones llegan con código personal
+    // nuevo (6 letras) y listas vacías; una partida vieja no pierde nada
+    if(!validInviteCode(S.inviteCode)) S.inviteCode=genInviteCode();
+    if(!S.invites||!Array.isArray(S.invites.used)||!Array.isArray(S.invites.rewarded))
+      S.invites={used:(S.invites&&Array.isArray(S.invites.used))?S.invites.used:[],rewarded:(S.invites&&Array.isArray(S.invites.rewarded))?S.invites.rewarded:[],pendingReturn:(S.invites&&typeof S.invites.pendingReturn==='string')?S.invites.pendingReturn:null};
     if(typeof S.daily.lastClaim==='undefined') S.daily.lastClaim=null;
     // migración v1.2 → v1.3: ninguna — los vecinos y el ciclo de luz se
     // derivan de los edificios y no guardan nada en la partida
     S.plots.forEach(p=>{ if(p.b&&typeof p.b.stored!=='number') p.b.stored=0; });
+    // migración obras (v2.2): sin b.until numérico = terminado; los campos
+    // de obra mal formados se limpian y la partida sigue intacta
+    S.plots.forEach(p=>{ if(p.b){ if(typeof p.b.until!=='number') delete p.b.until; if(typeof p.b.pendingLvl!=='number') delete p.b.pendingLvl; if(typeof p.b.durMs!=='number') delete p.b.durMs; } });
     return true; } }catch(e){}
   S=newState(); return false;
 }
@@ -332,8 +512,9 @@ sun.position.set(7,13,5); sun.castShadow=true;
 sun.shadow.mapSize.set(2048,2048);
 sun.shadow.camera.left=-8; sun.shadow.camera.right=8; sun.shadow.camera.top=8; sun.shadow.camera.bottom=-8; sun.shadow.camera.far=32;
 scene.add(sun);
-{ const g=new THREE.Mesh(new THREE.CircleGeometry(15,40),new THREE.MeshStandardMaterial({color:0x63b84b,roughness:1}));
-  g.rotation.x=-Math.PI/2; g.position.y=-0.07; g.receiveShadow=true; scene.add(g); }
+let groundMesh=null;
+{ const g=new THREE.Mesh(new THREE.CircleGeometry(26,48),new THREE.MeshStandardMaterial({color:0x63b84b,roughness:1}));
+  g.rotation.x=-Math.PI/2; g.position.y=-0.07; g.receiveShadow=true; scene.add(g); groundMesh=g; }
 
 const loader=new THREE.GLTFLoader(); const cache={};
 function loadModel(name){ if(!cache[name]) cache[name]=new Promise((res,rej)=>loader.load('assets/models/'+name+'.glb',g=>res(g.scene),undefined,rej)); return cache[name]; }
@@ -397,6 +578,7 @@ async function refreshPlot(i){
   const gx=i%COLS, gz=Math.floor(i/COLS), key=i;
   if(plotGroups[key]){ scene.remove(plotGroups[key]); delete plotGroups[key]; }
   const p=S.plots[i]; if(!p.b) return;
+  if(isBuilding(p.b)){ const grp=new THREE.Group(); const sc=await instance('tower-round-build-c'); const bb0=boxOf(sc); sc.scale.setScalar((PITCH*0.9)/Math.max(bb0.size.x,bb0.size.z)); grp.add(sc); grp.position.set(px2w(gx),0.02,pz2w(gz)); scene.add(grp); plotGroups[key]=grp; p.b._grp=grp; return; }
   const grp=await buildingVisual(p.b.type,p.b.lvl);
   grp.position.set(px2w(gx),0.02,pz2w(gz));
   scene.add(grp); plotGroups[key]=grp;
@@ -480,6 +662,7 @@ function updateVillagers(dt){
 }
 
 /* ================= tablero ================= */
+const natureDecor=[];
 async function buildBoard(){
   for(let gz=0;gz<ROWS;gz++) for(let gx=0;gx<COLS;gx++){
     const i=gz*COLS+gx;
@@ -492,8 +675,24 @@ async function buildBoard(){
     gg.position.set(px2w(gx),0,pz2w(gz));
     scene.add(gg); plotGround[i]=gg;
   }
-  const deco=[[-5.6,-3.4],[-4.9,3.1],[5.5,-3.2],[4.8,3.4],[0.2,-3.9],[-2.8,3.8],[6.1,0.6],[-6.2,-0.4]];
-  for(const [x,z] of deco){ const d=await instance(Math.random()<0.72?'detail-tree-large':'detail-rocks-large'); d.position.set(x,0,z); d.rotation.y=Math.random()*6.28; scene.add(d); }
+  /* Terreno ampliado (pedido de Felix): anillo determinista de
+     naturaleza del Kenney Nature Kit (CC0) alrededor del tablero 5×4,
+     fuera de las parcelas: no tapa edificios y no bloquea los toques
+     (los toques se resuelven contra el plano del suelo, no contra la
+     decoración). [x, z, modelo, altura objetivo] */
+  const ring=[
+    [-5.8,-4.2,'tree_default',1.9],[-6.6,0.4,'tree_pineDefaultA',2.1],[-5.6,3.9,'tree_pineDefaultA',1.8],[-3.4,-4.6,'tree_default',1.7],
+    [0.6,-4.9,'tree_pineDefaultA',2.2],[3.8,-4.5,'tree_default',1.85],[6.4,-3.6,'tree_default',1.95],[6.8,0.8,'tree_pineDefaultA',2.0],
+    [5.7,4.1,'tree_default',1.6],[2.9,4.7,'tree_pineDefaultA',1.8],[-1.2,4.9,'tree_default',2.05],[-4.3,4.5,'tree_pineDefaultA',1.7],
+    [-6.9,-2.2,'rock_largeA',0.8],[7.0,-1.4,'rock_largeA',0.65],[-2.2,-5.2,'rock_largeA',0.55],[5.0,-5.0,'rock_largeA',0.6],
+    [-5.0,-1.8,'grass_large',0.5],[5.2,2.6,'grass_large',0.45],[-1.8,-4.3,'grass_large',0.48],[1.9,4.3,'grass_large',0.5],[-5.2,1.9,'grass_large',0.42],[6.0,-0.6,'grass_large',0.46],
+    [-4.6,-3.1,'flower_redA',0.38],[4.4,3.6,'flower_redA',0.36],[-0.6,4.5,'flower_redA',0.34],[5.9,1.9,'flower_redA',0.38]
+  ];
+  for(let di=0;di<ring.length;di++){ const [x,z,nm,th]=ring[di];
+    try{ const d=await instance(nm); const bb=boxOf(d); const sc=th/Math.max(bb.size.y,0.001);
+      d.scale.setScalar(sc); d.position.set(x,-bb.min.y*sc,z); d.rotation.y=(di*1.37)%6.28;
+      d.userData.nature=true; d.userData.model=nm; scene.add(d); natureDecor.push(d);
+    }catch(e){ console.log('nature',nm,e); } }
   hoverMarker=await instance('selection-a'); hoverMarker.visible=false; scene.add(hoverMarker);
 }
 
@@ -524,13 +723,22 @@ function openSheet(i){
     Object.keys(BUILDINGS).forEach(k=>{ if(k==='hall') return; const d=BUILDINGS[k];
       const lockedTown=townLvl()<d.needsTown;
       const card=document.createElement('div'); card.className='buildcard'+((canPay(d.cost)&&!lockedTown)?'':' poor');
-      card.innerHTML='<div class="ic">'+d.ic+'</div><div class="nm">'+d.name+'</div><div class="ds">'+d.desc+'</div><div class="cost">'+(lockedTown?('🏰 Pueblo Nv '+d.needsTown):fmtCost(d.cost))+'</div>';
+      card.innerHTML='<div class="ic">'+d.ic+'</div><div class="nm">'+d.name+'</div><div class="ds">'+d.desc+'</div><div class="cost">'+(lockedTown?('🏰 Pueblo Nv '+d.needsTown):(fmtCost(d.cost)+'<br>⏳ '+fmtDur(BUILD_TIMES[k]||10)))+'</div>';
       card.addEventListener('click',()=>{ if(lockedTown){ toast('🏰 Necesitas el Ayuntamiento al nivel '+d.needsTown); sfx.err(); return; }
         if(!canPay(d.cost)){ toast('Te faltan recursos para el '+d.name); sfx.err(); return; }
-        pay(d.cost); p.b={type:k,lvl:1,stored:0}; sfx.build(); constructionFx(i,async()=>{ await refreshPlot(i); growPlot(i); }); closeSheet(); afterChange(); });
+        pay(d.cost); const secs=BUILD_TIMES[k]||10; p.b={type:k,lvl:1,stored:0,until:Date.now()+secs*1000,durMs:secs*1000}; sfx.build(); refreshPlot(i); closeSheet(); afterChange(); });
       row.appendChild(card); });
   } else {
     const b=p.b, d=BUILDINGS[b.type];
+    sheetCountEl=null; sheetBarEl=null;
+    if(isBuilding(b)){
+      $('sheetTitle').textContent='🚧 '+(b.pendingLvl?('Mejorando a Nv '+b.pendingLvl):'Construyendo')+' · '+d.ic+' '+d.name;
+      $('sheetDesc').innerHTML='Esta parcela está en obras. Quedan <b id="sheetCount">'+fmtClock(b.until-Date.now())+'</b> de '+fmtDur((b.durMs||0)/1000)+'. Al terminar, '+(b.pendingLvl?'el edificio subirá de nivel y volverá a producir':'el edificio empezará a funcionar')+'.';
+      const bar=document.createElement('div'); bar.className='bar'; bar.innerHTML='<i id="sheetBarFill"></i>'; row.appendChild(bar);
+      const note=document.createElement('p'); note.textContent='⏳ El tiempo de obra sigue corriendo aunque salgas del juego.'; row.appendChild(note);
+      sheetCountEl=$('sheetCount'); sheetBarEl=$('sheetBarFill');
+      $('sheet').classList.add('on'); return;
+    }
     $('sheetTitle').textContent=d.ic+' '+d.name+' · Nv '+b.lvl;
     if(b.type==='hall'){
       $('sheetDesc').textContent='Almacenes: hasta '+storeCap(townLvl())+' de cada recurso'+(warehouseBonus()>0?' (incluye +'+warehouseBonus()+' de tus almacenes)':'')+'. Mejorar el Ayuntamiento desbloquea parcelas y edificios.';
@@ -563,10 +771,9 @@ function openSheet(i){
     if(b.lvl<(d.maxLvl||5)){
       const c=upCost(b), afford=canPay(c);
       const btn=document.createElement('button'); btn.className='btn'; btn.type='button'; btn.disabled=!afford;
-      btn.innerHTML='⬆️ Mejorar a Nv '+(b.lvl+1)+'<small>'+fmtCost(c)+(afford?'':' · te falta')+'</small>';
-      btn.addEventListener('click',()=>{ if(!canPay(c)) return; pay(c); b.lvl++;
-        if(b.type==='hall'){ sfx.quest(); toast('🏰 ¡El pueblo sube al nivel '+townLvl()+'!'); rebuildBoardTiles(); }
-        sfx.build(); constructionFx(i,async()=>{ await refreshPlot(i); growPlot(i); }); closeSheet(); afterChange(); });
+      btn.innerHTML='⬆️ Mejorar a Nv '+(b.lvl+1)+'<small>'+fmtCost(c)+' · ⏳ '+fmtDur(UPGRADE_TIMES[b.lvl+1]||30)+(afford?'':' · te falta')+'</small>';
+      btn.addEventListener('click',()=>{ if(!canPay(c)||isBuilding(b)) return; pay(c); const secs=UPGRADE_TIMES[b.lvl+1]||30; b.pendingLvl=b.lvl+1; b.until=Date.now()+secs*1000; b.durMs=secs*1000;
+        sfx.build(); refreshPlot(i); closeSheet(); afterChange(); });
       row.appendChild(btn);
     } else {
       const s=document.createElement('p'); s.textContent='⭐ Nivel máximo alcanzado.'; row.appendChild(s);
@@ -587,7 +794,7 @@ async function rebuildBoardTiles(){ // al subir el pueblo, las parcelas nuevas d
   await refreshAllPlots();
 }
 function collect(i,sound){
-  const p=S.plots[i]; if(!p.b||p.b.type==='hall'||p.b.type==='mill') return 0;
+  const p=S.plots[i]; if(!p.b||p.b.type==='hall'||p.b.type==='mill'||isBuilding(p.b)) return 0;
   const d=BUILDINGS[p.b.type]; if(!d.makes) return 0;
   const amt=Math.floor(p.b.stored); if(amt<=0) return 0;
   const room=storeCap(townLvl())-S.res[d.makes]; const give=Math.max(0,Math.min(amt,room));
@@ -609,23 +816,23 @@ function afterChange(){ checkQuest(); refreshHUD(); save(); }
    trigo del almacén y guarda harina; la Panadería hornea pan con la harina
    guardada en los molinos. La harina nunca entra al almacén del jugador. */
 function accrue(dtSec){
-  for(const p of S.plots){ if(p.b&&p.b.type!=='hall'&&BUILDINGS[p.b.type].kind!=='converter'&&BUILDINGS[p.b.type].makes){ p.b.stored=Math.min(bCap(p.b),p.b.stored+prodRate(p.b)*dtSec); } }
-  for(const p of S.plots){ if(p.b&&p.b.type==='mill'){ const want=prodRate(p.b)*dtSec, room=bCap(p.b)-p.b.stored;
+  for(const p of S.plots){ if(p.b&&!isBuilding(p.b)&&p.b.type!=='hall'&&BUILDINGS[p.b.type].kind!=='converter'&&BUILDINGS[p.b.type].makes){ p.b.stored=Math.min(bCap(p.b),p.b.stored+prodRate(p.b)*dtSec); } }
+  for(const p of S.plots){ if(p.b&&p.b.type==='mill'&&!isBuilding(p.b)){ const want=prodRate(p.b)*dtSec, room=bCap(p.b)-p.b.stored;
     const make=Math.max(0,Math.min(want,room,S.res.wheat||0)); p.b.stored+=make; S.res.wheat-=make; } }
-  for(const p of S.plots){ if(p.b&&p.b.type==='bakery'){ let want=Math.min(prodRate(p.b)*dtSec,bCap(p.b)-p.b.stored); let need=want;
-    for(const q of S.plots){ if(need<=0) break; if(q.b&&q.b.type==='mill'&&q.b.stored>0){ const take=Math.min(need,q.b.stored); q.b.stored-=take; need-=take; } }
+  for(const p of S.plots){ if(p.b&&p.b.type==='bakery'&&!isBuilding(p.b)){ let want=Math.min(prodRate(p.b)*dtSec,bCap(p.b)-p.b.stored); let need=want;
+    for(const q of S.plots){ if(need<=0) break; if(q.b&&q.b.type==='mill'&&!isBuilding(q.b)&&q.b.stored>0){ const take=Math.min(need,q.b.stored); q.b.stored-=take; need-=take; } }
     p.b.stored+=want-need; } }
 }
 function offlineGains(elapsedSec){
   const cap=8*3600, sec=Math.min(elapsedSec,cap), totals={wood:0,stone:0,gold:0,wheat:0,bread:0};
   let wheat=S.res.wheat||0; const millFlour=new Map();
   for(let idx=0;idx<S.plots.length;idx++){ const p=S.plots[idx];
-    if(p.b&&p.b.type!=='hall'&&BUILDINGS[p.b.type].kind!=='converter'&&BUILDINGS[p.b.type].makes){ const d=BUILDINGS[p.b.type];
+    if(p.b&&!isBuilding(p.b)&&p.b.type!=='hall'&&BUILDINGS[p.b.type].kind!=='converter'&&BUILDINGS[p.b.type].makes){ const d=BUILDINGS[p.b.type];
       totals[d.makes]+=Math.floor(Math.min(bCap(p.b)-p.b.stored,prodRate(p.b)*sec)); } }
   for(let idx=0;idx<S.plots.length;idx++){ const p=S.plots[idx];
-    if(p.b&&p.b.type==='mill'){ const make=Math.min(prodRate(p.b)*sec,bCap(p.b)-p.b.stored,wheat);
+    if(p.b&&p.b.type==='mill'&&!isBuilding(p.b)){ const make=Math.min(prodRate(p.b)*sec,bCap(p.b)-p.b.stored,wheat);
       wheat-=Math.max(0,make); millFlour.set(idx,p.b.stored+Math.max(0,make)); } }
-  for(const p of S.plots){ if(p.b&&p.b.type==='bakery'){ let need=Math.min(prodRate(p.b)*sec,bCap(p.b)-p.b.stored), want=need;
+  for(const p of S.plots){ if(p.b&&p.b.type==='bakery'&&!isBuilding(p.b)){ let need=Math.min(prodRate(p.b)*sec,bCap(p.b)-p.b.stored), want=need;
     for(const [idx,fl] of millFlour){ if(need<=0) break; const take=Math.min(need,fl); millFlour.set(idx,fl-take); need-=take; }
     totals.bread+=Math.floor(want-need); } }
   return {sec,totals};
@@ -660,6 +867,17 @@ $('btnDailyClose').addEventListener('click',()=>$('dailyOverlay').classList.add(
 $('btnDailyClaim').addEventListener('click',()=>{ if(claimDaily()) openDaily(); });
 $('pillAll').addEventListener('click',collectAll);
 $('pillShare').addEventListener('click',()=>{ sfx.tap(); shareVillage(); });
+$('pillInvite').addEventListener('click',()=>{ sfx.tap(); openInvite(); });
+$('btnInviteClose').addEventListener('click',()=>$('inviteOverlay').classList.add('hidden'));
+$('btnInviteCopy').addEventListener('click',()=>{ lastInviteCopy=S.inviteCode; try{ navigator.clipboard&&navigator.clipboard.writeText(S.inviteCode); }catch(e){} toast('📋 Tu código: '+S.inviteCode,2600); });
+$('btnInviteCopyReturn').addEventListener('click',()=>{ if(!S.invites.pendingReturn) return; lastInviteCopy=S.invites.pendingReturn; try{ navigator.clipboard&&navigator.clipboard.writeText(S.invites.pendingReturn); }catch(e){} toast('📋 Código de vuelta copiado',2200); });
+$('btnInviteShare').addEventListener('click',()=>{ sfx.tap(); shareInvite(); });
+$('btnInviteFriend').addEventListener('click',()=>{ const r=redeemFriendCode($('inviteFriendInput').value);
+  if(r.ok){ inviteMsg('🎉 ¡Premio de invitado! +'+fmtCost(r.gift)+' · Pásale a tu amigo tu código de vuelta de abajo para que cobre su premio.',true); openInvite(); }
+  else inviteMsg(r.reason==='propio'?'⚠️ Ese es tu propio código: compártelo con un amigo, no lo canjees tú.':(r.reason==='usado'?'⚠️ Ya canjeaste ese código antes.':(r.reason==='formato'?'⚠️ Ese código no tiene buena pinta: son 6 letras.':'⚠️ No se pudo canjear ese código.')),false); });
+$('btnInviteReturn').addEventListener('click',()=>{ const r=redeemReturnCode($('inviteReturnInput').value);
+  if(r.ok){ inviteMsg('🏆 ¡Premio de anfitrión! +'+fmtCost(r.reward)+' · Tu amigo '+r.friend+' ya está en tu aldea.',true); openInvite(); }
+  else inviteMsg(r.reason==='no-es-tuyo'?'⚠️ Ese código de vuelta no es para ti: empieza por tu propio código.':(r.reason==='firma'?'⚠️ Ese código de vuelta no cuadra: revisa que esté copiado entero.':(r.reason==='usado'?'⚠️ Ya cobraste el premio de ese amigo.':(r.reason==='formato'?'⚠️ Un código de vuelta empieza por R y tiene 14 letras.':'⚠️ No se pudo canjear ese código.'))),false); });
 $('quest').addEventListener('click',()=>{ const q=QUESTS[S.quest]; toast(q?('🎯 '+q.txt):'🏆 Aldea en marcha: construye a tu ritmo',2200); });
 addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); placeCamera(); });
 document.addEventListener('visibilitychange',()=>{ if(document.hidden) save(); });
@@ -678,6 +896,7 @@ function loop(now){
   updateDaylight(dt);
   if(S&&S.started) updateVillagers(dt);
   if(S&&S.started) updateGrows(dt);
+  if(S&&S.started){ tickBuilds(); updateBuildLabels(); }
   for(const m of parts){ m.userData.t+=dt; const u=m.userData;
     m.position.x+=u.vx*dt; m.position.y+=u.vy*dt; m.position.z+=u.vz*dt; u.vy-=3*dt;
     m.material.opacity=1-u.t/u.life; if(u.t>=u.life){ m.userData.gone=true; scene.remove(m); } }
@@ -687,6 +906,7 @@ function loop(now){
 (async function init(){
   const had=load();
   try{ await buildBoard(); await refreshAllPlots(); spawnVillagers(); }catch(e){ console.log('board',e); }
+  try{ await finishWorks(); }catch(e){ console.log('obras',e); }
   ['tower-round-bottom-a','wood-structure','detail-rocks-large','tower-square-bottom-a'].forEach(n=>loadModel(n).catch(()=>{}));
   $('load').style.display='none';
   refreshHUD();
@@ -708,6 +928,11 @@ function loop(now){
   if(had&&S.started) $('introOverlay').classList.add('hidden');
   // aviso al entrar: si el cofre diario está listo, se anuncia al entrar
   if(had&&S.started){ try{ if(dailyInfo().available) setTimeout(()=>toast('🎁 ¡Tu cofre diario está listo! Toca 🎁 arriba para recogerlo.',2800),1400); }catch(e){} }
+  // invitaciones (2.2): entrar por el enlace de un amigo trae su código
+  // en el start_param de Telegram y el premio de invitado se cobra solo
+  try{ const sp=(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.initDataUnsafe&&Telegram.WebApp.initDataUnsafe.start_param)||null;
+    if(sp){ const r=applyStartParam(sp);
+      if(r.ok) setTimeout(()=>toast('🎉 ¡Veniste invitado por un amigo! +'+fmtCost(r.gift)+' · Tu código de vuelta está en 👥 Invitar',3400),1600); } }catch(e){}
   requestAnimationFrame(loop);
 })();
 </script>
