@@ -19,9 +19,9 @@
   .drow{display:flex;justify-content:space-between;gap:8px;text-align:left;background:#fff;border:2px solid #e3cf9a;border-radius:10px;padding:6px 10px;margin:4px 0;font-size:.82rem;font-weight:700;color:#5c4a12}
   .drow.today{background:#fff0a0;border-color:#d8a94e;color:#4a3200}
   .spacer{flex:1}
-  #quest{position:fixed;top:52px;left:8px;z-index:5;max-width:74vw;background:rgba(255,253,244,.94);border:2px solid #d8a94e;border-radius:14px;padding:6px 11px;font-size:.78rem;font-weight:700;color:#5c4a12;box-shadow:0 4px 12px rgba(60,40,0,.25);cursor:pointer}
+  #quest{position:fixed;top:calc(var(--hud-h,52px) + 6px);left:8px;z-index:5;max-width:74vw;background:rgba(255,253,244,.94);border:2px solid #d8a94e;border-radius:14px;padding:6px 11px;font-size:.78rem;font-weight:700;color:#5c4a12;box-shadow:0 4px 12px rgba(60,40,0,.25);cursor:pointer}
   #quest b{color:#2e6b1e}
-  #toast{position:fixed;top:100px;left:50%;transform:translateX(-50%);background:rgba(18,32,24,.88);color:#ffe98a;border:2px solid rgba(255,210,60,.5);padding:7px 16px;border-radius:99px;font-weight:900;font-size:.85rem;z-index:8;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;max-width:94vw}
+  #toast{position:fixed;top:calc(var(--hud-h,52px) + 54px);left:50%;transform:translateX(-50%);background:rgba(18,32,24,.88);color:#ffe98a;border:2px solid rgba(255,210,60,.5);padding:7px 16px;border-radius:99px;font-weight:900;font-size:.85rem;z-index:8;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;max-width:94vw}
   #toast.on{opacity:1}
   .sheet{position:fixed;left:0;right:0;bottom:0;z-index:6;background:linear-gradient(170deg,#fffdf4,#ffedc0);border-top:3px solid #d8a94e;border-radius:20px 20px 0 0;padding:12px 12px calc(12px + env(safe-area-inset-bottom));box-shadow:0 -8px 30px rgba(60,40,0,.3);transform:translateY(110%);transition:transform .25s}
   .sheet.on{transform:translateY(0)}
@@ -54,10 +54,13 @@
   .panel p{color:#5c4a12;margin:8px 0 13px;font-size:.92rem;line-height:1.45}
   .panel .btn{flex:none;min-width:170px}
   #inviteOverlay .panel{max-height:calc(100vh - 28px);overflow-y:auto}
+  #starsOverlay .panel{max-height:calc(100vh - 28px);overflow-y:auto}
   #inviteOverlay input{width:100%;padding:10px;border:2px solid #e3cf9a;border-radius:12px;font:900 1rem 'Trebuchet MS',sans-serif;text-align:center;letter-spacing:2px;text-transform:uppercase;margin:4px 0 8px;color:#4a3200;background:#fff}
   #inviteOverlay label{display:block;text-align:left;font-size:.78rem;font-weight:900;color:#7a5c14;margin-top:10px}
   #load{position:fixed;inset:0;background:linear-gradient(180deg,#79c7f2,#cdeffd);z-index:20;display:flex;align-items:center;justify-content:center;color:#14532d;font-weight:900;font-size:1.05rem}
-  @media (max-width:560px){ #quest{top:96px} #toast{top:142px} }
+  /* El chip de misión y el toast ya no usan un top fijo: JS mide la
+     altura real del HUD (layoutTopUI) y la deja en --hud-h, así en
+     retrato, con 3 filas de píldoras, nada queda tapado. */
 </style>
 </head>
 <body>
@@ -68,6 +71,7 @@
   <div class="pill" id="pillG">🪙 <b id="uiGold">0</b></div>
   <div class="pill" id="pillWheat">🌾 <b id="uiWheat">0</b></div>
   <div class="pill" id="pillBread">🍞 <b id="uiBread">0</b></div>
+  <div class="pill" id="pillStars" style="cursor:pointer;pointer-events:auto">⭐ <b id="uiStars">0</b></div>
   <div class="pill" id="pillDaily" style="cursor:pointer;pointer-events:auto">🎁 <b id="uiDaily">Cofre</b></div>
   <div class="pill">🏰 Nv <b id="uiTown">1</b></div>
   <div class="spacer"></div>
@@ -125,6 +129,21 @@
     <button class="btn blue" id="btnInviteClose" type="button">Cerrar</button>
   </div>
 </div>
+<div class="overlay hidden" id="starsOverlay">
+  <div class="panel">
+    <h2>⭐ Tienda Stars</h2>
+    <p id="starsBalance"></p>
+    <p style="font-size:.78rem">Las Stars son la moneda de pago de Telegram. La recarga con Stars reales se activa con el encendido del bot (pendiente de tu orden); la tienda ya funciona con el saldo guardado en tu aldea.</p>
+    <div id="starsWorks"></div>
+    <div id="starsPacks"></div>
+    <div id="starsSpecial"></div>
+    <p id="starsMsg" style="font-weight:900"></p>
+    <div class="row">
+      <button class="btn gold" id="btnStarsGet" type="button">⭐ Conseguir Stars</button>
+      <button class="btn blue" id="btnStarsClose" type="button">Cerrar</button>
+    </div>
+  </div>
+</div>
 <div class="overlay hidden" id="dailyOverlay">
   <div class="panel">
     <h2>🎁 Cofre diario</h2>
@@ -140,7 +159,7 @@
 <script src="lib/GLTFLoader.js"></script>
 <script>
 'use strict';
-/* ================= ALDEA EN OBRAS · v2.2 (obras con tiempo real y contador + terreno ampliado — pedido de Felix) ================= */
+/* ================= ALDEA EN OBRAS · v2.2 (obras con tiempo real y contador + terreno ampliado — pedido de Felix) + arreglo visual de Felix: Aserradero/Granja cerrados con techo, Cantera a tamaño de parcela y HUD en retrato sin tapados ================= */
 /* ================= compartir mi aldea (2.1) ================= */
 /* Botón 📤 en el HUD: abre el compartir de Telegram (t.me/share/url) con
    el enlace del bot @AldeaEnObrasBot y un texto con el nivel actual del
@@ -243,6 +262,15 @@ function openInvite(){
 function inviteMsg(txt,ok){ const el=$('inviteMsg'); el.textContent=txt; el.style.color=ok?'#2e6b1e':'#a33'; }
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+/* HUD en retrato (pedido de Felix): el HUD se envuelve en varias filas
+   según el ancho real, así que el chip de misión y el toast se colocan
+   midiendo su altura terminada, nunca con un top fijo adivinado. */
+function layoutTopUI(){
+  const hud=document.querySelector('.hud'); if(!hud) return 0;
+  const h=Math.ceil(hud.getBoundingClientRect().height);
+  document.documentElement.style.setProperty('--hud-h',h+'px');
+  return h;
+}
 const SAVE_KEY='aldea-en-obras-v1';
 if(window.Telegram&&Telegram.WebApp){ try{ Telegram.WebApp.ready(); Telegram.WebApp.expand(); }catch(e){} }
 const TG_USER=(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.initDataUnsafe&&Telegram.WebApp.initDataUnsafe.user)||null;
@@ -303,7 +331,9 @@ const BUILDINGS={
   warehouse:{ name:'Almacén', ic:'📦', desc:'Guarda de sobra: cada nivel añade +250 al tope de cada recurso del almacén.',
            cost:{wood:60,stone:40,gold:40}, needsTown:3 },
   workshop:{ name:'Taller', ic:'🔨', desc:'Los artesanos abaratan las mejoras: cada nivel descuenta un 5% del coste de mejorar cualquier edificio (máx. 50%).',
-           cost:{wood:40,gold:60}, needsTown:3 }
+           cost:{wood:40,gold:60}, needsTown:3 },
+  starfountain:{ name:'Fuente Estelar', ic:'⭐', desc:'Edificio especial solo con Stars: produce oro sin parar y brilla con cristales. Solo puede haber una por aldea.',
+           makes:'gold', perMin:12, starsOnly:true, maxLvl:1 }
 };
 const QUESTS=[
   { txt:'Construye un Aserradero', test:s=>s.plots.some(p=>p.b&&!isBuilding(p.b)&&p.b.type==='sawmill'), rew:{gold:20} },
@@ -448,12 +478,91 @@ function fmtCost(c){ return Object.keys(c).map(k=>PROD[k].ic+' '+c[k]).join(' ·
 function canPay(c){ return Object.keys(c).every(k=>S.res[k]>=c[k]); }
 function pay(c){ Object.keys(c).forEach(k=>S.res[k]-=c[k]); }
 
+/* ================= tienda Stars (3.2) ================= */
+/* La tienda vive en el juego y cobra de un saldo ⭐ guardado en la
+   partida (S.stars, migrado a 0 en partidas viejas). Tres cosas:
+   - Terminar cualquier obra al instante: 1 ⭐ por cada 10 min que le
+     queden a la obra (mínimo 1 ⭐), se cobra y la obra se entrega con
+     la misma finishWorks() de siempre (nivel aplicado, misiones, guardado).
+   - Paquetes de recursos con precio fijo en ⭐, que se suman al almacén.
+   - La Fuente Estelar: edificio especial que SOLO se compra con ⭐
+     (100 ⭐), produce 12 oro/min, no se construye desde la parcela ni se
+     mejora (Nv 1, máximo), solo puede haber una por aldea y se coloca
+     en la primera parcela libre desbloqueada.
+   La recarga con Stars REALES es el paso pendiente del bot (3.1): el bot
+   deberá enviar la factura de Stars y acreditar el saldo; aquí queda el
+   gancho creditStars(n) para ese paso y el botón «Conseguir Stars» que
+   abre el bot. Sin token, sin llamada a la API real de Telegram.
+   lastStarsPurchase es sonda de verificación (no afecta al juego). */
+const STARS_PACKS=[
+  {id:'packS',name:'Pack Pequeño',price:20,res:{gold:200,wood:100,stone:100}},
+  {id:'packL',name:'Pack Grande',price:50,res:{gold:600,wood:300,stone:300,wheat:100}},
+  {id:'packB',name:'Pack Panadero',price:40,res:{wheat:200,bread:100}}
+];
+const STARS_SPECIAL_PRICE=100;
+let lastStarsPurchase=null;
+function starsFinishCost(ms){ return Math.max(1,Math.ceil(Math.max(0,ms)/600000)); }
+function hasStarfountain(){ return S.plots.some(p=>p.b&&p.b.type==='starfountain'); }
+function firstFreePlot(){ for(let i=0;i<S.plots.length;i++) if(!S.plots[i].b&&plotUnlocked(i)) return i; return -1; }
+function creditStars(n){ if(!S||!(n>0)) return false; S.stars=(S.stars||0)+Math.floor(n); afterChange(); return true; }
+function buyStarsPack(id){
+  const pk=STARS_PACKS.find(p=>p.id===id); if(!pk) return lastStarsPurchase={ok:false,reason:'pack'};
+  if((S.stars||0)<pk.price) return lastStarsPurchase={ok:false,reason:'saldo'};
+  S.stars-=pk.price; Object.keys(pk.res).forEach(k=>S.res[k]=(S.res[k]||0)+pk.res[k]);
+  sfx.coin(); toast('⭐ ¡Pack comprado! +'+fmtCost(pk.res),2600); afterChange();
+  return lastStarsPurchase={ok:true,kind:'pack',id:id,price:pk.price};
+}
+async function buyStarsFinish(i){
+  const p=S.plots[i]; if(!p||!p.b||!isBuilding(p.b)) return lastStarsPurchase={ok:false,reason:'no-obra'};
+  const cost=starsFinishCost(p.b.until-Date.now());
+  if((S.stars||0)<cost) return lastStarsPurchase={ok:false,reason:'saldo'};
+  S.stars-=cost; p.b.until=Date.now()-1; await finishWorks();
+  return lastStarsPurchase={ok:true,kind:'finish',plot:i,price:cost};
+}
+async function buyStarfountain(){
+  if(hasStarfountain()) return lastStarsPurchase={ok:false,reason:'ya-tienes'};
+  const free=firstFreePlot(); if(free<0) return lastStarsPurchase={ok:false,reason:'sin-parcela'};
+  if((S.stars||0)<STARS_SPECIAL_PRICE) return lastStarsPurchase={ok:false,reason:'saldo'};
+  S.stars-=STARS_SPECIAL_PRICE; S.plots[free].b={type:'starfountain',lvl:1,stored:0};
+  sfx.build(); await refreshPlot(free); growPlot(free); afterChange();
+  return lastStarsPurchase={ok:true,kind:'special',plot:free,price:STARS_SPECIAL_PRICE};
+}
+function starsMsg(txt,ok){ const el=$('starsMsg'); el.textContent=txt; el.style.color=ok?'#2e6b1e':'#a33'; }
+function openStarsShop(){
+  $('starsBalance').innerHTML='Tu saldo: <b>⭐ '+Math.floor(S.stars||0)+'</b>';
+  const wEl=$('starsWorks'); let wHtml='<p style="text-align:left;font-weight:900;color:#4a3200;margin:8px 0 4px">⏳ Terminar obras al instante</p>';
+  let anyWork=false;
+  for(let i=0;i<S.plots.length;i++){ const b=S.plots[i].b; if(!b||!isBuilding(b)) continue; anyWork=true;
+    const d=BUILDINGS[b.type]; const cost=starsFinishCost(b.until-Date.now());
+    wHtml+='<div class="drow"><span>'+d.ic+' '+d.name+(b.pendingLvl?' (mejora a Nv '+b.pendingLvl+')':'')+' · quedan '+fmtClock(b.until-Date.now())+'</span><button class="btn gold" data-finish="'+i+'" type="button" style="min-width:0;flex:none;padding:8px 10px">Terminar · '+cost+' ⭐</button></div>'; }
+  if(!anyWork) wHtml+='<p style="font-size:.8rem;color:#7a5c14">Ahora mismo no tienes ninguna obra en curso.</p>';
+  wEl.innerHTML=wHtml;
+  $('starsPacks').innerHTML='<p style="text-align:left;font-weight:900;color:#4a3200;margin:8px 0 4px">📦 Paquetes de recursos</p>'+STARS_PACKS.map(pk=>'<div class="drow"><span>'+pk.name+' · +'+fmtCost(pk.res)+'</span><button class="btn gold" data-pack="'+pk.id+'" type="button" style="min-width:0;flex:none;padding:8px 10px">'+pk.price+' ⭐</button></div>').join('');
+  const sEl=$('starsSpecial');
+  if(hasStarfountain()) sEl.innerHTML='<p style="text-align:left;font-weight:900;color:#4a3200;margin:8px 0 4px">⭐ Edificio especial</p><p style="font-size:.8rem;color:#7a5c14">Ya tienes tu Fuente Estelar en la aldea: solo puede haber una.</p>';
+  else { const free=firstFreePlot();
+    sEl.innerHTML='<p style="text-align:left;font-weight:900;color:#4a3200;margin:8px 0 4px">⭐ Edificio especial</p><div class="drow"><span>⭐ Fuente Estelar · produce 🪙 12 oro/min, solo con Stars</span><button class="btn gold" data-special="1" type="button" style="min-width:0;flex:none;padding:8px 10px">'+STARS_SPECIAL_PRICE+' ⭐</button></div>'+(free<0?'<p style="font-size:.8rem;color:#a33">No tienes parcelas libres para colocarla.</p>':''); }
+  $('starsMsg').textContent='';
+  wEl.querySelectorAll('[data-finish]').forEach(btn=>btn.addEventListener('click',async()=>{ const r=await buyStarsFinish(+btn.dataset.finish); openStarsShop(); starsMsg(r.ok?('✅ Obra terminada al instante · −'+r.price+' ⭐'):(r.reason==='saldo'?'⚠️ Te faltan ⭐ para terminar esa obra.':'⚠️ Esa obra ya no está en curso.'),r.ok); }));
+  $('starsPacks').querySelectorAll('[data-pack]').forEach(btn=>btn.addEventListener('click',()=>{ const r=buyStarsPack(btn.dataset.pack); openStarsShop(); starsMsg(r.ok?('⭐ ¡Pack comprado! · −'+r.price+' ⭐'):'⚠️ Te faltan ⭐ para ese pack.',r.ok); }));
+  const spBtn=sEl.querySelector('[data-special]');
+  if(spBtn) spBtn.addEventListener('click',async()=>{ const r=await buyStarfountain(); openStarsShop(); starsMsg(r.ok?('⭐ ¡Fuente Estelar construida! · −'+r.price+' ⭐'):(r.reason==='ya-tienes'?'⚠️ Ya tienes tu Fuente Estelar.':(r.reason==='sin-parcela'?'⚠️ No tienes parcelas libres para colocarla.':'⚠️ Te faltan ⭐ para la Fuente Estelar.')),r.ok); });
+  $('starsOverlay').classList.remove('hidden');
+}
+function getStars(){
+  try{
+    if(window.Telegram&&Telegram.WebApp&&typeof Telegram.WebApp.openTelegramLink==='function') Telegram.WebApp.openTelegramLink(SHARE_BOT_URL);
+    else window.open(SHARE_BOT_URL,'_blank');
+  }catch(e){}
+  toast('⭐ Las Stars se compran en Telegram: abre el bot @AldeaEnObrasBot y vuelve cuando el bot esté encendido para recargar.',3200);
+}
+
 /* ================= estado ================= */
 let S=null;
 function newState(){
   const plots=[]; for(let i=0;i<COLS*ROWS;i++) plots.push({b:null});
   plots[12].b={type:'hall',lvl:1,stored:0}; // parcela central: el Ayuntamiento
-  return { res:{wood:40,stone:10,gold:60,wheat:0,bread:0}, plots, quest:0, daily:{lastClaim:null,streak:0}, inviteCode:genInviteCode(), invites:{used:[],rewarded:[],pendingReturn:null}, t:Date.now(), started:false };
+  return { res:{wood:40,stone:10,gold:60,wheat:0,bread:0}, plots, quest:0, daily:{lastClaim:null,streak:0}, inviteCode:genInviteCode(), invites:{used:[],rewarded:[],pendingReturn:null}, stars:0, t:Date.now(), started:false };
 }
 function townLvl(){ const h=S.plots.find(p=>p.b&&p.b.type==='hall'); return h?h.b.lvl:1; }
 function hallIndex(){ const i=S.plots.findIndex(p=>p.b&&p.b.type==='hall'); return i>=0?i:12; }
@@ -483,6 +592,8 @@ function load(){
     if(!S.invites||!Array.isArray(S.invites.used)||!Array.isArray(S.invites.rewarded))
       S.invites={used:(S.invites&&Array.isArray(S.invites.used))?S.invites.used:[],rewarded:(S.invites&&Array.isArray(S.invites.rewarded))?S.invites.rewarded:[],pendingReturn:(S.invites&&typeof S.invites.pendingReturn==='string')?S.invites.pendingReturn:null};
     if(typeof S.daily.lastClaim==='undefined') S.daily.lastClaim=null;
+    // migración v3.1 → v3.2: la tienda Stars llega con saldo 0
+    if(typeof S.stars!=='number') S.stars=0;
     // migración v1.2 → v1.3: ninguna — los vecinos y el ciclo de luz se
     // derivan de los edificios y no guardan nada en la partida
     S.plots.forEach(p=>{ if(p.b&&typeof p.b.stored!=='number') p.b.stored=0; });
@@ -529,6 +640,22 @@ function stackInto(grp, parts){ // parts: [modelo, escalaRel] apilados en Y
     for(const [name] of parts){ const m=await instance(name); const bb=boxOf(m); m.position.y=y-bb.min.y; grp.add(m); y+=bb.size.y; }
     return y; })();
 }
+/* Casas cerradas del Kenney Fantasy Town Kit (CC0): cada pared es una
+   pieza fina situada en un borde de la casilla 1×1; se rotan las cuatro
+   para cerrar la caja y se remata con una pieza de techo a y=1. Así el
+   edificio se lee como estructura, no como el armazón wood-structure. */
+async function fantasyWall(g,name,side){
+  const m=await instance(name);
+  m.rotation.y={east:0,west:Math.PI,north:Math.PI/2,south:-Math.PI/2}[side];
+  g.add(m); return m;
+}
+async function fantasyHouse(g,parts,roof){
+  await fantasyWall(g,parts.door,'south');
+  await fantasyWall(g,parts.plain,'north');
+  await fantasyWall(g,parts.window,'east');
+  await fantasyWall(g,parts.west,'west');
+  const r=await instance(roof); r.position.y=1; g.add(r);
+}
 async function buildingVisual(type,lvl){
   const grp=new THREE.Group();
   if(type==='hall'){
@@ -538,18 +665,30 @@ async function buildingVisual(type,lvl){
     { const rf=await instance('tower-round-roof-a'); const bb=boxOf(grp); rf.position.y=bb.size.y-0.02; grp.add(rf); }
     if(lvl>=4){ const c=await instance('detail-crystal'); const bb=boxOf(grp); c.position.y=bb.size.y+0.05; grp.add(c); }
   } else if(type==='sawmill'){
-    const m=await instance(lvl>=2?'wood-structure-high':'wood-structure'); grp.add(m);
-    { const top=boxOf(grp); const part=await instance('wood-structure-part'); part.position.y=top.size.y-0.03; grp.add(part); }
-    if(lvl>=3){ const t=await instance('detail-tree'); t.position.set(0.42,0,0.3); t.scale.setScalar(0.8); grp.add(t); }
+    // Cabaña cerrada de madera (Fantasy Town Kit, CC0) con puerta al sur,
+    // ventana con contraventanas, pared de travesaños y techo. Las tablas
+    // apiladas junto a la puerta la distinguen como aserradero.
+    await fantasyHouse(grp,{door:'fantasy/wall-wood-door',plain:'fantasy/wall-wood',window:'fantasy/wall-wood-window-shutters',west:'fantasy/wall-wood-detail-cross'},'fantasy/roof-gable');
+    const lumberStacks=lvl>=2?[[0.4,0.38],[-0.4,0.38]]:[[0.4,0.38]];
+    for(const [lx,lz] of lumberStacks) for(let k=0;k<3;k++){ const p=await instance('fantasy/planks'); p.scale.setScalar(0.55); p.position.set(lx,k*0.065,lz); grp.add(p); }
+    if(lvl>=3){ const t=await instance('detail-tree'); t.position.set(0.48,0,-0.38); t.scale.setScalar(0.8); grp.add(t); }
   } else if(type==='quarry'){
-    const r=await instance('detail-rocks-large'); grp.add(r);
-    { const t=await instance('tower-square-bottom-a'); t.scale.setScalar(lvl>=2?0.66:0.5); t.position.set(0.3,0,-0.25); grp.add(t); }
+    // Antes: una sola roca baja (0,41 de alto) aplastaba la caja del grupo
+    // y la torre quedaba dentro de ella. Ahora las rocas se apilan y la
+    // torre de piedra sobresale detrás: la caja ocupa toda la parcela.
+    const r=await instance('detail-rocks-large'); r.scale.setScalar(1.3); r.position.set(-0.12,0,0.16); grp.add(r);
+    const rTop=await instance('detail-rocks-large'); rTop.scale.setScalar(0.92); rTop.position.set(-0.2,0.46,0.08); rTop.rotation.y=1.1; grp.add(rTop);
+    const rSmall=await instance('detail-rocks'); rSmall.scale.setScalar(1.15); rSmall.position.set(0.42,0,0.34); grp.add(rSmall);
+    for(let k=0;k<2;k++){ const t=await instance('tower-square-bottom-a'); t.scale.setScalar(0.75); t.position.set(0.3,k*0.375,-0.3); grp.add(t); }
+    if(lvl>=3){ const c=await instance('detail-crystal'); c.scale.setScalar(0.65); c.position.set(0.3,0.78,-0.3); grp.add(c); }
   } else if(type==='market'){
     await stackInto(grp,[['tower-square-bottom-a']]);
     const rf=await instance('tower-square-roof-a'); const bb=boxOf(grp); rf.position.y=bb.size.y-0.02; grp.add(rf);
     if(lvl>=3){ const c=await instance('detail-crystal'); c.position.set(0.45,0.35,0.35); grp.add(c); }
   } else if(type==='farm'){
-    const m=await instance('wood-structure'); grp.add(m);
+    // Casa de campo cerrada de pared clara (Fantasy Town Kit, CC0), con
+    // techo de extremo distinto al del Aserradero y el maíz delante.
+    await fantasyHouse(grp,{door:'fantasy/wall-door',plain:'fantasy/wall',window:'fantasy/wall-window-shutters',west:'fantasy/wall-window-small'},'fantasy/roof-gable-end');
     for(const [x,z] of [[-0.48,0.42],[0.48,0.42]]){ const c=await instance('crop-corn'); c.position.set(x,0,z); c.scale.setScalar(0.65); grp.add(c); }
   } else if(type==='mill'){
     const m=await instance('windmill'); grp.add(m);
@@ -568,6 +707,12 @@ async function buildingVisual(type,lvl){
     // de madera alta con chimenea de fragua
     const m=await instance('wood-structure-high'); grp.add(m);
     const ch=await instance('chimney'); ch.position.set(0.48,0,-0.38); ch.scale.setScalar(0.85); grp.add(ch);
+  } else if(type==='starfountain'){
+    // 3.2: torre de piedra con cristales, reutilizando modelos Kenney
+    // (CC0) ya presentes en el juego; nada nuevo que descargar
+    await stackInto(grp,[['tower-round-bottom-a']]);
+    const cr=await instance('detail-crystal'); const bbS=boxOf(grp); cr.position.y=bbS.size.y+0.02; grp.add(cr);
+    const cr2=await instance('detail-crystal'); cr2.scale.setScalar(0.6); cr2.position.set(0.45,0.3,0.35); grp.add(cr2);
   }
   const bb=boxOf(grp); const f=(PITCH*0.92)/Math.max(bb.size.x,bb.size.z,0.001); grp.scale.setScalar(Math.min(f,1.6));
   grp.userData.built=true;
@@ -699,14 +844,17 @@ async function buildBoard(){
 /* ================= interfaz ================= */
 function toast(msg,ms){ const t=$('toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('on'),ms||1900); }
 function refreshHUD(popRes){
+  layoutTopUI();
   $('uiWood').textContent=Math.floor(S.res.wood); $('uiStone').textContent=Math.floor(S.res.stone); $('uiGold').textContent=Math.floor(S.res.gold);
   $('uiWheat').textContent=Math.floor(S.res.wheat||0); $('uiBread').textContent=Math.floor(S.res.bread||0);
+  $('uiStars').textContent=Math.floor(S.stars||0);
   $('uiTown').textContent=townLvl();
   try{ const di=dailyInfo(); $('uiDaily').textContent=di.available?'¡Cofre listo!':'Cofre ✓';
     $('pillDaily').classList.toggle('ready',di.available); }catch(e){}
   if(popRes){ const el=$('pill'+({wood:'W',stone:'S',gold:'G',wheat:'Wheat',bread:'Bread'}[popRes])); if(el){ el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); } }
   const q=QUESTS[S.quest];
   $('questTxt').innerHTML=q?('<b>Misión:</b> '+q.txt+' · 🎁 '+fmtCost(q.rew)):'<b>🏆 ¡Aldea en marcha!</b> Sigue construyendo a tu ritmo.';
+  layoutTopUI();
 }
 let selPlot=-1;
 function closeSheet(){ $('sheet').classList.remove('on'); selPlot=-1; if(hoverMarker) hoverMarker.visible=false; }
@@ -720,7 +868,7 @@ function openSheet(i){
   } else if(!p.b){
     $('sheetTitle').textContent='🌱 Parcela libre';
     $('sheetDesc').textContent='¿Qué quieres construir aquí? Cada edificio produce sin parar y guarda hasta 30 minutos de producción.';
-    Object.keys(BUILDINGS).forEach(k=>{ if(k==='hall') return; const d=BUILDINGS[k];
+    Object.keys(BUILDINGS).forEach(k=>{ if(k==='hall'||BUILDINGS[k].starsOnly) return; const d=BUILDINGS[k];
       const lockedTown=townLvl()<d.needsTown;
       const card=document.createElement('div'); card.className='buildcard'+((canPay(d.cost)&&!lockedTown)?'':' poor');
       card.innerHTML='<div class="ic">'+d.ic+'</div><div class="nm">'+d.name+'</div><div class="ds">'+d.desc+'</div><div class="cost">'+(lockedTown?('🏰 Pueblo Nv '+d.needsTown):(fmtCost(d.cost)+'<br>⏳ '+fmtDur(BUILD_TIMES[k]||10)))+'</div>';
@@ -868,6 +1016,9 @@ $('btnDailyClaim').addEventListener('click',()=>{ if(claimDaily()) openDaily(); 
 $('pillAll').addEventListener('click',collectAll);
 $('pillShare').addEventListener('click',()=>{ sfx.tap(); shareVillage(); });
 $('pillInvite').addEventListener('click',()=>{ sfx.tap(); openInvite(); });
+$('pillStars').addEventListener('click',()=>{ sfx.tap(); openStarsShop(); });
+$('btnStarsClose').addEventListener('click',()=>$('starsOverlay').classList.add('hidden'));
+$('btnStarsGet').addEventListener('click',()=>{ sfx.tap(); getStars(); });
 $('btnInviteClose').addEventListener('click',()=>$('inviteOverlay').classList.add('hidden'));
 $('btnInviteCopy').addEventListener('click',()=>{ lastInviteCopy=S.inviteCode; try{ navigator.clipboard&&navigator.clipboard.writeText(S.inviteCode); }catch(e){} toast('📋 Tu código: '+S.inviteCode,2600); });
 $('btnInviteCopyReturn').addEventListener('click',()=>{ if(!S.invites.pendingReturn) return; lastInviteCopy=S.invites.pendingReturn; try{ navigator.clipboard&&navigator.clipboard.writeText(S.invites.pendingReturn); }catch(e){} toast('📋 Código de vuelta copiado',2200); });
@@ -879,7 +1030,9 @@ $('btnInviteReturn').addEventListener('click',()=>{ const r=redeemReturnCode($('
   if(r.ok){ inviteMsg('🏆 ¡Premio de anfitrión! +'+fmtCost(r.reward)+' · Tu amigo '+r.friend+' ya está en tu aldea.',true); openInvite(); }
   else inviteMsg(r.reason==='no-es-tuyo'?'⚠️ Ese código de vuelta no es para ti: empieza por tu propio código.':(r.reason==='firma'?'⚠️ Ese código de vuelta no cuadra: revisa que esté copiado entero.':(r.reason==='usado'?'⚠️ Ya cobraste el premio de ese amigo.':(r.reason==='formato'?'⚠️ Un código de vuelta empieza por R y tiene 14 letras.':'⚠️ No se pudo canjear ese código.'))),false); });
 $('quest').addEventListener('click',()=>{ const q=QUESTS[S.quest]; toast(q?('🎯 '+q.txt):'🏆 Aldea en marcha: construye a tu ritmo',2200); });
-addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); placeCamera(); });
+addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); placeCamera(); layoutTopUI(); });
+addEventListener('orientationchange',()=>{ setTimeout(()=>{ placeCamera(); layoutTopUI(); },60); });
+if(window.visualViewport) visualViewport.addEventListener('resize',()=>layoutTopUI());
 document.addEventListener('visibilitychange',()=>{ if(document.hidden) save(); });
 
 /* ================= bucle principal ================= */
