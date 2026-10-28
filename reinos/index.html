@@ -163,7 +163,7 @@ details.help p,details.help li{color:var(--mut);line-height:1.55;margin-top:6px;
    REINOS DE VALDORIA — tarjeta jugable de prueba en el chat.
    Valores reales tomados de ~/workspace/aldea/medieval/config.mjs
    (costes, tiempos, estadísticas, factores de escala del servidor).
-   La partida vive solo en esta pestaña: sin guardado entre sesiones.
+   La partida se guarda en el navegador (localStorage) y se restaura al volver.
    ================================================================ */
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -220,7 +220,7 @@ const TRAVEL_SCALE=60; /* escala de prueba: el viaje tarda 60× menos que en el 
 </script>
 <script>
 'use strict';
-/* ---------- ESTADO (solo en memoria, en esta pestaña) ---------- */
+/* ---------- ESTADO (guardado en el navegador) ---------- */
 let uid=1;
 function emptyBuildings(){const o={};for(const k in BUILDINGS)o[k]=0;return o;}
 function emptyTroops(){const o={};for(const k in UNITS)o[k]=0;return o;}
@@ -239,6 +239,32 @@ const S={
   achClaimed:{},
   startedAt:Date.now(),
 };
+
+/* ---------- GUARDADO EN EL NAVEGADOR ---------- */
+/* La partida (imperio + mundo, incluidas las ciudades/campamentos ya
+   conquistados o reaparecidos) se guarda en localStorage y se restaura
+   al volver. Sin esto, cerrar la pestaña borraba todo el progreso. */
+const SAVE_KEY='reinos-de-valdoria-save-v1';
+function saveGame(){
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify({v:1, savedAt:Date.now(), uid:uid, S:S, world:world})); }
+  catch(e){ /* almacenamiento lleno o no disponible: el juego sigue en memoria */ }
+}
+function loadGame(){
+  let raw=null;
+  try{ raw=localStorage.getItem(SAVE_KEY); }catch(e){ return null; }
+  if(!raw) return null;
+  try{
+    const d=JSON.parse(raw);
+    if(!d || d.v!==1 || !d.S || !Array.isArray(d.S.provinces) || !d.world) return null;
+    Object.keys(S).forEach(k=>delete S[k]); Object.assign(S, d.S);
+    uid=d.uid||uid;
+    Object.keys(world).forEach(k=>delete world[k]); Object.assign(world, d.world);
+    return d.savedAt||null;
+  }catch(e){ return null; }
+}
+function clearSave(){
+  try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+}
 function newProvince(nombre,x,y,buildings,troops,especial){
   const p={id:uid++,nombre,x,y,buildings:Object.assign(emptyBuildings(),buildings||{}),troops:Object.assign(emptyTroops(),troops||{}),buildQueue:[],trainQueue:[],especial:especial||null};
   return p;
@@ -511,6 +537,7 @@ function processEvents(now){
 }
 function tick(){
   const now=Date.now(); const dt=Math.min(3600,(now-(tick._last||now))/1000); tick._last=now;
+  if(now-(tick._savedAt||0)>10000){ tick._savedAt=now; saveGame(); }
   const rt=empireRates();
   for(const r of RES){let v=S.res[r]+rt.net[r]*dt/3600; if(v<0)v=0; if(v>rt.storage)v=rt.storage; S.res[r]=v;}
   S.stats.produced+=Math.max(0,RES.reduce((s,r)=>s+rt.gross[r],0))*dt/3600;
@@ -813,6 +840,7 @@ function renderPerfil(){
   const mins=Math.floor((Date.now()-S.startedAt)/60000);
   let h=`<div class="card hero"><h2>👑 Tu imperio</h2><p class="desc" style="font-size:13px">Sesión de prueba · ${mins} min jugados · ${S.provinces.length} provincia(s)</p>
   <div class="chips"><span class="chip">⭐ Puntos netos: <b>${fmtN(pts.total)}</b></span><span class="chip">⚔️ Poder militar: ${fmtN(pts.militar)}</span></div></div>
+  <div class="card"><h3>💾 Partida guardada</h3><p class="desc" style="font-size:13px">Tu progreso se guarda automáticamente en este navegador y se restaura al volver, aunque cierres la pestaña.</p><button class="btn sec" data-reset-save>🗑️ Borrar partida guardada y empezar de nuevo</button></div>
   <div class="card"><h3>📊 Tus números (sin ranking global en esta tarjeta)</h3><dl class="kv">
   <dt>Puntos de edificios</dt><dd>${fmtN(pts.edificios)}</dd>
   <dt>Puntos de investigación</dt><dd>${fmtN(pts.investigacion)}</dd>
@@ -835,13 +863,18 @@ function renderPerfil(){
   <details class="help"><summary>Hambruna</summary><p>La población empleada y las tropas comen cada hora. Si los alimentos llegan a 0, toda la producción cae a la mitad hasta recuperar reservas.</p></details>
   </div>`;
   $('#tab-perfil').innerHTML=h;
+  const rb=$('#tab-perfil [data-reset-save]');
+  if(rb)rb.onclick=()=>{ if(confirm('¿Borrar la partida guardada y empezar de nuevo? Esta acción no se puede deshacer.')){ clearSave(); location.reload(); } };
 }
 
 /* ---------- ARRANQUE ---------- */
-$('#footNote').innerHTML='Versión de prueba en el navegador: la partida vive mientras la pestaña esté abierta y el mundo es de un jugador. El juego completo multijugador, con alianzas, diplomacia y ranking real, corre en el servidor y se abrirá en Telegram.';
+const _restoredAt=loadGame();
+if(_restoredAt){ tick._last=_restoredAt; tick._savedAt=Date.now(); }
+$('#footNote').innerHTML='Versión en el navegador: tu partida se guarda en este navegador y continúa al volver. El mundo es de un jugador; el juego completo multijugador, con alianzas, diplomacia y ranking real, corre en el servidor y se abrirá en Telegram.';
 renderHeader(); renderTab(true);
 setInterval(tick,1000);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)tick();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){saveGame();}else{tick();}});
+window.addEventListener('beforeunload',saveGame);
 </script>
 </body>
 </html>
