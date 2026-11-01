@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reinos de Valdoria — el servidor está descansando</title>
+<meta name="description" content="Página de aviso de Reinos de Valdoria: si el servidor multijugador está descansando, aquí te lo contamos y te damos alternativas.">
+<style>
+  :root{--gold:#d4af37;--gold2:#f3d98b;--gold-dark:#8a6a1f;--ink:#eef2f7;--mut:#9fb2c8}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px;
+    background:linear-gradient(180deg,#060d1d 0%,#0a1830 46%,#122544 78%,#1a2c49 100%);color:var(--ink);
+    font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
+  .card{width:min(92vw,360px);background:linear-gradient(165deg,#173252,#08182c);border:1px solid var(--gold);
+    border-radius:18px;padding:24px 20px 20px;box-shadow:0 24px 70px rgba(0,0,0,.6);text-align:center}
+  .logo{font-family:Georgia,'Times New Roman',serif;font-size:21px;letter-spacing:2.5px;color:var(--gold2);
+    text-shadow:0 2px 14px rgba(0,0,0,.6);margin:0 0 2px}
+  .sub{color:#b8c7dd;font-size:11px;letter-spacing:1.6px;text-transform:uppercase;margin:0 0 16px}
+  h1{margin:0 0 10px;font-size:20px;color:#ffe9a8}
+  p{margin:0 0 10px;font-size:14.5px;line-height:1.55}
+  .safe{color:#d2f5dc}
+  .estado{font-size:13px;color:var(--mut);min-height:20px;margin:12px 0 2px}
+  .estado.ok{color:#a9e5ae}
+  a.btn{display:block;margin-top:11px;background:linear-gradient(180deg,var(--gold2),var(--gold));
+    border:1px solid var(--gold-dark);color:#241a0c;border-radius:999px;padding:12px 20px;
+    font-size:15.5px;font-weight:850;text-decoration:none;cursor:pointer}
+  a.btn.sec{background:#13273f;border-color:#405a76;color:#e8eefc;font-weight:700}
+  .pie{margin-top:16px;font-size:12px;color:var(--mut)}
+</style>
+</head>
+<body>
+  <main class="card">
+    <p class="logo">REINOS DE VALDORIA</p>
+    <p class="sub">Estrategia medieval · Mundo compartido</p>
+    <h1>🙏 Perdón: el servidor está descansando</h1>
+    <p>Hemos alcanzado el límite del día o hay un fallo temporal en el servicio, y ahora mismo el juego multijugador no puede responder.</p>
+    <p class="safe">🛡️ Tus ciudades están a salvo: tu imperio sigue guardado y volverá tal y como lo dejaste.</p>
+    <p class="estado" id="estado">Comprobando el servidor cada 30 segundos…</p>
+    <a class="btn" href="https://reinos-de-valdoria.felixvaldoria.workers.dev/app">🔄 Reintentar entrar al juego</a>
+    <a class="btn sec" href="https://felixvaldoria.github.io/reinos/">🎮 Jugar la versión de un jugador mientras tanto</a>
+    <p class="pie">El límite diario se reinicia a las 00:00 UTC. Gracias por tu paciencia, señor feudal.</p>
+  </main>
+<script>
+  // Sondeo amable del servidor: fetch en modo no-cors contra
+  // /api/health (público). Si la petición se resuelve, el
+  // servidor vuelve a responder (la respuesta es opaca entre
+  // orígenes, pero basta para saber que está vivo); si se
+  // rechaza, sigue caído. Al recuperarse se avisa en la página.
+  (function(){
+    var el = document.getElementById('estado');
+    var vivo = false;
+    function sondear(){
+      fetch('https://reinos-de-valdoria.felixvaldoria.workers.dev/api/health', { mode: 'no-cors', cache: 'no-store' })
+        .then(function(){
+          if (!vivo) { vivo = true; el.textContent = '✅ El servidor parece responder de nuevo: pulsa «Reintentar entrar al juego».'; el.className = 'estado ok'; }
+        })
+        .catch(function(){
+          vivo = false;
+          el.textContent = '⏳ El servidor aún no responde: lo seguimos comprobando cada 30 segundos…';
+          el.className = 'estado';
+        });
+    }
+    sondear();
+    setInterval(sondear, 30000);
+  })();
+</script>
+</body>
+</html>
