@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Muestra — Aldeanos que caminan de verdad</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;background:#141c0d;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;color:#f2ecd9}
+  header{position:fixed;top:0;left:0;right:0;z-index:9999;background:rgba(20,26,12,.92);backdrop-filter:blur(6px);padding:8px 10px;border-bottom:1px solid rgba(255,217,160,.35)}
+  header h1{font-size:15px;font-weight:800;color:#ffd9a0}
+  header p{font-size:11px;opacity:.85;margin-top:2px;line-height:1.35}
+  header .fila{display:flex;gap:8px;margin-top:6px;align-items:center}
+  header button{background:#3d5222;color:#ffe9b0;border:1px solid #ffd9a0;border-radius:999px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer}
+  header button.activo{background:#ffd9a0;color:#2a3a14}
+  #estado{font-size:11px;opacity:.8}
+  #vista{position:fixed;inset:0;padding-top:104px;overflow:auto;-webkit-overflow-scrolling:touch}
+  #escena{position:relative;margin:0 auto;aspect-ratio:1170/2532;width:175vw}
+  body.ciudad #escena{width:min(100vw,calc((100dvh - 110px)*1170/2532))}
+  body.sonda #escena{width:200vw}
+  #fondo{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .pieza{position:absolute;display:block;pointer-events:none}
+  .npc{position:absolute;left:0;top:0;pointer-events:none;will-change:left,top}
+  .npc img{display:block;width:100%;height:100%}
+  .npc.faena img{animation:faena .5s ease-in-out infinite alternate}
+  @keyframes faena{from{transform:rotate(-1.8deg)}to{transform:rotate(1.8deg)}}
+  #sonda-out{display:none}
+  body.sonda #sonda-out{display:block;position:fixed;bottom:0;left:0;right:0;max-height:40dvh;overflow:auto;background:#000;color:#8f8;font-size:10px;z-index:99999;white-space:pre-wrap}
+</style>
+</head>
+<body>
+<header>
+  <h1>🚶 Muestra: aldeanos que caminan de verdad</h1>
+  <p>Ciclo de pasos real del pack KayKit (el mismo de la ciudad), pies pegados al suelo y sombra que acompaña. El guardia de la puerta es el Caballero; el herrero junto al Taller, el Bárbaro. <b>Solo es una muestra: el juego no ha cambiado.</b></p>
+  <div class="fila">
+    <button id="btnPlaza" class="activo">🔍 Plaza</button>
+    <button id="btnCiudad">🏰 Ciudad entera</button>
+    <span id="estado">Cargando…</span>
+  </div>
+</header>
+<div id="vista"><div id="escena">
+  <img id="fondo" src="../ciudad-kaykit/fondo-t2.webp" alt="" draggable="false">
+  <div id="capaEdificios"></div>
+  <div id="capaNpc"></div>
+</div></div>
+<pre id="sonda-out"></pre>
+<script>
+'use strict';
+const ART = '../ciudad-kaykit/';
+const GEO = {"almacen":[11.54,66.31,25.21,9.6],"aserradero":[65.98,18.29,26.5,11.02],"cantera":[66.41,34.12,27.44,9.79],"casas":[5.3,50.0,35.9,12.44],"cuartel":[65.81,49.61,28.63,12.88],"establo":[26.92,74.88,22.65,8.14],"granja":[15.21,17.46,31.62,11.81],"mercado":[37.86,43.25,29.06,12.09],"mina":[44.27,19.75,23.93,9.52],"posada":[12.22,74.8,18.8,8.21],"senado":[35.64,29.9,35.04,14.02],"taller":[67.09,66.51,25.21,9.4],"taller_artesano":[60.51,74.64,17.95,8.37],"universidad":[14.7,33.18,23.93,10.74]};
+const CAJA = {"almacen":[14.79,67.3,16.58,6.95],"aserradero":[68.46,20.14,19.49,7.5],"cantera":[68.29,37.32,21.54,4.94],"casas":[7.52,52.45,29.4,8.37],"cuartel":[67.78,51.34,22.56,9.48],"establo":[28.63,76.22,17.09,5.13],"granja":[17.18,21.41,25.47,6.44],"mercado":[39.74,47.59,23.08,6.12],"mina":[46.75,21.37,16.75,6.28],"posada":[14.27,76.15,12.48,5.21],"senado":[41.79,32.39,20.68,9.87],"taller":[69.57,68.01,18.12,6.24],"taller_artesano":[61.97,77.33,12.82,4.03],"universidad":[17.78,36.02,15.73,6.48]};
+const baseDe = id => Math.round((CAJA[id][1] + CAJA[id][3]) / 100 * 2532);
+/* Las MISMAS rutas que usa el juego (red de calles de la placa). */
+const RUTAS = [
+ {n:'lenador',mod:'lenador',vIda:44,vVuelta:66,faena:[4,5],pts:[[915,693],[915,745],[414,745],[414,1118],[433,1300],[520,1352],[600,1352]]},
+ {n:'granjera',mod:'granjera',vIda:46,vVuelta:64,faena:[4,5],pts:[[350,691],[350,745],[414,745],[414,1118],[470,1136],[540,1200],[580,1300],[600,1352]]},
+ {n:'minero',mod:'minero',vIda:46,vVuelta:64,faena:[5,4],pts:[[645,694],[645,745],[414,745],[414,1118],[585,1136],[700,1118],[850,1118],[925,1118],[925,1063]]},
+ {n:'herrero',mod:'herrero',vIda:58,vVuelta:58,faena:[3,6],pts:[[920,1874],[920,1924],[585,1924],[585,1450],[600,1360]]},
+ {n:'vecina',mod:'vecina',vIda:56,vVuelta:56,faena:[3,4],pts:[[260,1530],[260,1584],[433,1584],[433,1450],[520,1360],[600,1352]]},
+ {n:'aldeano',mod:'granjera',vIda:40,vVuelta:40,faena:[5,3],pts:[[585,2200],[585,1500],[600,1330],[585,1136],[610,1057],[585,1200],[600,1352]]},
+ {n:'posadero',mod:'posadero',vIda:56,vVuelta:56,faena:[3,4],pts:[[240,2055],[240,2092],[585,2092],[585,1450],[600,1360]]},
+];
+const GUARDIA = {n:'guardia', mod:'guardia', x:548, y:2122};
+const DUR_FRAME = 0.1125;      /* ciclo de 8 frames ≈ 0,9 s */
+const DUR_IDLE = 0.34;
+const Q = new URLSearchParams(location.search);
+const SONDA = Q.get('sonda') === '1', SIN = Q.get('sin') === '1';
+let DATOS = null, NPCS = [], guardia = null;
+
+const escena = document.getElementById('escena');
+const capaE = document.getElementById('capaEdificios');
+const capaN = document.getElementById('capaNpc');
+for (const id of Object.keys(GEO)) {
+  const g = GEO[id], im = document.createElement('img');
+  im.className = 'pieza'; im.src = ART + id + '-t2.webp'; im.alt = ''; im.draggable = false;
+  im.style.left = g[0] + '%'; im.style.top = g[1] + '%';
+  im.style.width = g[2] + '%'; im.style.height = g[3] + '%';
+  im.style.zIndex = baseDe(id);
+  capaE.appendChild(im);
+}
+if (SIN) capaN.style.display = 'none';
+
+function mediana(a){ const s = [...a].sort((x, y) => x - y); return s[Math.floor(s.length / 2)]; }
+function prepararDatos(){
+  for (const k of Object.keys(DATOS)) {
+    const S = DATOS[k];
+    S.solH = mediana(S.frames.map(f => S.feetY - f.top));
+    S.cxMed = mediana(S.frames.map(f => f.cx));
+    S.n = S.frames.length;
+  }
+}
+function crearEl(npc){
+  const el = document.createElement('div');
+  el.className = 'npc'; el.dataset.npc = npc.ruta ? npc.ruta.n : npc.n;
+  el.innerHTML = '<img alt="" draggable="false">';
+  npc.el = el; npc.img = el.querySelector('img');
+  npc.clave = '';
+  capaN.appendChild(el);
+}
+function colocar(npc){
+  const S = DATOS[npc.setKey]; if (!S) return;
+  const esc = 0.82 + 0.28 * (npc.y / 2532);
+  const k = (80 * esc) / S.solH;
+  const dispW = S.w * k, dispH = S.h * k;
+  npc.el.style.width = (dispW / 1170 * 100) + '%';
+  npc.el.style.height = (dispH / 2532 * 100) + '%';
+  npc.el.style.left = (npc.x / 1170 * 100) + '%';
+  npc.el.style.top = (npc.y / 2532 * 100) + '%';
+  const cxOff = (S.cxMed - S.w / 2) / S.w * 100;
+  npc.el.style.transform = 'translate(calc(-50% - ' + cxOff.toFixed(2) + '%), ' + (-(S.feetY / S.h * 100)).toFixed(2) + '%)';
+  npc.el.style.zIndex = String(Math.round(npc.y));
+  const clave = npc.setKey + '|' + npc.frame + '|' + (npc.flip ? -1 : 1);
+  if (clave !== npc.clave) {
+    npc.clave = clave;
+    npc.img.src = 'frames/' + npc.setKey + '-' + npc.frame + '.webp';
+    npc.img.style.transform = npc.flip ? 'scaleX(-1)' : '';
+  }
+}
+function setDeSegmento(npc, dx, dy){
+  if (Math.abs(dx) >= Math.abs(dy)) { npc.setKey = npc.mod + '-e'; npc.flip = dx < 0; }
+  else if (dy > 0) { npc.setKey = npc.mod + '-s'; npc.flip = false; }
+  else { npc.setKey = npc.mod + '-n'; npc.flip = false; }
+}
+let ultimo = 0;
+function tick(ts){
+  requestAnimationFrame(tick);
+  const dt = Math.min(0.05, (ts - (ultimo || ts)) / 1000); ultimo = ts;
+  if (document.hidden || !DATOS) return;
+  for (const npc of NPCS) {
+    if (npc.pausa > 0) { npc.pausa -= dt; npc.el.classList.add('faena'); continue; }
+    npc.el.classList.remove('faena');
+    const pts = npc.ruta.pts, i = npc.seg, a = pts[i], b = pts[i + 1];
+    const dx = b[0] - a[0], dy = b[1] - a[1], lon = Math.hypot(dx, dy) || 1;
+    setDeSegmento(npc, npc.dir > 0 ? dx : -dx, npc.dir > 0 ? dy : -dy);
+    npc.reloj += dt;
+    npc.frame = Math.floor(npc.reloj / DUR_FRAME) % DATOS[npc.setKey].n;
+    const v = npc.dir > 0 ? npc.ruta.vIda : npc.ruta.vVuelta;
+    npc.t += v * dt / lon;
+    if (npc.t >= 1) {
+      npc.t = 0;
+      if (npc.dir > 0) { npc.x = b[0]; npc.y = b[1];
+        if (i >= pts.length - 2) { npc.dir = -1; npc.pausa = npc.ruta.faena[0]; }
+        else npc.seg++;
+      } else { npc.x = a[0]; npc.y = a[1];
+        if (i <= 0) { npc.dir = 1; npc.pausa = npc.ruta.faena[1]; }
+        else npc.seg--;
+      }
+    } else if (npc.dir > 0) { npc.x = a[0] + dx * npc.t; npc.y = a[1] + dy * npc.t; }
+    else { npc.x = b[0] - dx * npc.t; npc.y = b[1] - dy * npc.t; }
+    colocar(npc);
+  }
+  if (guardia && DATOS['guardia-s']) {
+    guardia.frame = Math.floor(ts / 1000 / DUR_IDLE) % DATOS['guardia-s'].n;
+    colocar(guardia);
+  }
+}
+function iniciar(){
+  NPCS = RUTAS.map(r => {
+    const npc = {ruta: r, mod: r.mod, seg: 0, t: 0, dir: 1, pausa: 1 + Math.random() * 2,
+                 x: r.pts[0][0], y: r.pts[0][1], reloj: Math.random(), frame: 0,
+                 setKey: r.mod + '-s', flip: false};
+    crearEl(npc); colocar(npc); return npc;
+  });
+  guardia = {n: 'guardia', mod: 'guardia', x: GUARDIA.x, y: GUARDIA.y,
+             setKey: 'guardia-s', frame: 0, flip: false};
+  crearEl(guardia); colocar(guardia);
+  /* Precarga de frames para que el cambio de frame no parpadee. */
+  let total = 0, cargados = 0;
+  const urls = [];
+  for (const k of Object.keys(DATOS)) for (let i = 0; i < DATOS[k].n; i++) urls.push('frames/' + k + '-' + i + '.webp');
+  total = urls.length;
+  const est = document.getElementById('estado');
+  for (const u of urls) { const im = new Image(); im.onload = im.onerror = () => { cargados++; if (cargados === total) est.textContent = 'Listo ✔'; else est.textContent = 'Cargando frames ' + cargados + '/' + total; }; im.src = u; }
+  if (!SONDA) requestAnimationFrame(tick);
+}
+/* ---------- SONDA: posiciones fijas y datos medibles ---------- */
+function sonda(){
+  document.body.classList.add('sonda');
+  const casos = [
+    {n: 'granjera', mod: 'granjera', x: 610, y: baseDe('senado') - 46, setKey: 'granjera-s', frame: 2, flip: false, nota: 'detras-del-senado'},
+    {n: 'vecina', mod: 'vecina', x: 610, y: baseDe('senado') + 46, setKey: 'vecina-s', frame: 2, flip: false, nota: 'delante-del-senado'},
+    {n: 'minero', mod: 'minero', x: 775, y: 1118, setKey: 'minero-e', frame: 3, flip: false, nota: 'calle-horizontal-este'},
+    {n: 'aldeano', mod: 'granjera', x: 414, y: 930, setKey: 'granjera-n', frame: 3, flip: false, nota: 'calle-vertical-norte'},
+    {n: 'posadero', mod: 'posadero', x: 500, y: 2092, setKey: 'posadero-e', frame: 3, flip: true, nota: 'oeste-volteado'},
+    {n: 'lenador', mod: 'lenador', x: 600, y: 1352, setKey: 'lenador-s', frame: 0, flip: false, nota: 'plaza-sur'},
+  ];
+  const out = [];
+  for (const c of casos) { const npc = {...c}; crearEl(npc); colocar(npc); out.push(npc); }
+  guardia = {n: 'guardia', mod: 'guardia', x: GUARDIA.x, y: GUARDIA.y, setKey: 'guardia-s', frame: 1, flip: false};
+  crearEl(guardia); colocar(guardia); out.push(guardia);
+  const vista = document.getElementById('vista');
+  setTimeout(() => {
+    const escW = escena.getBoundingClientRect().width;
+    vista.scrollLeft = 610 / 1170 * escW - vista.clientWidth / 2;
+    vista.scrollTop = 1080 / 2532 * (escW * 2532 / 1170) - vista.clientHeight / 2;
+    setTimeout(() => {
+      const datos = out.map(npc => {
+        const r = npc.el.getBoundingClientRect();
+        const rect = [Math.round(r.left + r.width * 0.18), Math.round(r.top + r.height * 0.05),
+                      Math.round(r.right - r.width * 0.18), Math.round(r.bottom - r.height * 0.10)];
+        return {rol: npc.n, nota: npc.nota || 'guardia-puerta', x: npc.x, y: npc.y,
+                z: Math.round(npc.y), set: npc.setKey, frame: npc.frame, flip: !!npc.flip, rect};
+      });
+      document.getElementById('sonda-out').textContent = 'SONDA ' + JSON.stringify(datos);
+    }, 350);
+  }, 350);
+}
+window.__npcTest = { estados: () => [...NPCS, ...(guardia ? [guardia] : [])].map(n => ({n: n.ruta ? n.ruta.n : n.n, x: Math.round(n.x), y: Math.round(n.y), z: Math.round(n.y), set: n.setKey, frame: n.frame, flip: !!n.flip})) };
+
+const vista = document.getElementById('vista');
+function centrarPlaza(){
+  const escW = escena.getBoundingClientRect().width, escH = escW * 2532 / 1170;
+  vista.scrollLeft = 585 / 1170 * escW - vista.clientWidth / 2;
+  vista.scrollTop = 1250 / 2532 * escH - vista.clientHeight / 2;
+}
+document.getElementById('btnPlaza').onclick = e => { document.body.classList.remove('ciudad'); document.getElementById('btnCiudad').classList.remove('activo'); e.target.classList.add('activo'); setTimeout(centrarPlaza, 60); };
+document.getElementById('btnCiudad').onclick = e => { document.body.classList.add('ciudad'); document.getElementById('btnPlaza').classList.remove('activo'); e.target.classList.add('activo'); vista.scrollTop = 0; };
+
+fetch('frames/datos.json').then(r => r.json()).then(d => {
+  DATOS = d; prepararDatos();
+  if (SONDA) { sonda(); }
+  else { iniciar(); setTimeout(centrarPlaza, 120); document.getElementById('estado').textContent = 'Listo ✔'; }
+}).catch(e => { document.getElementById('estado').textContent = 'Error cargando datos: ' + e; });
+</script>
+</body>
+</html>
